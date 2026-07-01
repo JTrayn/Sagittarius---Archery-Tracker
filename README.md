@@ -1,5 +1,17 @@
 # Sagittarius - Archery Tracker
 
+## v0.5.2 changes
+
+v0.5.2 prepares the project for GitHub/Codex-based development. App functionality is unchanged from v0.5.1.
+
+Added repository context and workflow files:
+
+- `AGENTS.md` - guidance and project context for AI coding agents.
+- `CHANGELOG.md` - release history.
+- `ROADMAP.md` - likely future feature directions.
+- `TESTING.md` - manual smoke-test checklist and validation notes.
+- `.gitignore` - ignores packaged ZIPs, OS clutter, dependencies, build output, and logs.
+
 A vanilla HTML/CSS/JS Olympic recurve archery scoring web app.
 
 ## How to run

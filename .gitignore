@@ -1,0 +1,21 @@
+# OS/editor clutter
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Packaged releases
+*.zip
+
+# Dependencies/build output, in case tooling is added later
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs/temp
+*.log
+.tmp/
+tmp/

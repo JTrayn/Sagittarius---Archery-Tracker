@@ -1,5 +1,11 @@
 # Project Notes
 
+## v0.5.2 Codex/repository preparation
+
+- Added `AGENTS.md` with project architecture, terminology, UI preferences, scoring rules, viewport modes, and development guidance for Codex/AI coding agents.
+- Added `CHANGELOG.md`, `ROADMAP.md`, `TESTING.md`, and `.gitignore`.
+- Bumped `APP_VERSION` to `0.5.2`.
+- No intended app functionality changes from v0.5.1.
 
 ## v0.5.1 scorecard panel refinement
 
