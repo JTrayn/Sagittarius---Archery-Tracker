@@ -178,6 +178,10 @@ When making changes:
 10. Avoid adding build tooling unless it clearly improves the workflow.
 11. Keep the app easy to run locally.
 
+## Documentation discipline
+
+When a change affects user-visible behaviour, UI, data models, scoring, storage/migration, or adds a feature, update the genuinely relevant docs in the same change. Consider `README.md`, `PROJECT_NOTES.md`, `CHANGELOG.md`, `ROADMAP.md`, `TESTING.md`, and `AGENTS.md`, but do not update files that are not materially affected.
+
 ## Suggested validation after edits
 
 At minimum:
