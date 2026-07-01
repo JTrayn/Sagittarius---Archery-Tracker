@@ -10,9 +10,9 @@ The project started as an iterative ChatGPT-built app. Preserve the existing UX 
 
 ## Current version
 
-v0.7.6
+v0.7.12
 
-v0.7.6 refines Trends record-card layout, metric explanations, Global records copy, and leaderboard styling.
+v0.7.12 refines export zoom viewports, restores small yellow grouping centre markers, and softens end-coloured grouping rings.
 
 ## Core terminology
 
@@ -165,6 +165,8 @@ Current export image features:
 - End sheet PNG
 - Export options for labels, target visibility, dispersion/radial grouping, and enclosing/simple grouping
 - Optional scorecard table on target image exports
+- Optional Zoom to plotted group mode for target image and end sheet exports
+- Grouping exports use the persistent target-focus styling without dimming export headers or scorecard panels
 - Scorecard JSON export bundles referenced custom target-face definitions.
 - End sheet score badges use target-zone colours
 
@@ -179,18 +181,20 @@ Two grouping modes exist.
 - Also draws a confidence ellipse based on plotted-arrow covariance
 - Tooltip shows radius only
 - Tooltip appears only when hovering over the group ring
+- Renders above plotted arrows and arrow labels
 
 ### Enclosing / Simple
 
 - Red theme
 - Uses minimum enclosing circle
 - Tooltip appears only when hovering over the group ring
+- Renders above plotted arrows and arrow labels
 
 Current user-facing viewport labels should say **Dispersion** and **Enclosing**. Internal code may still use radial/simple terminology for the existing state and renderer APIs.
 
-Grouping overlays share a gold mean point of impact marker based on the plotted-arrow centroid. The viewport HUD shows the visible arrows' MPI offset from target centre and horizontal/vertical spread.
+Grouping overlays share a small yellow circular mean point of impact marker based on the plotted-arrow centroid. Keep the marker compact so it does not dominate zoomed-out views. The viewport HUD shows the visible arrows' MPI offset from target centre and horizontal/vertical spread.
 
-Hovering over grouping rings subtly darkens/desaturates the target and slightly emphasizes the hovered grouping ring.
+When Dispersion or Enclosing is enabled and at least two plotted arrows are visible, the live viewport darkens the target/background and renders brighter grouping overlays until the overlays are disabled. Hovering over grouping rings should still only control ring tooltips and a subtle extra emphasis.
 
 ## Trends features
 

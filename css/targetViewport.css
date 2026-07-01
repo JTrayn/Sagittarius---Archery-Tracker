@@ -70,7 +70,7 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto minmax(130px, 0.5fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(220px, 0.72fr) minmax(310px, 1fr);
   gap: 12px;
   padding: 16px;
   color: var(--text);
@@ -180,6 +180,7 @@
 }
 
 .trends-records {
+  display: grid;
   min-height: 0;
   overflow: auto;
   border-top: 1px solid rgba(151, 184, 212, 0.12);
@@ -190,7 +191,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1.48fr) minmax(300px, 0.82fr);
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
+  min-height: 100%;
 }
 
 .trends-record-hero {
@@ -297,6 +299,15 @@
   gap: 10px;
 }
 
+.trends-record-side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 100%;
+}
+
 .trends-selected-records-main {
   display: grid;
   gap: 10px;
@@ -306,7 +317,7 @@
 .trends-record-section-agnostic {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 10px;
   background: rgba(94, 167, 255, 0.035);
 }
 
@@ -317,22 +328,25 @@
 .trends-record-section-agnostic .trends-record-metric {
   aspect-ratio: 1;
   min-height: 0;
-  align-content: space-between;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+  gap: 8px;
+  padding: 10px;
 }
 
 .trends-record-section-head {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  margin-bottom: 8px;
+  gap: 3px;
+  margin-bottom: 2px;
 }
 
 .trends-record-section-head strong {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -341,37 +355,12 @@
 .trends-record-section-head span {
   min-width: 0;
   overflow: hidden;
-  color: var(--muted-2);
-  font-size: 0.68rem;
+  color: rgba(180, 201, 219, 0.76);
+  font-size: 0.69rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
-}
-
-.trends-global-explainer {
-  display: grid;
-  gap: 5px;
-  padding: 9px;
-  border: 1px solid rgba(151, 184, 212, 0.10);
-  border-radius: 8px;
-  background: rgba(3, 10, 17, 0.20);
-}
-
-.trends-global-explainer span {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.67rem;
-  font-weight: 720;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trends-global-explainer strong {
-  color: var(--text);
-  font-weight: 920;
 }
 
 .trends-record-metrics {
@@ -410,6 +399,73 @@
 .trends-record-metric.is-empty:hover {
   border-color: rgba(151, 184, 212, 0.10);
   background: rgba(3, 10, 17, 0.26);
+}
+
+.trends-arrow-volume {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(94, 167, 255, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(94, 167, 255, 0.10), rgba(122, 183, 255, 0.035)),
+    rgba(3, 10, 17, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.trends-arrow-volume-head {
+  display: grid;
+  gap: 3px;
+}
+
+.trends-arrow-volume-head span,
+.trends-arrow-volume-grid span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted-2);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trends-arrow-volume-head strong {
+  color: var(--text);
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.trends-arrow-volume-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.trends-arrow-volume-grid div {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(151, 184, 212, 0.10);
+  border-radius: 8px;
+  background: rgba(3, 10, 17, 0.25);
+}
+
+.trends-arrow-volume-grid strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trends-leaderboard {
@@ -577,6 +633,26 @@
   font-size: 0.68rem;
 }
 
+.trends-record-section-agnostic .trends-record-metric span {
+  color: rgba(150, 180, 207, 0.86);
+  font-size: 0.61rem;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+.trends-record-section-agnostic .trends-record-metric strong {
+  align-self: center;
+  color: #f3f8ff;
+  font-size: clamp(1.04rem, 1.5vw, 1.28rem);
+  line-height: 1;
+}
+
+.trends-record-section-agnostic .trends-record-metric small {
+  color: rgba(180, 201, 219, 0.82);
+  font-size: 0.68rem;
+  line-height: 1.15;
+}
+
 .trends-empty {
   display: grid;
   place-items: center;
@@ -599,6 +675,11 @@
   .trends-record-hero,
   .trends-record-sections {
     grid-template-columns: 1fr;
+  }
+
+  .trends-record-side {
+    grid-template-rows: auto;
+    min-height: 0;
   }
 
   .trends-record-section-agnostic .trends-record-metrics {

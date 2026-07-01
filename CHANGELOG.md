@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.7.12 - Export zoom viewport and grouping marker refinement
+
+- Reverted the grouping centre marker from a twinkle back to a small yellow circle.
+- Changed Zoom to plotted group for non-end-sheet target exports to render through a large square clipped viewport.
+- Reduced the stroke width, opacity, fill, and glow of end-coloured Dispersion/Enclosing rings to keep multi-end exports cleaner.
+
+## v0.7.11 - Export grouping focus and twinkle marker
+
+- Propagated the stronger persistent grouping focus treatment to exported target images and end sheet mini-targets.
+- Added target-area-only export scrims so grouping exports darken the target view without dimming headers or scorecard panels.
+- Replaced the grouping centre crosshair/yellow dot with a compact twinkle marker coloured to match the grouping overlay.
+
+## v0.7.10 - Persistent grouping focus
+
+- Changed the live viewport grouping focus effect so it starts when Dispersion or Enclosing is enabled and remains active until grouping overlays are disabled.
+- Made the grouping focus treatment more pronounced with a darker target/background scrim, brighter grouping rings, and stronger glass fills.
+- Kept grouping tooltips hover-only, with hover now acting as a subtle extra emphasis rather than the trigger for the whole focus effect.
+
+## v0.7.9 - Export group zoom and overlay layering
+
+- Draw Dispersion and Enclosing overlays above plotted arrows and arrow labels in the live viewport.
+- Draw grouping overlays above arrows in target-style exports and end sheet mini-targets.
+- Added a Zoom to plotted group export option that fits the PNG camera around plotted arrows and enabled grouping bounds.
+
+## v0.7.8 - Trends vertical balance polish
+
+- Gave the Trends chart a larger share of the view so the graph uses more of the available vertical space.
+- Stretched the Records dashboard to fill its lower region, with the Arrows shot component extending under Global records.
+- Refined Global records card typography and spacing for cleaner label, value, and date alignment.
+
+## v0.7.7 - Trends arrow volume counter
+
+- Removed the bulky explanatory text block from Global records.
+- Added an Arrows shot counter below Global records showing total saved arrows, current-week arrows, and current-month arrows.
+- Current-week and current-month counts use the local scorecard date and the saved scorecard's recorded arrow count.
+
 ## v0.7.6 - Trends layout and explanations
 
 - Folded the Top 5 totals leaderboard into the selected Records component.

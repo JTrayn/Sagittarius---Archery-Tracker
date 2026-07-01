@@ -7,7 +7,11 @@
     sheetWidth: 2400,
     sheetHeight: 3200,
     margin: 110,
-    headerHeight: 220
+    headerHeight: 220,
+    groupFitMinSpanMm: 160,
+    groupFitPaddingMm: 26,
+    groupFitMaxPxPerMm: 12,
+    groupFocusAmount: 1
   };
 
   const SCORECARD_PANEL = {
@@ -125,35 +129,43 @@
     drawExportBackground(ctx, canvas.width, canvas.height);
     drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
 
-    const transform = makeFitTransform(canvas, targetFace, {
+    const targetPadding = getTargetViewportPadding(canvas, {
       top: EXPORT.headerHeight + 76,
       right: EXPORT.margin,
       bottom: EXPORT.margin,
       left: exportLayout.targetLeft
-    });
+    }, options);
+    const transform = makeFitTransform(canvas, targetFace, targetPadding, getExportFocusBounds(scorecard, targetFace, options.visibleEndIndex ?? null, options));
+    const targetRect = getPaddedRect(canvas, targetPadding);
 
-    App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
-      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
-    });
-    if (options.showRadialGrouping || options.showSimpleGrouping) {
-      App.GroupingRenderer.drawGroupingOverlay(ctx, canvas, transform, scorecard, {
-        visibleEndIndex: options.visibleEndIndex ?? null,
-        showRadial: options.showRadialGrouping,
-        showSimple: options.showSimpleGrouping,
-        showLabel: false
+    drawInsideRect(ctx, targetRect, () => {
+      App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
+        visibility: normalizeTargetVisibility(options.targetFaceVisibility)
       });
-    }
-    App.ArrowRenderer.drawArrows(
-      ctx,
-      canvas,
-      transform,
-      scorecard,
-      targetFace,
-      { endIndex: -1, arrowIndex: -1 },
-      options.showArrowLabels !== false,
-      null,
-      { visibleEndIndex: options.visibleEndIndex ?? null }
-    );
+      if (hasVisibleGrouping(scorecard, options.visibleEndIndex ?? null, options)) {
+        drawExportGroupFocusScrim(ctx, targetRect, EXPORT.groupFocusAmount);
+      }
+      App.ArrowRenderer.drawArrows(
+        ctx,
+        canvas,
+        transform,
+        scorecard,
+        targetFace,
+        { endIndex: -1, arrowIndex: -1 },
+        options.showArrowLabels !== false,
+        null,
+        { visibleEndIndex: options.visibleEndIndex ?? null }
+      );
+      if (options.showRadialGrouping || options.showSimpleGrouping) {
+        App.GroupingRenderer.drawGroupingOverlay(ctx, canvas, transform, scorecard, {
+          visibleEndIndex: options.visibleEndIndex ?? null,
+          showRadial: options.showRadialGrouping,
+          showSimple: options.showSimpleGrouping,
+          showLabel: false,
+          focusAmount: EXPORT.groupFocusAmount
+        });
+      }
+    });
 
     if (scorecardLayout) {
       drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
@@ -176,18 +188,25 @@
     drawExportBackground(ctx, canvas.width, canvas.height);
     drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
 
-    const transform = makeFitTransform(canvas, targetFace, {
+    const targetPadding = getTargetViewportPadding(canvas, {
       top: EXPORT.headerHeight + 76,
       right: EXPORT.margin,
       bottom: EXPORT.margin + 185,
       left: exportLayout.targetLeft
-    });
+    }, options);
+    const transform = makeFitTransform(canvas, targetFace, targetPadding, getExportFocusBounds(scorecard, targetFace, null, { ...options, perEndGrouping: true }));
+    const targetRect = getPaddedRect(canvas, targetPadding);
 
-    App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
-      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+    drawInsideRect(ctx, targetRect, () => {
+      App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
+        visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+      });
+      if (hasVisibleEndColourGrouping(endGroups, options)) {
+        drawExportGroupFocusScrim(ctx, targetRect, EXPORT.groupFocusAmount);
+      }
+      drawEndColourArrows(ctx, canvas, transform, endGroups, options.showArrowLabels !== false);
+      drawEndColourGrouping(ctx, canvas, transform, endGroups, options);
     });
-    drawEndColourGrouping(ctx, canvas, transform, endGroups, options);
-    drawEndColourArrows(ctx, canvas, transform, endGroups, options.showArrowLabels !== false);
     drawEndColourLegend(ctx, endGroups, canvas.height - EXPORT.margin - 112, exportLayout.targetLeft, EXPORT.targetWidth - EXPORT.margin * 2);
     if (scorecardLayout) {
       drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
@@ -233,19 +252,14 @@
       height: height - labelSpace - inset
     };
     const tempCanvas = makeVirtualCanvas(targetBox.width, targetBox.height);
-    const transform = makeFitTransform(tempCanvas, targetFace, { top: 16, right: 16, bottom: 16, left: 16 });
+    const transform = makeFitTransform(tempCanvas, targetFace, { top: 16, right: 16, bottom: 16, left: 16 }, getExportFocusBounds(scorecard, targetFace, endIndex, options));
     const tempCtx = tempCanvas.getContext("2d");
     tempCtx.clearRect(0, 0, targetBox.width, targetBox.height);
     App.TargetRenderer.drawTarget(tempCtx, tempCanvas, transform, targetFace, {
       visibility: normalizeTargetVisibility(options.targetFaceVisibility)
     });
-    if (options.showRadialGrouping !== false || options.showSimpleGrouping === true) {
-      App.GroupingRenderer.drawGroupingOverlay(tempCtx, tempCanvas, transform, scorecard, {
-        visibleEndIndex: endIndex,
-        showRadial: options.showRadialGrouping !== false,
-        showSimple: options.showSimpleGrouping === true,
-        showLabel: false
-      });
+    if (hasVisibleGrouping(scorecard, endIndex, options)) {
+      drawExportGroupFocusScrim(tempCtx, getPaddedRect(tempCanvas, { top: 16, right: 16, bottom: 16, left: 16 }), EXPORT.groupFocusAmount);
     }
     App.ArrowRenderer.drawArrows(
       tempCtx,
@@ -258,6 +272,15 @@
       null,
       { visibleEndIndex: endIndex }
     );
+    if (options.showRadialGrouping !== false || options.showSimpleGrouping === true) {
+      App.GroupingRenderer.drawGroupingOverlay(tempCtx, tempCanvas, transform, scorecard, {
+        visibleEndIndex: endIndex,
+        showRadial: options.showRadialGrouping !== false,
+        showSimple: options.showSimpleGrouping === true,
+        showLabel: false,
+        focusAmount: EXPORT.groupFocusAmount
+      });
+    }
     delete tempCanvas.__archeryExportRect;
     ctx.drawImage(tempCanvas, targetBox.x, targetBox.y);
   }
@@ -287,14 +310,16 @@
     ctx.save();
     endGroups.forEach(group => {
       if (group.entries.length < 2) return;
+      let centrePoint = null;
 
       if (options.showSimpleGrouping) {
         const simple = App.GroupingRenderer.calculateSimpleGroupStats(group.entries);
         if (simple) {
+          centrePoint = simple.centroid;
           drawEndGroupCircle(ctx, canvas, transform, simple.circle, group.colour, {
-            alpha: 0.86,
-            fillAlpha: 0.032,
-            lineWidth: 5.4,
+            alpha: 0.66,
+            fillAlpha: 0.052,
+            lineWidth: 4.1,
             dash: []
           });
         }
@@ -303,14 +328,17 @@
       if (options.showRadialGrouping) {
         const radial = App.GroupingRenderer.calculateRadialGroupStats(group.entries);
         if (radial) {
+          centrePoint = radial.centroid;
           drawEndGroupCircle(ctx, canvas, transform, radial.circle, group.colour, {
-            alpha: 0.88,
-            fillAlpha: 0.026,
-            lineWidth: 4.4,
+            alpha: 0.68,
+            fillAlpha: 0.045,
+            lineWidth: 3.4,
             dash: [22, 12]
           });
         }
       }
+
+      if (centrePoint) drawEndGroupCentreMarker(ctx, canvas, transform, centrePoint);
     });
     ctx.restore();
   }
@@ -324,11 +352,44 @@
     ctx.arc(centre.x, centre.y, radiusPx, 0, Math.PI * 2);
     ctx.fillStyle = hexToRgba(colour, style.fillAlpha);
     ctx.fill();
+    ctx.lineWidth = style.lineWidth + 1.8;
+    ctx.setLineDash(style.dash);
+    ctx.strokeStyle = "rgba(1, 8, 13, 0.46)";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.28)";
+    ctx.shadowBlur = 9;
+    ctx.stroke();
     ctx.lineWidth = style.lineWidth;
     ctx.setLineDash(style.dash);
     ctx.strokeStyle = hexToRgba(colour, style.alpha);
-    ctx.shadowColor = hexToRgba(colour, 0.28);
-    ctx.shadowBlur = 16;
+    ctx.shadowColor = hexToRgba(colour, 0.24);
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+    ctx.shadowColor = "transparent";
+    ctx.lineWidth = 0.85;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.30)";
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawEndGroupCentreMarker(ctx, canvas, transform, point) {
+    const screen = App.ViewportMath.worldToScreen(point, canvas, transform);
+    const radius = 4.8;
+
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.44)";
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, radius + 2, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(1, 8, 13, 0.72)";
+    ctx.fill();
+
+    ctx.shadowColor = "transparent";
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 209, 102, 0.96)";
+    ctx.fill();
+    ctx.lineWidth = 1.15;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.70)";
     ctx.stroke();
     ctx.restore();
   }
@@ -744,21 +805,204 @@
     return mainTop + Math.max(0, (mainHeight - scorecardLayout.height) / 2);
   }
 
-  function makeFitTransform(canvas, targetFace, padding) {
+  function getPaddedRect(canvas, padding) {
+    const rect = App.ViewportMath.getCanvasRect(canvas);
+    return {
+      x: padding.left,
+      y: padding.top,
+      width: Math.max(1, rect.width - padding.left - padding.right),
+      height: Math.max(1, rect.height - padding.top - padding.bottom)
+    };
+  }
+
+  function getTargetViewportPadding(canvas, padding, options = {}) {
+    if (options.zoomToGroup !== true) return padding;
+
+    const rect = App.ViewportMath.getCanvasRect(canvas);
+    const availableWidth = Math.max(1, rect.width - padding.left - padding.right);
+    const availableHeight = Math.max(1, rect.height - padding.top - padding.bottom);
+    const size = Math.max(100, Math.min(availableWidth, availableHeight));
+    const extraX = Math.max(0, (availableWidth - size) / 2);
+    const extraY = Math.max(0, (availableHeight - size) / 2);
+    return {
+      top: padding.top + extraY,
+      right: padding.right + extraX,
+      bottom: padding.bottom + extraY,
+      left: padding.left + extraX
+    };
+  }
+
+  function drawInsideRect(ctx, rect, draw) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    draw();
+    ctx.restore();
+  }
+
+  function drawExportGroupFocusScrim(ctx, rect, amount) {
+    const alpha = App.Geometry.clamp(amount || 0, 0, 1);
+    if (alpha <= 0.01) return;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(1, 6, 12, 0.48)";
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+    const gradient = ctx.createRadialGradient(
+      rect.x + rect.width / 2,
+      rect.y + rect.height / 2,
+      0,
+      rect.x + rect.width / 2,
+      rect.y + rect.height / 2,
+      Math.max(rect.width, rect.height) * 0.72
+    );
+    gradient.addColorStop(0, "rgba(5, 14, 23, 0.16)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.38)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    ctx.restore();
+  }
+
+  function makeFitTransform(canvas, targetFace, padding, focusBounds = null) {
     const rect = App.ViewportMath.getCanvasRect(canvas);
     const availableWidth = Math.max(100, rect.width - padding.left - padding.right);
     const availableHeight = Math.max(100, rect.height - padding.top - padding.bottom);
-    const scale = Math.min(availableWidth, availableHeight) / targetFace.diameterMm;
+    const focus = focusBounds || {
+      center: { xMm: 0, yMm: 0 },
+      widthMm: targetFace.diameterMm,
+      heightMm: targetFace.diameterMm
+    };
+    const scale = Math.min(
+      Math.min(availableWidth / focus.widthMm, availableHeight / focus.heightMm),
+      focusBounds ? EXPORT.groupFitMaxPxPerMm : Number.POSITIVE_INFINITY
+    );
     const centreX = padding.left + availableWidth / 2;
     const centreY = padding.top + availableHeight / 2;
+    const panX = centreX - rect.width / 2 - focus.center.xMm * scale;
+    const panY = centreY - rect.height / 2 - focus.center.yMm * scale;
     return {
       currentPxPerMm: scale,
       targetPxPerMm: scale,
-      currentPanX: centreX - rect.width / 2,
-      currentPanY: centreY - rect.height / 2,
-      targetPanX: centreX - rect.width / 2,
-      targetPanY: centreY - rect.height / 2
+      currentPanX: panX,
+      currentPanY: panY,
+      targetPanX: panX,
+      targetPanY: panY
     };
+  }
+
+  function getExportFocusBounds(scorecard, targetFace, visibleEndIndex, options = {}) {
+    if (options.zoomToGroup !== true || !scorecard) return null;
+
+    const bounds = createWorldBounds();
+    const addEntries = entries => {
+      entries.forEach(entry => {
+        if (entry.point) addCircleToBounds(bounds, entry.point, App.Constants.VIEWPORT.ARROW_REAL_RADIUS_MM);
+      });
+    };
+
+    if (options.perEndGrouping === true) {
+      scorecard.ends.forEach((_end, endIndex) => {
+        const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, endIndex);
+        if (!entries.length) return;
+        addEntries(entries);
+        addGroupingBounds(bounds, entries, options);
+      });
+    } else {
+      const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex);
+      if (!entries.length) return null;
+      addEntries(entries);
+      addGroupingBounds(bounds, entries, options);
+    }
+
+    if (!bounds.hasValue) return null;
+    const targetRadius = (Number(targetFace.diameterMm) || 0) / 2;
+    const rawWidth = Math.max(1, bounds.maxX - bounds.minX);
+    const rawHeight = Math.max(1, bounds.maxY - bounds.minY);
+    const widthMm = Math.min(targetFace.diameterMm, Math.max(EXPORT.groupFitMinSpanMm, rawWidth + EXPORT.groupFitPaddingMm * 2));
+    const heightMm = Math.min(targetFace.diameterMm, Math.max(EXPORT.groupFitMinSpanMm, rawHeight + EXPORT.groupFitPaddingMm * 2));
+    const center = {
+      xMm: clampFocusCenter((bounds.minX + bounds.maxX) / 2, targetRadius, widthMm),
+      yMm: clampFocusCenter((bounds.minY + bounds.maxY) / 2, targetRadius, heightMm)
+    };
+
+    return { center, widthMm, heightMm };
+  }
+
+  function hasVisibleGrouping(scorecard, visibleEndIndex, options = {}) {
+    if (!scorecard || (!options.showRadialGrouping && !options.showSimpleGrouping)) return false;
+    return App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex).length >= 2;
+  }
+
+  function hasVisibleEndColourGrouping(endGroups, options = {}) {
+    if (!endGroups.length || (!options.showRadialGrouping && !options.showSimpleGrouping)) return false;
+    return endGroups.some(group => group.entries.length >= 2);
+  }
+
+  function clampFocusCenter(value, targetRadius, spanMm) {
+    const limit = Math.max(0, targetRadius - spanMm / 2);
+    return App.Geometry.clamp(value, -limit, limit);
+  }
+
+  function addGroupingBounds(bounds, entries, options = {}) {
+    if (entries.length < 2) return;
+
+    if (options.showSimpleGrouping === true) {
+      const simple = App.GroupingRenderer.calculateSimpleGroupStats(entries);
+      if (simple) addCircleToBounds(bounds, simple.circle.center, simple.circle.radiusMm);
+    }
+
+    if (options.showRadialGrouping !== false) {
+      const radial = App.GroupingRenderer.calculateRadialGroupStats(entries);
+      if (radial) {
+        addCircleToBounds(bounds, radial.circle.center, radial.circle.radiusMm);
+        addEllipseToBounds(bounds, radial.analysis.confidenceEllipse);
+      }
+    }
+  }
+
+  function createWorldBounds() {
+    return {
+      minX: Number.POSITIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY,
+      hasValue: false
+    };
+  }
+
+  function addPointToBounds(bounds, point) {
+    bounds.minX = Math.min(bounds.minX, point.xMm);
+    bounds.minY = Math.min(bounds.minY, point.yMm);
+    bounds.maxX = Math.max(bounds.maxX, point.xMm);
+    bounds.maxY = Math.max(bounds.maxY, point.yMm);
+    bounds.hasValue = true;
+  }
+
+  function addCircleToBounds(bounds, center, radiusMm) {
+    const radius = Math.max(0, Number(radiusMm) || 0);
+    addPointToBounds(bounds, { xMm: center.xMm - radius, yMm: center.yMm - radius });
+    addPointToBounds(bounds, { xMm: center.xMm + radius, yMm: center.yMm + radius });
+  }
+
+  function addEllipseToBounds(bounds, ellipse) {
+    if (!ellipse || ellipse.count < 2) return;
+    const steps = 24;
+    const cosRotation = Math.cos(ellipse.rotationRad);
+    const sinRotation = Math.sin(ellipse.rotationRad);
+    for (let index = 0; index < steps; index += 1) {
+      const angle = (Math.PI * 2 * index) / steps;
+      const x = Math.cos(angle) * ellipse.radiusXMm;
+      const y = Math.sin(angle) * ellipse.radiusYMm;
+      addPointToBounds(bounds, {
+        xMm: ellipse.center.xMm + x * cosRotation - y * sinRotation,
+        yMm: ellipse.center.yMm + x * sinRotation + y * cosRotation
+      });
+    }
   }
 
   function drawExportBackground(ctx, width, height) {

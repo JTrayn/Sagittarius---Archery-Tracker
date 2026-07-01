@@ -5,23 +5,23 @@
     radial: {
       name: "Dispersion",
       title: "Dispersion radius",
-      stroke: "rgba(85, 214, 190, 0.86)",
-      strokeSoft: "rgba(255, 255, 255, 0.30)",
+      stroke: "rgba(113, 255, 225, 0.95)",
+      strokeSoft: "rgba(255, 255, 255, 0.42)",
       fill: "rgba(85, 214, 190, 0.055)",
-      fillFocus: "rgba(85, 214, 190, 0.145)",
-      glow: "rgba(85, 214, 190, 0.18)",
-      glowFocus: "rgba(85, 214, 190, 0.38)",
+      fillFocus: "rgba(85, 214, 190, 0.235)",
+      glow: "rgba(85, 214, 190, 0.24)",
+      glowFocus: "rgba(85, 214, 190, 0.56)",
       marker: "rgba(85, 214, 190, 0.96)"
     },
     simple: {
       name: "Enclosing",
       title: "Enclosing radius",
-      stroke: "rgba(255, 104, 119, 0.84)",
-      strokeSoft: "rgba(255, 255, 255, 0.27)",
+      stroke: "rgba(255, 127, 141, 0.95)",
+      strokeSoft: "rgba(255, 255, 255, 0.38)",
       fill: "rgba(255, 104, 119, 0.045)",
-      fillFocus: "rgba(255, 104, 119, 0.125)",
-      glow: "rgba(255, 104, 119, 0.16)",
-      glowFocus: "rgba(255, 104, 119, 0.34)",
+      fillFocus: "rgba(255, 104, 119, 0.215)",
+      glow: "rgba(255, 104, 119, 0.22)",
+      glowFocus: "rgba(255, 104, 119, 0.52)",
       marker: "rgba(255, 104, 119, 0.96)"
     }
   };
@@ -182,6 +182,7 @@
           showLabel,
           labelOffset: showRadial ? 34 : 0,
           isHovered: Boolean(hoverState.simple),
+          isFocused: true,
           focusAmount
         });
       }
@@ -196,10 +197,12 @@
           showLabel,
           labelOffset: 0,
           isHovered: Boolean(hoverState.radial),
+          isFocused: true,
           focusAmount
         });
         drawConfidenceEllipse(ctx, canvas, transform, radial.analysis.confidenceEllipse, THEMES.radial, {
           isHovered: Boolean(hoverState.radial),
+          isFocused: true,
           focusAmount
         });
       }
@@ -208,6 +211,7 @@
     if (analysis) {
       drawMeanPoint(ctx, App.ViewportMath.worldToScreen(analysis.centroid, canvas, transform), {
         isHovered: Boolean(hoverState.radial || hoverState.simple),
+        isFocused: showRadial || showSimple,
         focusAmount
       });
     }
@@ -221,6 +225,7 @@
     const radiusPx = Math.max(2, stats.circle.radiusMm * transform.currentPxPerMm);
     drawGroupCircle(ctx, centre, radiusPx, theme, {
       isHovered: Boolean(options.isHovered),
+      isFocused: Boolean(options.isFocused),
       focusAmount: options.focusAmount || 0
     });
 
@@ -230,7 +235,8 @@
   }
 
   function drawGroupCircle(ctx, centre, radiusPx, theme, options = {}) {
-    const focus = options.isHovered ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const focus = options.isFocused ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const hoverBoost = options.isHovered ? 1 : 0;
 
     ctx.save();
 
@@ -241,20 +247,20 @@
 
     ctx.beginPath();
     ctx.arc(centre.x, centre.y, radiusPx, 0, Math.PI * 2);
-    ctx.lineWidth = 3.6 + focus * 1.8;
+    ctx.lineWidth = 3.8 + focus * 2.4 + hoverBoost * 0.6;
     ctx.shadowColor = "rgba(0, 0, 0, 0.32)";
-    ctx.shadowBlur = 7 + focus * 4;
-    ctx.strokeStyle = `rgba(1, 8, 13, ${0.34 + focus * 0.18})`;
+    ctx.shadowBlur = 8 + focus * 5;
+    ctx.strokeStyle = `rgba(1, 8, 13, ${0.38 + focus * 0.24})`;
     ctx.stroke();
 
     ctx.shadowColor = focus > 0.01 ? blendRgba(theme.glow, theme.glowFocus, focus) : theme.glow;
-    ctx.shadowBlur = 7 + focus * 9;
-    ctx.lineWidth = 1.85 + focus * 1.15;
+    ctx.shadowBlur = 8 + focus * 14 + hoverBoost * 3;
+    ctx.lineWidth = 2.05 + focus * 1.65 + hoverBoost * 0.4;
     ctx.strokeStyle = theme.stroke;
     ctx.stroke();
 
     ctx.shadowColor = "transparent";
-    ctx.lineWidth = 0.9 + focus * 0.35;
+    ctx.lineWidth = 1 + focus * 0.55;
     ctx.strokeStyle = theme.strokeSoft;
     ctx.stroke();
 
@@ -264,7 +270,8 @@
   function drawConfidenceEllipse(ctx, canvas, transform, ellipse, theme, options = {}) {
     if (!ellipse || ellipse.count < 2) return;
 
-    const focus = options.isHovered ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const focus = options.isFocused ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const hoverBoost = options.isHovered ? 1 : 0;
     const centre = App.ViewportMath.worldToScreen(ellipse.center, canvas, transform);
     const majorPx = Math.max(2, ellipse.radiusXMm * transform.currentPxPerMm);
     const minorPx = Math.max(2, ellipse.radiusYMm * transform.currentPxPerMm);
@@ -275,14 +282,14 @@
 
     ctx.beginPath();
     ctx.ellipse(0, 0, majorPx, minorPx, 0, 0, Math.PI * 2);
-    ctx.fillStyle = focus > 0.01 ? blendRgba(theme.fill, theme.fillFocus, focus) : "rgba(85, 214, 190, 0.035)";
+    ctx.fillStyle = focus > 0.01 ? blendRgba(theme.fill, theme.fillFocus, focus) : "rgba(85, 214, 190, 0.055)";
     ctx.fill();
 
     ctx.shadowColor = focus > 0.01 ? blendRgba(theme.glow, theme.glowFocus, focus) : theme.glow;
-    ctx.shadowBlur = 8 + focus * 8;
-    ctx.lineWidth = 1.45 + focus * 0.75;
+    ctx.shadowBlur = 9 + focus * 13 + hoverBoost * 3;
+    ctx.lineWidth = 1.65 + focus * 1.05 + hoverBoost * 0.35;
     ctx.setLineDash([9, 6]);
-    ctx.strokeStyle = "rgba(204, 255, 245, 0.78)";
+    ctx.strokeStyle = "rgba(220, 255, 249, 0.9)";
     ctx.stroke();
 
     ctx.shadowColor = "transparent";
@@ -294,33 +301,26 @@
   }
 
   function drawMeanPoint(ctx, point, options = {}) {
-    const focus = options.isHovered ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
-    const arm = 7.2 + focus * 2.4;
+    const focus = options.isFocused ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const hoverBoost = options.isHovered ? 1 : 0;
+    const radius = 3.9 + focus * 0.45 + hoverBoost * 0.25;
     ctx.save();
-    ctx.lineCap = "round";
     ctx.shadowColor = "rgba(0, 0, 0, 0.44)";
-    ctx.shadowBlur = 6 + focus * 3;
-    ctx.strokeStyle = "rgba(1, 8, 13, 0.62)";
-    ctx.lineWidth = 3 + focus * 0.8;
+    ctx.shadowBlur = 6 + focus * 3 + hoverBoost;
     ctx.beginPath();
-    ctx.moveTo(point.x - arm, point.y);
-    ctx.lineTo(point.x + arm, point.y);
-    ctx.moveTo(point.x, point.y - arm);
-    ctx.lineTo(point.x, point.y + arm);
-    ctx.stroke();
+    ctx.arc(point.x, point.y, radius + 2.1, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(1, 8, 13, 0.72)";
+    ctx.fill();
 
     ctx.shadowColor = "transparent";
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.72)";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
     ctx.beginPath();
-    ctx.arc(point.x, point.y, 3.4 + focus * 0.9, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255, 209, 102, 0.96)";
     ctx.fill();
-    ctx.lineWidth = 1.15;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.68)";
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.70)";
     ctx.stroke();
+
     ctx.restore();
   }
 

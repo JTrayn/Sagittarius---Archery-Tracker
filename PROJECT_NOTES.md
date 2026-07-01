@@ -1,5 +1,60 @@
 # Project Notes
 
+## v0.7.12 Export zoom viewport and grouping marker refinement
+
+- `GroupingRenderer.drawMeanPoint()` now renders a small yellow circle again instead of the v0.7.11 twinkle marker.
+- End-coloured target exports also use a small yellow centre marker via `drawEndGroupCentreMarker()`.
+- `renderTargetImage()` and `renderEndColourTargetImage()` now call `getTargetViewportPadding()` so `zoomToGroup` renders non-end-sheet target exports through a square clipped viewport.
+- Regular non-zoom target exports keep the existing full-target fitted layout.
+- End sheet mini-targets keep their existing per-cell zoom/focus rendering behavior from v0.7.11.
+- End-coloured grouping rings were softened with thinner strokes, lower fill opacity, lower stroke alpha, and reduced glow to avoid noisy all-end overlays.
+- No scoring, analytics, storage, or migration changes are included.
+
+## v0.7.11 Export grouping focus and twinkle marker
+
+- `GroupingRenderer.drawMeanPoint()` now renders a four-point twinkle marker instead of the previous crosshair plus yellow centre dot.
+- The shared grouping marker uses the Dispersion cyan colour so it reads as part of the grouping overlay system.
+- `ExportRenderer` now applies the persistent grouping focus treatment to target-style exports by drawing a clipped target-area scrim and passing `focusAmount: 1` into `GroupingRenderer.drawGroupingOverlay()`.
+- End sheet mini-targets receive the same clipped scrim and focused shared grouping overlay treatment.
+- End-coloured exports use stronger per-end ring fills/glows and draw a matching per-end twinkle marker at each end group's centroid.
+- Export scrims are clipped to the target drawing area so export headers and optional scorecard panels are not dimmed.
+- No scoring, analytics, storage, or migration changes are included.
+
+## v0.7.10 Persistent grouping focus
+
+- `TargetViewport.draw()` now sets `groupFocusTarget` from visible enabled grouping overlays rather than `hoverState.any`.
+- The grouping focus scrim is stronger and applies after target rendering but before arrows/grouping overlays, so the target/background is darkened while arrows and overlays stay readable.
+- `GroupingRenderer` separates hover state from focus state: hover still controls tooltips, while enabled overlays receive persistent focused ring/ellipse/MPI styling.
+- Dispersion and Enclosing theme values were brightened, and focused glass fills/glows were strengthened.
+- The focus effect only appears when the selected visible-end scope has at least two plotted arrows, because grouping rings cannot render below that threshold.
+- No scoring, analytics, storage, or migration changes are included.
+
+## v0.7.9 Export group zoom and overlay layering
+
+- `TargetViewport.draw()` now renders arrows before `GroupingRenderer.drawGroupingOverlay()` so Dispersion, Enclosing, confidence ellipse, and MPI overlays sit above plotted arrows and labels.
+- Target-style exports now use the same target -> arrows -> grouping overlay order.
+- The Export Image modal adds a `Zoom to plotted group` option. It is read into `exportOptions.zoomToGroup`.
+- `ExportRenderer.makeFitTransform()` can now accept derived focus bounds. When `zoomToGroup` is enabled, it fits plotted arrow positions plus enabled grouping bounds, including the radial confidence ellipse.
+- Zoom-to-group uses a minimum 160mm world span, 26mm padding, and a max export scale cap so tight groups remain readable without over-zooming.
+- End-coloured exports calculate focus bounds from per-end plotted groups; end sheet mini-targets fit each end independently.
+- No scorecard data, scoring, storage, or migration changes are included.
+
+## v0.7.8 Trends vertical balance polish
+
+- Trends layout now gives the chart a larger middle row via `trends-view` grid sizing.
+- `trends-records` and `trends-record-dashboard` now stretch to fill the lower region instead of leaving unused space below the cards.
+- The right-side Records column uses `trends-record-side` rows so the Arrows shot card fills the space beneath Global records on desktop.
+- Global records cards use dedicated spacing and typography rules for cleaner label, value, and date placement.
+- No scoring, analytics, storage, or migration changes are included.
+
+## v0.7.7 Trends arrow volume counter
+
+- `TrendsView` now stacks Global records with a new Arrows shot counter in the right-side Records column.
+- Global records no longer renders the explanatory text block for 70m-equivalent stats; the compact record cards remain unchanged.
+- The Arrows shot counter derives counts from saved trend records using `recordedArrows`, falling back to `totalArrows` for older data.
+- Current-week arrows use the local Monday-start calendar week, and current-month arrows use the local calendar month.
+- No storage migration is required because the counter is derived from existing saved scorecard metadata.
+
 ## v0.7.6 Trends layout and explanations
 
 - `TrendsView` now renders the Top 5 totals leaderboard inside `trends-record-section-selected`, keeping the selected face/distance/arrow-count records together.

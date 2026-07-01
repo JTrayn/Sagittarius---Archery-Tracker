@@ -219,20 +219,18 @@
             </div>
             ${renderTopFiveLeaderboard(selectedRecords)}
           </section>
-          <section class="trends-record-section trends-record-section-agnostic">
-            <div class="trends-record-section-head">
-              <strong>Global records</strong>
-              <span>Best 70m-equivalent results across all saved scorecards.</span>
-            </div>
-            <div class="trends-global-explainer">
-              <span><strong>Centre</strong> average arrow distance scaled to 70m.</span>
-              <span><strong>Group</strong> enclosing group diameter scaled to 70m.</span>
-              <span><strong>MPI</strong> group-centre offset scaled to 70m.</span>
-            </div>
-            <div class="trends-record-metrics">
-              ${renderRecordMetrics(AGNOSTIC_METRICS, this.records)}
-            </div>
-          </section>
+          <div class="trends-record-side">
+            <section class="trends-record-section trends-record-section-agnostic">
+              <div class="trends-record-section-head">
+                <strong>Global records</strong>
+                <span>Best 70m-equivalent results across all saved scorecards.</span>
+              </div>
+              <div class="trends-record-metrics">
+                ${renderRecordMetrics(AGNOSTIC_METRICS, this.records)}
+              </div>
+            </section>
+            ${renderArrowVolumeCounter(this.records)}
+          </div>
         </div>
       `;
 
@@ -462,6 +460,51 @@
     `;
   }
 
+  function renderArrowVolumeCounter(records) {
+    const volume = getArrowVolume(records);
+    return `
+      <section class="trends-arrow-volume" aria-label="Arrows shot">
+        <div class="trends-arrow-volume-head">
+          <span>Arrows shot</span>
+          <strong>${escapeHtml(formatInteger(volume.total))}</strong>
+        </div>
+        <div class="trends-arrow-volume-grid">
+          <div>
+            <span>This week</span>
+            <strong>${escapeHtml(formatInteger(volume.week))}</strong>
+          </div>
+          <div>
+            <span>This month</span>
+            <strong>${escapeHtml(formatInteger(volume.month))}</strong>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function getArrowVolume(records) {
+    const now = new Date();
+    const weekStart = getLocalWeekStart(now);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return records.reduce((totals, record) => {
+      const arrowCount = getRecordArrowCount(record);
+      if (!arrowCount) return totals;
+      const shotAt = new Date(record.shotAt);
+      totals.total += arrowCount;
+      if (Number.isNaN(shotAt.getTime())) return totals;
+      if (shotAt >= weekStart && shotAt <= now) totals.week += arrowCount;
+      if (shotAt >= monthStart && shotAt <= now) totals.month += arrowCount;
+      return totals;
+    }, { total: 0, week: 0, month: 0 });
+  }
+
+  function getLocalWeekStart(date) {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
   function getBestRecord(records, metric) {
     return records
       .filter(record => Number.isFinite(record[metric.key]))
@@ -499,6 +542,10 @@
 
   function getRecordArrowCount(record) {
     return Number(record.recordedArrows) || Number(record.totalArrows) || 0;
+  }
+
+  function formatInteger(value) {
+    return new Intl.NumberFormat().format(Math.max(0, Math.round(Number(value) || 0)));
   }
 
   function uniqueBy(records, getter) {

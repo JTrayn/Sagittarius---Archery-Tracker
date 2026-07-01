@@ -1,5 +1,52 @@
 # Sagittarius - Archery Tracker
 
+## v0.7.12 changes
+
+v0.7.12 refines export zoom and grouping marker styling.
+
+- Grouping centre markers are small yellow circles again.
+- Zoom to plotted group now uses a large square viewport for non-end-sheet target exports.
+- End-coloured target grouping rings are thinner and less visually noisy.
+
+## v0.7.11 changes
+
+v0.7.11 carries the stronger grouping focus style into exported images.
+
+- Exported target images and end sheet mini-targets now use the darker target focus treatment when grouping overlays are enabled.
+- Grouping centre markers now use a compact twinkle shape instead of the crosshair/yellow dot marker.
+- End-coloured target exports use stronger per-end grouping rings and matching per-end twinkle markers.
+
+## v0.7.10 changes
+
+v0.7.10 experiments with stronger persistent grouping focus in the live viewport.
+
+- Enabling Dispersion or Enclosing now keeps the target/background focus dim active until overlays are disabled.
+- Grouping rings, the confidence ellipse, and the MPI marker are brighter and more pronounced.
+- Grouping tooltips still appear only when hovering the actual ring.
+
+## v0.7.9 changes
+
+v0.7.9 improves grouping overlay visibility and target image exports.
+
+- Dispersion and Enclosing overlays now render above plotted arrows and arrow labels.
+- Target-style exports and end sheet mini-targets use the same overlay-above-arrows layering.
+- Export Image now includes a **Zoom to plotted group** option for close-up PNGs of tight groups on large target faces.
+
+## v0.7.8 changes
+
+v0.7.8 polishes the Trends layout balance.
+
+- The Trends chart now gets more vertical room.
+- The lower Records dashboard stretches to fill the available space.
+- Global records cards have cleaner label, value, and date formatting.
+
+## v0.7.7 changes
+
+v0.7.7 adds a compact arrow volume summary to Trends.
+
+- Global records is cleaner, with the bulky explanation block removed.
+- A new Arrows shot counter shows total saved arrows, arrows shot this week, and arrows shot this month.
+
 ## v0.7.6 changes
 
 v0.7.6 polishes the Trends Records area and metric explanations.
@@ -575,7 +622,19 @@ Manual scores are stored separately from plotted positions:
 
 ## Version
 
-0.7.6
+0.7.12
+
+v0.7.12 - Square zoom viewport for non-end-sheet target exports, small yellow grouping centre markers, and quieter end-coloured grouping rings.
+
+v0.7.11 - Export grouping focus styling and twinkle-style grouping centre markers.
+
+v0.7.10 - Persistent grouping focus when Dispersion or Enclosing is enabled, with stronger dimming and brighter grouping overlays.
+
+v0.7.9 - Grouping overlays above arrows and labels, plus Zoom to plotted group for target image exports.
+
+v0.7.8 - Trends vertical balance polish, larger chart area, filled Records dashboard, and cleaner Global records card text.
+
+v0.7.7 - Trends Arrows shot counter, with total, current-week, and current-month saved arrow counts.
 
 v0.7.6 - Trends Records layout polish, Global records explanations, metric-specific chart subtitles, reordered metric dropdown, and medal-coloured leaderboard ranks.
 

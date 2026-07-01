@@ -213,6 +213,10 @@
           <input type="checkbox" name="includeScorecard" />
           <span>Scorecard table</span>
         </label>
+        <label class="export-check">
+          <input type="checkbox" name="zoomToGroup" />
+          <span>Zoom to plotted group</span>
+        </label>
       </div>
       <div class="export-choice-list">
         <button class="export-choice" type="button" data-export-kind="visible">
@@ -274,6 +278,7 @@
       showRadialGrouping: Boolean(modalBody.querySelector("input[name='showRadial']")?.checked),
       showSimpleGrouping: Boolean(modalBody.querySelector("input[name='showSimple']")?.checked),
       includeScorecard: Boolean(modalBody.querySelector("input[name='includeScorecard']")?.checked),
+      zoomToGroup: Boolean(modalBody.querySelector("input[name='zoomToGroup']")?.checked),
       targetFaceVisibility: App.Geometry.clamp(visibilityPercent / 100, 0.35, 1)
     };
   }

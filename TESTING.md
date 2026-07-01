@@ -118,6 +118,7 @@ After meaningful changes, test the following manually.
 - Save several plotted scorecards with different dates/distances if needed.
 - Switch to Trends view and confirm the summary stats, chart, filters, and Records panel render cleanly.
 - Confirm the chart title/subtitle do not overlap the graph plot area.
+- Confirm the Trends chart uses the available vertical space without leaving an oversized empty Records area.
 - Confirm the Trends metric dropdown is ordered as Avg Centre, 70m eq centre, Group Size, 70m eq group, MPI Offset, 70m eq MPI, then Avg Arrow.
 - Change Metric between Avg Centre, 70m eq centre, Group Size, 70m eq group, MPI Offset, 70m eq MPI, and Avg Arrow.
 - Confirm the chart subtitle explains the selected metric.
@@ -130,8 +131,11 @@ After meaningful changes, test the following manually.
 - Change the Records Face, Distance, and Arrows selectors and confirm PB cards update for that combination.
 - Confirm the Top 5 totals leaderboard sits inside the selected Records component, is scoped to the selected Face/Distance/Arrows combination, and ranks equal totals by lower Avg centre.
 - Confirm the top three leaderboard rank badges are gold, silver, and bronze.
-- Confirm the right-side Global records component explains 70m eq centre, 70m eq group, and 70m eq MPI.
-- Confirm the Records panel has enough vertical room, groups the Face/Distance selectors with the associated PB cards, and shows a comparable records section.
+- Confirm the right-side Global records component shows the three 70m-equivalent record cards without the old explanatory text block.
+- Confirm Global records card labels, values, and dates are aligned cleanly and remain readable.
+- Confirm the Arrows shot counter appears below Global records and shows total arrows, this week, and this month.
+- Confirm the Arrows shot component fills the space beneath Global records on desktop.
+- Confirm the Records panel has enough vertical room, groups the Face/Distance selectors with the associated PB cards, and shows Global records on the right.
 - With 200 dummy scorecards, switch filters/record selectors repeatedly and confirm the Trends view remains responsive.
 - Hover chart points and confirm the tooltip shows scorecard context.
 - Hover chart points near the right edge and confirm the tooltip opens left of the cursor.
@@ -143,8 +147,11 @@ After meaningful changes, test the following manually.
 - Confirm the Dispersion overlay shows the radial circle, confidence ellipse, and mean point of impact marker.
 - Toggle Enclosing grouping.
 - Confirm the mean point of impact marker remains based on the visible plotted arrows.
+- Confirm the mean point of impact marker renders as a compact yellow circle.
+- Confirm Dispersion and Enclosing overlays render above plotted arrows and arrow labels.
+- Confirm enabling Dispersion or Enclosing persistently darkens the target/background and brightens grouping overlays until both overlays are disabled.
 - Confirm the viewport HUD shows MPI offset and horizontal x vertical spread for All ends and individual end filters.
-- Hover group rings and confirm tooltips/focus effects appear.
+- Hover group rings and confirm tooltips and subtle extra ring emphasis appear.
 - Confirm tooltips disappear when not hovering rings.
 - Move the Target slider and confirm grouping rings remain prominent over the faded target.
 
@@ -160,6 +167,12 @@ After meaningful changes, test the following manually.
 - Export end sheet PNG.
 - Test labels/Dispersion/Enclosing export options.
 - Move the export Target slider and confirm exported target faces fade while arrows, labels, grouping overlays, and score badges remain readable.
+- Enable Zoom to plotted group and export a target image from a large face with a tight centre group; confirm the PNG camera fits the plotted group instead of the full target.
+- Confirm Zoom to plotted group uses a square clipped viewport for current target, complete target, and end-coloured target exports.
+- With Zoom to plotted group enabled, confirm grouping overlays still render above arrows in current target, complete target, end-coloured target, and end sheet exports.
+- With grouping enabled, confirm exported target images and end sheet mini-targets use the stronger grouping focus styling without dimming headers or scorecard panels.
+- Confirm exported grouping centre markers render as compact yellow circles.
+- Confirm end-coloured target grouping rings are thin enough to remain readable when many ends are shown at once.
 - Confirm end sheet score badges are colour-coded.
 
 ### Scorecard browser

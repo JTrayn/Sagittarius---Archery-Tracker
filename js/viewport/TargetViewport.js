@@ -153,23 +153,16 @@
         showSimple: this.state.viewport.showSimpleGrouping,
         pointerScreen: this.pointerScreen
       });
+      const groupingEnabled = this.state.viewport.showRadialGrouping || this.state.viewport.showSimpleGrouping;
+      const groupingVisible = groupingEnabled
+        && App.GroupingRenderer.getVisiblePlottedEntries(this.state.scorecard, this.state.viewport.visibleEndIndex).length >= 2;
       this.groupHoverState = hoverState;
-      this.groupFocusTarget = hoverState.any ? 1 : 0;
+      this.groupFocusTarget = groupingVisible ? 1 : 0;
 
       App.TargetRenderer.drawTarget(this.ctx, this.canvas, this.transform, this.targetFace, {
         visibility: this.state.viewport.targetFaceVisibility
       });
       drawGroupFocusScrim(this.ctx, rect, this.groupFocusAmount);
-      if (this.state.viewport.showRadialGrouping || this.state.viewport.showSimpleGrouping) {
-        App.GroupingRenderer.drawGroupingOverlay(this.ctx, this.canvas, this.transform, this.state.scorecard, {
-          visibleEndIndex: this.state.viewport.visibleEndIndex,
-          showRadial: this.state.viewport.showRadialGrouping,
-          showSimple: this.state.viewport.showSimpleGrouping,
-          pointerScreen: this.pointerScreen,
-          hoverState,
-          focusAmount: this.groupFocusAmount
-        });
-      }
       App.ArrowRenderer.drawArrows(
         this.ctx,
         this.canvas,
@@ -181,6 +174,16 @@
         this.state.viewport.hoveredArrow,
         { visibleEndIndex: this.state.viewport.visibleEndIndex }
       );
+      if (groupingEnabled) {
+        App.GroupingRenderer.drawGroupingOverlay(this.ctx, this.canvas, this.transform, this.state.scorecard, {
+          visibleEndIndex: this.state.viewport.visibleEndIndex,
+          showRadial: this.state.viewport.showRadialGrouping,
+          showSimple: this.state.viewport.showSimpleGrouping,
+          pointerScreen: this.pointerScreen,
+          hoverState,
+          focusAmount: this.groupFocusAmount
+        });
+      }
       this.drawScoreFeedback(performance.now());
       App.ScaleRenderer.drawScale(this.ctx, this.canvas, this.transform);
       this.updateHud();
@@ -341,7 +344,7 @@
 
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(1, 7, 13, 0.34)";
+    ctx.fillStyle = "rgba(1, 6, 12, 0.48)";
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     const gradient = ctx.createRadialGradient(
@@ -352,8 +355,8 @@
       rect.height / 2,
       Math.max(rect.width, rect.height) * 0.72
     );
-    gradient.addColorStop(0, "rgba(12, 22, 30, 0.08)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.26)");
+    gradient.addColorStop(0, "rgba(5, 14, 23, 0.16)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.38)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, rect.width, rect.height);
     ctx.restore();
