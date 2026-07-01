@@ -81,7 +81,7 @@
     select.addEventListener("change", () => refresh(select));
 
     const observer = new MutationObserver(() => refresh(select));
-    observer.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "label"] });
+    observer.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "label", "title"] });
     instance.observer = observer;
 
     refresh(select);
@@ -94,7 +94,9 @@
     const { wrapper, trigger, value, menu } = instance;
 
     wrapper.classList.toggle("is-disabled", select.disabled);
+    wrapper.title = select.title || "";
     trigger.disabled = select.disabled;
+    trigger.title = select.title || "";
     trigger.setAttribute("aria-disabled", String(select.disabled));
 
     const selectedOption = select.selectedOptions && select.selectedOptions[0]
@@ -159,7 +161,7 @@
   }
 
   function close(instance) {
-    instance.wrapper.classList.remove("is-open");
+    instance.wrapper.classList.remove("is-open", "align-right");
     instance.trigger.setAttribute("aria-expanded", "false");
     instance.menu.hidden = true;
     if (activeInstance === instance) activeInstance = null;
@@ -205,6 +207,10 @@
     const rect = instance.wrapper.getBoundingClientRect();
     const viewportSpaceBelow = window.innerHeight - rect.bottom;
     instance.wrapper.classList.toggle("opens-up", viewportSpaceBelow < 260 && rect.top > viewportSpaceBelow);
+    const menuWidth = Math.max(instance.wrapper.offsetWidth, instance.menu.scrollWidth);
+    const overflowRight = rect.left + menuWidth > window.innerWidth - 12;
+    const nearRightEdge = window.innerWidth - rect.right < 180;
+    instance.wrapper.classList.toggle("align-right", (overflowRight || nearRightEdge) && rect.right > menuWidth);
   }
 
   function cssEscape(value) {

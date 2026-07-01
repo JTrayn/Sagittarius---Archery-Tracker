@@ -72,16 +72,44 @@
   }
 
   function calculateEndTotal(end, targetFace) {
-    return end.arrows.reduce((total, arrow) => {
+    return calculateEndStats(end, targetFace).total;
+  }
+
+  function calculateEndStats(end, targetFace) {
+    let total = 0;
+    let recordedArrows = 0;
+    let plottedArrows = 0;
+    let recordedScoreTotal = 0;
+    let plottedDistanceTotalMm = 0;
+
+    end.arrows.forEach(arrow => {
       const score = scoreArrow(arrow, targetFace);
-      return total + (score ? score.value : 0);
-    }, 0);
+      if (!score) return;
+      recordedArrows += 1;
+      total += score.value;
+      recordedScoreTotal += score.value;
+      if (arrow.position && typeof score.distanceMm === "number") {
+        plottedArrows += 1;
+        plottedDistanceTotalMm += score.distanceMm;
+      }
+    });
+
+    return {
+      total,
+      recordedArrows,
+      plottedArrows,
+      averageArrowScore: recordedArrows > 0 ? recordedScoreTotal / recordedArrows : null,
+      averageDistanceFromCentreMm: plottedArrows > 0 ? plottedDistanceTotalMm / plottedArrows : null
+    };
   }
 
   function calculateScorecardTotals(scorecard, targetFace) {
     let scorecardTotal = 0;
     let possibleTotal = 0;
     let recordedArrows = 0;
+    let plottedArrows = 0;
+    let recordedScoreTotal = 0;
+    let plottedDistanceTotalMm = 0;
     let xCount = 0;
     let missCount = 0;
     const highestScore = Math.max(...targetFace.zones.map(zone => zone.score));
@@ -93,6 +121,11 @@
         if (!score) return;
         recordedArrows += 1;
         scorecardTotal += score.value;
+        recordedScoreTotal += score.value;
+        if (arrow.position && typeof score.distanceMm === "number") {
+          plottedArrows += 1;
+          plottedDistanceTotalMm += score.distanceMm;
+        }
         if (score.label === "X") xCount += 1;
         if (score.isMiss) missCount += 1;
       });
@@ -102,17 +135,28 @@
       scorecardTotal,
       possibleTotal,
       recordedArrows,
+      plottedArrows,
       totalArrows: scorecard.ends.reduce((sum, end) => sum + end.arrows.length, 0),
+      averageArrowScore: recordedArrows > 0 ? recordedScoreTotal / recordedArrows : null,
+      averageDistanceFromCentreMm: plottedArrows > 0 ? plottedDistanceTotalMm / plottedArrows : null,
       xCount,
       missCount
     };
+  }
+
+  function hasManualScores(scorecard) {
+    return Boolean(scorecard?.ends?.some(end =>
+      end.arrows.some(arrow => Boolean(arrow.manualScore))
+    ));
   }
 
   App.ScoringEngine = {
     getArrowScoringRadiusMm,
     scorePosition,
     scoreArrow,
+    calculateEndStats,
     calculateEndTotal,
-    calculateScorecardTotals
+    calculateScorecardTotals,
+    hasManualScores
   };
 })();

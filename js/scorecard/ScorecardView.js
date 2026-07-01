@@ -96,8 +96,11 @@
 
       const headers = Array.from({ length: arrowsPerEnd }, (_, index) => `<th>A${index + 1}</th>`).join("");
       const rows = scorecard.ends.map((end, endIndex) => {
-        const endTotal = App.ScoringEngine.calculateEndTotal(end, targetFace);
+        const endStats = App.ScoringEngine.calculateEndStats(end, targetFace);
+        const endTotal = endStats.total;
         runningTotal += endTotal;
+        const averageArrowText = formatAverageScore(endStats.averageArrowScore);
+        const averageCentreText = formatAverageDistance(endStats.averageDistanceFromCentreMm);
 
         const arrowCells = Array.from({ length: arrowsPerEnd }, (_, arrowIndex) => {
           const arrow = end.arrows[arrowIndex];
@@ -124,6 +127,8 @@
           ${arrowCells}
           <td class="total-cell">${endTotal}</td>
           <td class="running-cell">${runningTotal}</td>
+          <td class="average-arrow-cell">${averageArrowText}</td>
+          <td class="average-centre-cell">${averageCentreText}</td>
         </tr>`;
       }).join("");
 
@@ -134,6 +139,8 @@
             ${headers}
             <th>Total</th>
             <th>Run</th>
+            <th>Avg Arrow</th>
+            <th>Avg Centre</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -156,6 +163,14 @@
         App.Toast.show("Arrow cleared", "success");
       });
     }
+  }
+
+  function formatAverageScore(value) {
+    return value === null ? "-" : value.toFixed(1);
+  }
+
+  function formatAverageDistance(value) {
+    return value === null ? "-" : `${value.toFixed(1)}mm`;
   }
 
   App.ScorecardView = ScorecardView;

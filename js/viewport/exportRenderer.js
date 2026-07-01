@@ -10,6 +10,36 @@
     headerHeight: 220
   };
 
+  const SCORECARD_PANEL = {
+    gap: 44,
+    padding: 28,
+    titleHeight: 48,
+    headerHeight: 34,
+    rowHeight: 46,
+    scoreCellSize: 34,
+    columnGap: 8,
+    radius: 30
+  };
+
+  const END_COLOURS = [
+    "#55d6be",
+    "#ff7a90",
+    "#7ab7ff",
+    "#ffd166",
+    "#b98cff",
+    "#7ee787",
+    "#ff9f43",
+    "#f472d0",
+    "#22d3ee",
+    "#c4f25f",
+    "#ff6b6b",
+    "#a78bfa",
+    "#4ade80",
+    "#facc15",
+    "#fb7185",
+    "#38bdf8"
+  ];
+
   function exportVisibleTarget(scorecard, targetFace, visibleEndIndex, options = {}) {
     const label = visibleEndIndex === null ? "visible-target" : `end-${visibleEndIndex + 1}`;
     const title = visibleEndIndex === null ? "Visible target" : `End ${visibleEndIndex + 1}`;
@@ -19,7 +49,9 @@
       subtitle: options.subtitle || makeSubtitle(scorecard, targetFace),
       showArrowLabels: options.showArrowLabels !== false,
       showRadialGrouping: options.showRadialGrouping !== false,
-      showSimpleGrouping: options.showSimpleGrouping === true
+      showSimpleGrouping: options.showSimpleGrouping === true,
+      includeScorecard: options.includeScorecard === true,
+      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
     });
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-${label}.png`);
   }
@@ -31,9 +63,24 @@
       subtitle: makeSubtitle(scorecard, targetFace),
       showArrowLabels: options.showArrowLabels !== false,
       showRadialGrouping: options.showRadialGrouping !== false,
-      showSimpleGrouping: options.showSimpleGrouping === true
+      showSimpleGrouping: options.showSimpleGrouping === true,
+      includeScorecard: options.includeScorecard === true,
+      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
     });
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-full-target.png`);
+  }
+
+  function exportEndColourTarget(scorecard, targetFace, options = {}) {
+    const canvas = renderEndColourTargetImage(scorecard, targetFace, {
+      title: "End-coloured target",
+      subtitle: makeSubtitle(scorecard, targetFace),
+      showArrowLabels: options.showArrowLabels !== false,
+      showRadialGrouping: options.showRadialGrouping !== false,
+      showSimpleGrouping: options.showSimpleGrouping === true,
+      includeScorecard: options.includeScorecard === true,
+      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
+    });
+    downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-end-coloured-target.png`);
   }
 
   function exportEndSheet(scorecard, targetFace, options = {}) {
@@ -69,21 +116,25 @@
 
   function renderTargetImage(scorecard, targetFace, options = {}) {
     const canvas = document.createElement("canvas");
-    canvas.width = EXPORT.targetWidth;
-    canvas.height = EXPORT.targetHeight;
+    const scorecardLayout = makeScorecardExportLayout(scorecard, targetFace, options.visibleEndIndex ?? null, options.includeScorecard === true);
+    const exportLayout = makeTargetExportLayout(scorecardLayout);
+    canvas.width = exportLayout.width;
+    canvas.height = exportLayout.height;
     canvas.__archeryExportRect = { width: canvas.width, height: canvas.height, left: 0, top: 0 };
     const ctx = canvas.getContext("2d");
     drawExportBackground(ctx, canvas.width, canvas.height);
-    drawTargetHeader(ctx, scorecard, targetFace, options);
+    drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
 
     const transform = makeFitTransform(canvas, targetFace, {
       top: EXPORT.headerHeight + 76,
       right: EXPORT.margin,
       bottom: EXPORT.margin,
-      left: EXPORT.margin
+      left: exportLayout.targetLeft
     });
 
-    App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace);
+    App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
+      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+    });
     if (options.showRadialGrouping || options.showSimpleGrouping) {
       App.GroupingRenderer.drawGroupingOverlay(ctx, canvas, transform, scorecard, {
         visibleEndIndex: options.visibleEndIndex ?? null,
@@ -103,6 +154,44 @@
       null,
       { visibleEndIndex: options.visibleEndIndex ?? null }
     );
+
+    if (scorecardLayout) {
+      drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
+    }
+
+    delete canvas.__archeryExportRect;
+    return canvas;
+  }
+
+  function renderEndColourTargetImage(scorecard, targetFace, options = {}) {
+    const canvas = document.createElement("canvas");
+    const scorecardLayout = makeScorecardExportLayout(scorecard, targetFace, null, options.includeScorecard === true);
+    const exportLayout = makeTargetExportLayout(scorecardLayout);
+    canvas.width = exportLayout.width;
+    canvas.height = exportLayout.height;
+    canvas.__archeryExportRect = { width: canvas.width, height: canvas.height, left: 0, top: 0 };
+    const ctx = canvas.getContext("2d");
+    const endGroups = getPlottedEndGroups(scorecard);
+
+    drawExportBackground(ctx, canvas.width, canvas.height);
+    drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
+
+    const transform = makeFitTransform(canvas, targetFace, {
+      top: EXPORT.headerHeight + 76,
+      right: EXPORT.margin,
+      bottom: EXPORT.margin + 185,
+      left: exportLayout.targetLeft
+    });
+
+    App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
+      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+    });
+    drawEndColourGrouping(ctx, canvas, transform, endGroups, options);
+    drawEndColourArrows(ctx, canvas, transform, endGroups, options.showArrowLabels !== false);
+    drawEndColourLegend(ctx, endGroups, canvas.height - EXPORT.margin - 112, exportLayout.targetLeft, EXPORT.targetWidth - EXPORT.margin * 2);
+    if (scorecardLayout) {
+      drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
+    }
 
     delete canvas.__archeryExportRect;
     return canvas;
@@ -147,7 +236,9 @@
     const transform = makeFitTransform(tempCanvas, targetFace, { top: 16, right: 16, bottom: 16, left: 16 });
     const tempCtx = tempCanvas.getContext("2d");
     tempCtx.clearRect(0, 0, targetBox.width, targetBox.height);
-    App.TargetRenderer.drawTarget(tempCtx, tempCanvas, transform, targetFace);
+    App.TargetRenderer.drawTarget(tempCtx, tempCanvas, transform, targetFace, {
+      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+    });
     if (options.showRadialGrouping !== false || options.showSimpleGrouping === true) {
       App.GroupingRenderer.drawGroupingOverlay(tempCtx, tempCanvas, transform, scorecard, {
         visibleEndIndex: endIndex,
@@ -169,6 +260,372 @@
     );
     delete tempCanvas.__archeryExportRect;
     ctx.drawImage(tempCanvas, targetBox.x, targetBox.y);
+  }
+
+  function getPlottedEndGroups(scorecard) {
+    if (!scorecard || !Array.isArray(scorecard.ends)) return [];
+    return scorecard.ends
+      .map((_end, endIndex) => {
+        const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, endIndex);
+        return {
+          endIndex,
+          label: `End ${endIndex + 1}`,
+          colour: getEndColour(endIndex),
+          entries
+        };
+      })
+      .filter(group => group.entries.length > 0);
+  }
+
+  function getEndColour(endIndex) {
+    return END_COLOURS[endIndex % END_COLOURS.length];
+  }
+
+  function drawEndColourGrouping(ctx, canvas, transform, endGroups, options = {}) {
+    if (!endGroups.length || (!options.showRadialGrouping && !options.showSimpleGrouping)) return;
+
+    ctx.save();
+    endGroups.forEach(group => {
+      if (group.entries.length < 2) return;
+
+      if (options.showSimpleGrouping) {
+        const simple = App.GroupingRenderer.calculateSimpleGroupStats(group.entries);
+        if (simple) {
+          drawEndGroupCircle(ctx, canvas, transform, simple.circle, group.colour, {
+            alpha: 0.86,
+            fillAlpha: 0.032,
+            lineWidth: 5.4,
+            dash: []
+          });
+        }
+      }
+
+      if (options.showRadialGrouping) {
+        const radial = App.GroupingRenderer.calculateRadialGroupStats(group.entries);
+        if (radial) {
+          drawEndGroupCircle(ctx, canvas, transform, radial.circle, group.colour, {
+            alpha: 0.88,
+            fillAlpha: 0.026,
+            lineWidth: 4.4,
+            dash: [22, 12]
+          });
+        }
+      }
+    });
+    ctx.restore();
+  }
+
+  function drawEndGroupCircle(ctx, canvas, transform, circle, colour, style) {
+    const centre = App.ViewportMath.worldToScreen(circle.center, canvas, transform);
+    const radiusPx = Math.max(3, circle.radiusMm * transform.currentPxPerMm);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centre.x, centre.y, radiusPx, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(colour, style.fillAlpha);
+    ctx.fill();
+    ctx.lineWidth = style.lineWidth;
+    ctx.setLineDash(style.dash);
+    ctx.strokeStyle = hexToRgba(colour, style.alpha);
+    ctx.shadowColor = hexToRgba(colour, 0.28);
+    ctx.shadowBlur = 16;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawEndColourArrows(ctx, canvas, transform, endGroups, showLabels) {
+    const markerRadius = Math.max(9.5, App.Constants.VIEWPORT.ARROW_REAL_RADIUS_MM * transform.currentPxPerMm);
+
+    ctx.save();
+    endGroups.forEach(group => {
+      group.entries.forEach(entry => {
+        const screen = App.ViewportMath.worldToScreen(entry.point, canvas, transform);
+        drawEndColourArrowMarker(ctx, screen, markerRadius, group.colour, {
+          label: `${group.endIndex + 1}.${entry.arrowIndex + 1}`,
+          showLabel: showLabels
+        });
+      });
+    });
+    ctx.restore();
+  }
+
+  function drawEndColourArrowMarker(ctx, screen, radius, colour, options = {}) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(colour, 0.22);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = colour;
+    ctx.fill();
+    ctx.lineWidth = 2.4;
+    ctx.strokeStyle = "rgba(5, 14, 22, 0.92)";
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, Math.max(2.4, radius * 0.25), 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(5, 14, 22, 0.92)";
+    ctx.fill();
+
+    if (options.showLabel) {
+      drawEndColourArrowLabel(ctx, screen, radius, colour, options.label);
+    }
+    ctx.restore();
+  }
+
+  function drawEndColourArrowLabel(ctx, screen, radius, colour, label) {
+    const text = String(label || "");
+    if (!text) return;
+
+    const x = screen.x + radius + 9;
+    const y = screen.y - radius - 4;
+    ctx.save();
+    ctx.font = "850 17px Inter, system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    const width = Math.max(34, ctx.measureText(text).width + 18);
+    const height = 28;
+    ctx.beginPath();
+    roundRect(ctx, x - 9, y - height / 2, width, height, 12);
+    ctx.fillStyle = hexToRgba(colour, 0.94);
+    ctx.fill();
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = "rgba(5, 14, 22, 0.56)";
+    ctx.stroke();
+    ctx.fillStyle = readableTextColor(colour);
+    ctx.fillText(text, x, y + 0.5);
+    ctx.restore();
+  }
+
+  function drawEndColourLegend(ctx, endGroups, startY, startX = EXPORT.margin, maxWidth = EXPORT.targetWidth - EXPORT.margin * 2) {
+    if (!endGroups.length) return;
+
+    const itemWidth = 128;
+    const rowHeight = 38;
+    const perRow = Math.max(1, Math.floor(maxWidth / itemWidth));
+
+    ctx.save();
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(180, 201, 219, 0.86)";
+    ctx.font = "760 21px Inter, system-ui, sans-serif";
+    ctx.fillText("End colours", startX, startY - 36);
+
+    endGroups.forEach((group, index) => {
+      const col = index % perRow;
+      const row = Math.floor(index / perRow);
+      const x = startX + col * itemWidth;
+      const y = startY + row * rowHeight;
+
+      ctx.beginPath();
+      ctx.arc(x + 12, y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = group.colour;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(5, 14, 22, 0.75)";
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(238, 247, 255, 0.92)";
+      ctx.font = "820 20px Inter, system-ui, sans-serif";
+      ctx.fillText(group.label, x + 31, y + 0.5);
+    });
+    ctx.restore();
+  }
+
+  function makeScorecardExportLayout(scorecard, targetFace, visibleEndIndex, includeScorecard) {
+    if (!includeScorecard || !scorecard || !Array.isArray(scorecard.ends) || !scorecard.ends.length) return null;
+
+    const arrowsPerEnd = Math.max(...scorecard.ends.map(end => end.arrows.length));
+    const rows = [];
+    let runningTotal = 0;
+
+    scorecard.ends.forEach((end, endIndex) => {
+      const endStats = App.ScoringEngine.calculateEndStats(end, targetFace);
+      runningTotal += endStats.total;
+      if (visibleEndIndex !== null && endIndex !== visibleEndIndex) return;
+
+      rows.push({
+        endIndex,
+        end,
+        stats: endStats,
+        runningTotal,
+        scores: Array.from({ length: arrowsPerEnd }, (_unused, arrowIndex) => {
+          const arrow = end.arrows[arrowIndex];
+          return arrow ? App.ScoringEngine.scoreArrow(arrow, targetFace) : null;
+        })
+      });
+    });
+
+    if (!rows.length) return null;
+
+    const width = getScorecardExportPanelWidth(arrowsPerEnd);
+    const height = SCORECARD_PANEL.padding * 2
+      + SCORECARD_PANEL.titleHeight
+      + SCORECARD_PANEL.headerHeight
+      + rows.length * SCORECARD_PANEL.rowHeight;
+
+    return {
+      width,
+      height,
+      rows,
+      arrowsPerEnd,
+      targetFace,
+      title: visibleEndIndex !== null ? `End ${visibleEndIndex + 1} scorecard` : "Scorecard",
+      isSingleEnd: visibleEndIndex !== null
+    };
+  }
+
+  function drawExportScorecardPanel(ctx, layout, x, y) {
+    const width = layout.width;
+    const height = layout.height;
+    const pad = SCORECARD_PANEL.padding;
+    const tableX = x + pad;
+    const tableTop = y + pad + SCORECARD_PANEL.titleHeight;
+    const columns = getScorecardExportColumns(layout.arrowsPerEnd);
+
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, x, y, width, height, SCORECARD_PANEL.radius);
+    ctx.fillStyle = "rgba(8, 20, 32, 0.92)";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(151, 184, 212, 0.24)";
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(238, 247, 255, 0.98)";
+    ctx.font = "900 31px Inter, system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(layout.title, tableX, y + pad - 2);
+
+    ctx.fillStyle = "rgba(180, 201, 219, 0.86)";
+    ctx.font = "760 18px Inter, system-ui, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`${layout.rows.length} ${layout.rows.length === 1 ? "end" : "ends"}`, x + width - pad, y + pad + 7);
+
+    drawExportScorecardHeader(ctx, tableX, tableTop, columns);
+
+    layout.rows.forEach((row, rowIndex) => {
+      drawExportScorecardRow(
+        ctx,
+        row,
+        tableX,
+        tableTop + SCORECARD_PANEL.headerHeight + rowIndex * SCORECARD_PANEL.rowHeight,
+        columns,
+        layout.targetFace,
+        rowIndex
+      );
+    });
+
+    ctx.restore();
+  }
+
+  function getScorecardExportPanelWidth(arrowsPerEnd) {
+    const columns = getScorecardExportColumns(arrowsPerEnd);
+    const lastColumn = columns[columns.length - 1];
+    return SCORECARD_PANEL.padding * 2 + lastColumn.x + lastColumn.width;
+  }
+
+  function getScorecardExportColumns(arrowsPerEnd) {
+    const gap = SCORECARD_PANEL.columnGap;
+    const fixed = {
+      end: 76,
+      total: 88,
+      run: 88,
+      averageArrow: 126,
+      averageCentre: 144
+    };
+    const arrowWidth = SCORECARD_PANEL.scoreCellSize;
+    const columns = [];
+    let cursor = 0;
+
+    columns.push({ key: "end", label: "End", x: cursor, width: fixed.end });
+    cursor += fixed.end + gap;
+    for (let i = 0; i < arrowsPerEnd; i += 1) {
+      columns.push({ key: `arrow-${i}`, label: `A${i + 1}`, x: cursor, width: arrowWidth, arrowIndex: i });
+      cursor += arrowWidth + gap;
+    }
+    columns.push({ key: "total", label: "Total", x: cursor, width: fixed.total });
+    cursor += fixed.total + gap;
+    columns.push({ key: "run", label: "Run", x: cursor, width: fixed.run });
+    cursor += fixed.run + gap;
+    columns.push({ key: "avgArrow", label: "Avg Arrow", x: cursor, width: fixed.averageArrow });
+    cursor += fixed.averageArrow + gap;
+    columns.push({ key: "avgCentre", label: "Avg Centre", x: cursor, width: fixed.averageCentre });
+
+    return columns;
+  }
+
+  function drawExportScorecardHeader(ctx, x, y, columns) {
+    ctx.save();
+    ctx.font = "850 15px Inter, system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(180, 201, 219, 0.78)";
+
+    columns.forEach(column => {
+      ctx.fillText(column.label, x + column.x + column.width / 2, y + SCORECARD_PANEL.headerHeight / 2);
+    });
+    ctx.restore();
+  }
+
+  function drawExportScorecardRow(ctx, row, x, y, columns, targetFace, rowIndex) {
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, x - 8, y + 3, columns[columns.length - 1].x + columns[columns.length - 1].width + 16, SCORECARD_PANEL.rowHeight - 6, 16);
+    ctx.fillStyle = rowIndex % 2 === 0 ? "rgba(255, 255, 255, 0.045)" : "rgba(255, 255, 255, 0.025)";
+    ctx.fill();
+
+    columns.forEach(column => {
+      const cellX = x + column.x;
+      const cellY = y + 6;
+      const cellHeight = SCORECARD_PANEL.rowHeight - 12;
+      if (column.key === "end") {
+        drawExportTextCell(ctx, String(row.endIndex + 1), cellX, cellY, column.width, cellHeight, {
+          fill: "rgba(255, 209, 102, 0.16)",
+          stroke: "rgba(255, 209, 102, 0.24)",
+          text: "rgba(255, 223, 141, 0.98)"
+        });
+      } else if (column.key.startsWith("arrow-")) {
+        drawExportScoreCell(ctx, row.scores[column.arrowIndex], targetFace, cellX, cellY, column.width, cellHeight);
+      } else if (column.key === "total") {
+        drawExportTextCell(ctx, String(row.stats.total), cellX, cellY, column.width, cellHeight, { emphasis: true });
+      } else if (column.key === "run") {
+        drawExportTextCell(ctx, String(row.runningTotal), cellX, cellY, column.width, cellHeight);
+      } else if (column.key === "avgArrow") {
+        drawExportTextCell(ctx, formatAverageScore(row.stats.averageArrowScore), cellX, cellY, column.width, cellHeight);
+      } else if (column.key === "avgCentre") {
+        drawExportTextCell(ctx, formatAverageDistance(row.stats.averageDistanceFromCentreMm), cellX, cellY, column.width, cellHeight);
+      }
+    });
+
+    ctx.restore();
+  }
+
+  function drawExportScoreCell(ctx, score, targetFace, x, y, width, height) {
+    const colors = getScoreBadgeColors(score, targetFace);
+    drawExportTextCell(ctx, App.ScoreFormatting.arrowDisplay(score), x, y, width, height, {
+      fill: colors.fill,
+      stroke: colors.stroke,
+      text: colors.text
+    });
+  }
+
+  function drawExportTextCell(ctx, text, x, y, width, height, options = {}) {
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, x, y, width, height, 13);
+    ctx.fillStyle = options.fill || (options.emphasis ? "rgba(85, 214, 190, 0.18)" : "rgba(180, 201, 219, 0.11)");
+    ctx.fill();
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = options.stroke || (options.emphasis ? "rgba(85, 214, 190, 0.34)" : "rgba(180, 201, 219, 0.14)");
+    ctx.stroke();
+
+    ctx.fillStyle = options.text || "rgba(238, 247, 255, 0.92)";
+    ctx.font = options.emphasis ? "900 17px Inter, system-ui, sans-serif" : "820 16px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(text), x + width / 2, y + height / 2 + 0.5);
+    ctx.restore();
   }
 
 
@@ -251,12 +708,40 @@
     };
   }
 
+  function hexToRgba(hexColor, alpha) {
+    const rgb = parseHexColor(hexColor);
+    if (!rgb) return `rgba(238, 247, 255, ${alpha})`;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  }
+
   function makeVirtualCanvas(width, height) {
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.floor(width));
     canvas.height = Math.max(1, Math.floor(height));
     canvas.__archeryExportRect = { width: canvas.width, height: canvas.height, left: 0, top: 0 };
     return canvas;
+  }
+
+  function makeTargetExportLayout(scorecardLayout) {
+    if (!scorecardLayout) {
+      return {
+        width: EXPORT.targetWidth,
+        height: EXPORT.targetHeight,
+        targetLeft: EXPORT.margin
+      };
+    }
+
+    return {
+      width: EXPORT.targetWidth + scorecardLayout.width + SCORECARD_PANEL.gap,
+      height: EXPORT.targetHeight,
+      targetLeft: EXPORT.margin + scorecardLayout.width + SCORECARD_PANEL.gap
+    };
+  }
+
+  function getSideScorecardY(scorecardLayout) {
+    const mainTop = EXPORT.headerHeight + 76;
+    const mainHeight = EXPORT.targetHeight - mainTop - EXPORT.margin;
+    return mainTop + Math.max(0, (mainHeight - scorecardLayout.height) / 2);
   }
 
   function makeFitTransform(canvas, targetFace, padding) {
@@ -291,7 +776,7 @@
     ctx.restore();
   }
 
-  function drawTargetHeader(ctx, scorecard, targetFace, options) {
+  function drawTargetHeader(ctx, canvas, scorecard, targetFace, options) {
     const summary = App.ScoreFormatting.formatSummary(scorecard, targetFace);
     ctx.save();
     ctx.fillStyle = "rgba(238, 247, 255, 0.98)";
@@ -306,10 +791,10 @@
     ctx.textAlign = "right";
     ctx.fillStyle = "rgba(255, 209, 102, 0.98)";
     ctx.font = "950 52px Inter, system-ui, sans-serif";
-    ctx.fillText(summary.scoreText, EXPORT.targetWidth - EXPORT.margin, 72);
+    ctx.fillText(summary.scoreText, canvas.width - EXPORT.margin, 72);
     ctx.font = "760 22px Inter, system-ui, sans-serif";
     ctx.fillStyle = "rgba(180, 201, 219, 0.84)";
-    ctx.fillText(`${summary.totals.xCount} X · ${summary.totals.missCount} miss · ${summary.arrowsText}`, EXPORT.targetWidth - EXPORT.margin, 138);
+    ctx.fillText(`${summary.totals.xCount} X · ${summary.totals.missCount} miss · ${summary.arrowsText}`, canvas.width - EXPORT.margin, 138);
     ctx.restore();
   }
 
@@ -337,6 +822,18 @@
     if (endCount <= 4) return 2;
     if (endCount <= 12) return 3;
     return 4;
+  }
+
+  function normalizeTargetVisibility(value) {
+    return App.Geometry.clamp(Number(value) || 1, 0.35, 1);
+  }
+
+  function formatAverageScore(value) {
+    return value === null ? "-" : value.toFixed(1);
+  }
+
+  function formatAverageDistance(value) {
+    return value === null ? "-" : `${value.toFixed(1)}mm`;
   }
 
   function makeSubtitle(scorecard, targetFace) {
@@ -381,7 +878,9 @@
   App.ExportRenderer = {
     exportVisibleTarget,
     exportFullScorecardTarget,
+    exportEndColourTarget,
     exportEndSheet,
+    renderEndColourTargetImage,
     renderTargetImage
   };
 })();

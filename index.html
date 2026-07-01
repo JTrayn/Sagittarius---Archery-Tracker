@@ -23,10 +23,12 @@
 
       <div class="toolbar" id="topControls">
         <button class="btn btn-primary" id="newScorecardBtn" type="button">New Scorecard</button>
+        <button class="btn" id="manageTargetFacesBtn" type="button">Target Face Manager</button>
         <button class="btn" id="loadScorecardBtn" type="button">Load</button>
         <button class="btn" id="exportScorecardBtn" type="button">Export JSON</button>
         <label class="btn file-btn" for="importScorecardInput">Import JSON</label>
         <input id="importScorecardInput" type="file" accept="application/json,.json" hidden />
+        <button class="btn btn-dev" id="generateDummyDataBtn" type="button">Generate Dummy Data</button>
       </div>
     </header>
 
@@ -52,10 +54,12 @@
               <span>Name</span>
               <input id="scorecardNameInput" type="text" autocomplete="off" />
             </label>
-            <label>
-              <span>Target face</span>
-              <select id="targetFaceSelect"></select>
-            </label>
+            <div class="target-face-field">
+              <label>
+                <span>Target face</span>
+                <select id="targetFaceSelect"></select>
+              </label>
+            </div>
             <label>
               <span>Distance</span>
               <div class="input-with-unit">
@@ -81,28 +85,90 @@
 
       <section class="viewport-panel glass-card">
         <div class="viewport-toolbar">
-          <div>
+          <div class="viewport-toolbar-copy">
             <h2>Target viewport</h2>
             <p id="viewportModeHint">Plot mode · left click to plot · drag empty space to pan</p>
           </div>
           <div class="viewport-actions">
-            <label class="viewport-select-label" for="visibleEndSelect">
-              <span>Show</span>
-              <select id="visibleEndSelect" class="viewport-select"></select>
-            </label>
-            <div class="viewport-control-group" aria-label="Interaction mode">
-              <button class="btn btn-small btn-mode is-active" id="plotModeBtn" type="button">Plot</button>
-              <button class="btn btn-small btn-mode" id="editModeBtn" type="button">Edit</button>
-              <button class="btn btn-small btn-mode" id="lockedModeBtn" type="button">Locked</button>
+            <div class="viewport-control-cluster viewport-display-cluster" aria-label="Viewport display controls">
+              <span class="viewport-cluster-label">Display</span>
+              <div class="viewport-control-group" aria-label="Viewport display">
+                <button class="btn btn-small btn-mode is-active" id="targetViewBtn" type="button">Target</button>
+                <button class="btn btn-small btn-mode" id="trendsViewBtn" type="button">Trends</button>
+              </div>
             </div>
-            <button class="btn btn-small" id="fitTargetBtn" type="button">Fit</button>
-            <button class="btn btn-small" id="resetViewBtn" type="button">Centre</button>
-            <button class="btn btn-small btn-toggle is-active" id="toggleLabelsBtn" type="button">Labels</button>
-            <div class="viewport-control-group group-control-group" aria-label="Grouping overlays">
-              <button class="btn btn-small btn-toggle btn-toggle-radial is-active" id="toggleRadialGroupingBtn" type="button">Radial</button>
-              <button class="btn btn-small btn-toggle btn-toggle-simple" id="toggleSimpleGroupingBtn" type="button">Simple</button>
+            <div class="viewport-control-cluster viewport-view-cluster target-control-cluster" aria-label="View controls">
+              <span class="viewport-cluster-label">View</span>
+              <label class="viewport-fade-control" for="targetFadeRange" title="Adjust target face visibility in the live viewport">
+                <span>Target</span>
+                <input id="targetFadeRange" type="range" min="35" max="100" step="5" value="100" />
+                <output id="targetFadeValue" for="targetFadeRange">100%</output>
+              </label>
+              <label class="viewport-select-label" for="visibleEndSelect">
+                <span>Show</span>
+                <select id="visibleEndSelect" class="viewport-select"></select>
+              </label>
             </div>
-            <button class="btn btn-small btn-primary-soft" id="exportTargetImageBtn" type="button">Export Image</button>
+            <div class="viewport-control-cluster target-control-cluster" aria-label="Interaction mode controls">
+              <span class="viewport-cluster-label">Mode</span>
+              <div class="viewport-control-group" aria-label="Interaction mode">
+                <button class="btn btn-small btn-mode is-active" id="plotModeBtn" type="button">Plot</button>
+                <button class="btn btn-small btn-mode" id="editModeBtn" type="button">Edit</button>
+                <button class="btn btn-small btn-mode" id="lockedModeBtn" type="button">Locked</button>
+              </div>
+            </div>
+            <div class="viewport-control-cluster target-control-cluster" aria-label="Canvas view controls">
+              <span class="viewport-cluster-label">Canvas</span>
+              <button class="btn btn-small" id="fitTargetBtn" type="button">Fit</button>
+              <button class="btn btn-small" id="resetViewBtn" type="button">Centre</button>
+            </div>
+            <div class="viewport-control-cluster target-control-cluster" aria-label="Overlay controls">
+              <span class="viewport-cluster-label">Overlays</span>
+              <button class="btn btn-small btn-toggle is-active" id="toggleLabelsBtn" type="button">Labels</button>
+              <div class="viewport-control-group group-control-group" aria-label="Grouping overlays">
+                <button class="btn btn-small btn-toggle btn-toggle-radial is-active" id="toggleRadialGroupingBtn" type="button" title="Show radial standard-deviation dispersion ring">Dispersion</button>
+                <button class="btn btn-small btn-toggle btn-toggle-simple" id="toggleSimpleGroupingBtn" type="button" title="Show minimum enclosing circle">Enclosing</button>
+              </div>
+            </div>
+            <div class="viewport-control-cluster viewport-export-cluster target-control-cluster" aria-label="Export controls">
+              <button class="btn btn-small" id="exportTargetImageBtn" type="button">Export Image</button>
+            </div>
+            <div class="viewport-control-cluster trends-control-cluster hidden" aria-label="Trend controls">
+              <span class="viewport-cluster-label">Trends</span>
+              <label class="viewport-select-label" for="trendMetricSelect">
+                <span>Metric</span>
+                <select id="trendMetricSelect" class="viewport-select">
+                  <option value="averageCentreMm">Avg centre</option>
+                  <option value="normalizedAverageCentreMm">70m eq centre</option>
+                  <option value="enclosingDiameterMm">Group size</option>
+                  <option value="normalizedEnclosingDiameterMm">70m eq group</option>
+                  <option value="mpiOffsetMm">MPI offset</option>
+                  <option value="normalizedMpiOffsetMm">70m eq MPI</option>
+                  <option value="averageArrowScore">Avg arrow</option>
+                </select>
+              </label>
+              <div class="viewport-control-group trend-spacing-control" aria-label="Trend spacing">
+                <button class="btn btn-small btn-mode is-active" id="trendSpacingTimelineBtn" type="button">Timeline</button>
+                <button class="btn btn-small btn-mode" id="trendSpacingScorecardsBtn" type="button">Scorecards</button>
+              </div>
+              <label class="viewport-select-label" for="trendRangeSelect">
+                <span>Range</span>
+                <select id="trendRangeSelect" class="viewport-select">
+                  <option value="all">All</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                  <option value="365">1 year</option>
+                </select>
+              </label>
+              <label class="viewport-select-label" for="trendDistanceSelect">
+                <span>Distance</span>
+                <select id="trendDistanceSelect" class="viewport-select"></select>
+              </label>
+              <label class="viewport-select-label" for="trendTargetSelect">
+                <span>Face</span>
+                <select id="trendTargetSelect" class="viewport-select"></select>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -110,6 +176,14 @@
           <canvas id="targetCanvas"></canvas>
           <div class="viewport-hud top-left" id="viewportHud"></div>
           <div class="viewport-hud bottom-right" id="zoomHud"></div>
+          <div class="trends-view hidden" id="trendsView">
+            <div class="trends-summary" id="trendsSummary"></div>
+            <div class="trends-chart-region">
+              <canvas id="trendsCanvas"></canvas>
+              <div class="trends-tooltip hidden" id="trendsTooltip"></div>
+            </div>
+            <div class="trends-records" id="trendsRecords"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -145,11 +219,15 @@
   <script src="js/viewport/scaleRenderer.js"></script>
   <script src="js/viewport/interactionController.js"></script>
   <script src="js/viewport/TargetViewport.js"></script>
+  <script src="js/analytics/historyAnalytics.js"></script>
+  <script src="js/analytics/TrendsView.js"></script>
+  <script src="js/dev/dummyDataGenerator.js"></script>
   <script src="js/scorecard/ScorecardView.js"></script>
   <script src="js/ui/modal.js"></script>
   <script src="js/ui/toast.js"></script>
   <script src="js/ui/customSelect.js"></script>
   <script src="js/ui/scorecardBrowser.js"></script>
+  <script src="js/ui/targetFaceManager.js"></script>
   <script src="js/ui/topControls.js"></script>
   <script src="js/viewport/exportRenderer.js"></script>
   <script src="js/main.js"></script>

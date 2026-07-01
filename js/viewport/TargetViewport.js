@@ -156,7 +156,9 @@
       this.groupHoverState = hoverState;
       this.groupFocusTarget = hoverState.any ? 1 : 0;
 
-      App.TargetRenderer.drawTarget(this.ctx, this.canvas, this.transform, this.targetFace);
+      App.TargetRenderer.drawTarget(this.ctx, this.canvas, this.transform, this.targetFace, {
+        visibility: this.state.viewport.targetFaceVisibility
+      });
       drawGroupFocusScrim(this.ctx, rect, this.groupFocusAmount);
       if (this.state.viewport.showRadialGrouping || this.state.viewport.showSimpleGrouping) {
         App.GroupingRenderer.drawGroupingOverlay(this.ctx, this.canvas, this.transform, this.state.scorecard, {
@@ -274,6 +276,14 @@
         this.zoomHud.innerHTML = "";
         return;
       }
+      if (this.state.viewport.displayMode === "trends") {
+        this.hud.innerHTML = "";
+        this.zoomHud.innerHTML = "";
+        if (this.modeHud) {
+          this.modeHud.textContent = "Trends view · saved scorecard history";
+        }
+        return;
+      }
       const scorecard = this.state.scorecard;
       const summary = App.ScoreFormatting.formatSummary(scorecard, this.targetFace);
       const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
@@ -283,9 +293,11 @@
       const visibleText = this.state.viewport.visibleEndIndex === null
         ? "All ends"
         : `End ${this.state.viewport.visibleEndIndex + 1}`;
-      this.hud.innerHTML = `<strong>${this.targetFace.shortName || this.targetFace.name}</strong><br>${scorecard.distanceM}m · ${summary.arrowsText}<br><span>Showing ${visibleText}</span>${comparisonText}`;
+      const analysisText = getAnalysisHudText(scorecard, this.state.viewport.visibleEndIndex);
+      const analysisLine = analysisText ? `<br><span>${analysisText}</span>` : "";
+      this.hud.innerHTML = `<strong>${this.targetFace.shortName || this.targetFace.name}</strong><br>${scorecard.distanceM}m · ${summary.arrowsText}<br><span>Showing ${visibleText}</span>${analysisLine}${comparisonText}`;
       this.zoomHud.innerHTML = `Zoom <strong>${Math.round(this.transform.currentPxPerMm * 100)}%</strong>`;
-      if (this.modeHud) {
+      if (this.modeHud && this.state.viewport.displayMode !== "trends") {
         const mode = this.state.viewport.interactionMode;
         const modeText = {
           plot: "Plot mode · left click to plot selected empty arrow · drag empty space to pan",
@@ -296,6 +308,30 @@
         this.canvas.dataset.mode = mode;
       }
     }
+  }
+
+
+  function getAnalysisHudText(scorecard, visibleEndIndex) {
+    const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex);
+    const analysis = App.GroupingRenderer.calculatePlottedArrowAnalysis(entries);
+    if (!analysis) return "";
+
+    return `MPI ${formatGroupOffset(analysis.offsetMm)} · Spread ${formatMm(analysis.horizontalSpreadMm)} x ${formatMm(analysis.verticalSpreadMm)}`;
+  }
+
+  function formatGroupOffset(offset) {
+    const x = Number(offset?.xMm) || 0;
+    const y = Number(offset?.yMm) || 0;
+    const parts = [];
+    if (Math.abs(x) >= 0.05) parts.push(`${x < 0 ? "Left" : "Right"} ${formatMm(Math.abs(x))}`);
+    if (Math.abs(y) >= 0.05) parts.push(`${y < 0 ? "High" : "Low"} ${formatMm(Math.abs(y))}`);
+    return parts.length ? parts.join(", ") : "centred";
+  }
+
+  function formatMm(value) {
+    if (!Number.isFinite(value)) return "-";
+    if (value >= 100) return `${Math.round(value)}mm`;
+    return `${Math.round(value * 10) / 10}mm`;
   }
 
 

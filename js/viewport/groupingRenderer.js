@@ -3,8 +3,8 @@
 
   const THEMES = {
     radial: {
-      name: "Radial",
-      title: "Radial σ radius",
+      name: "Dispersion",
+      title: "Dispersion radius",
       stroke: "rgba(85, 214, 190, 0.86)",
       strokeSoft: "rgba(255, 255, 255, 0.30)",
       fill: "rgba(85, 214, 190, 0.055)",
@@ -14,8 +14,8 @@
       marker: "rgba(85, 214, 190, 0.96)"
     },
     simple: {
-      name: "Simple",
-      title: "Simple radius",
+      name: "Enclosing",
+      title: "Enclosing radius",
       stroke: "rgba(255, 104, 119, 0.84)",
       strokeSoft: "rgba(255, 255, 255, 0.27)",
       fill: "rgba(255, 104, 119, 0.045)",
@@ -42,11 +42,36 @@
     return calculateRadialGroupStats(entries);
   }
 
-  function calculateRadialGroupStats(entries) {
+  function calculatePlottedArrowAnalysis(entries) {
     const points = entries.map(entry => entry.point).filter(Boolean);
     if (!points.length) return null;
 
     const centroid = calculateCentroid(points);
+    const xs = points.map(point => point.xMm);
+    const ys = points.map(point => point.yMm);
+
+    return {
+      count: points.length,
+      centroid,
+      offsetMm: {
+        xMm: centroid.xMm,
+        yMm: centroid.yMm,
+        distanceMm: Math.hypot(centroid.xMm, centroid.yMm)
+      },
+      horizontalSpreadMm: Math.max(...xs) - Math.min(...xs),
+      verticalSpreadMm: Math.max(...ys) - Math.min(...ys),
+      extremeSpreadMm: calculateExtremeSpread(points),
+      confidenceEllipse: calculateConfidenceEllipse(points, centroid)
+    };
+  }
+
+  function calculateRadialGroupStats(entries) {
+    const points = entries.map(entry => entry.point).filter(Boolean);
+    if (!points.length) return null;
+
+    const analysis = calculatePlottedArrowAnalysis(entries);
+    if (!analysis) return null;
+    const centroid = analysis.centroid;
     const radialDistances = points.map(point => Math.hypot(point.xMm - centroid.xMm, point.yMm - centroid.yMm));
     const radialStdMm = Math.sqrt(radialDistances.reduce((sum, value) => sum + value * value, 0) / points.length);
     const meanRadiusMm = radialDistances.reduce((sum, value) => sum + value, 0) / points.length;
@@ -65,7 +90,8 @@
       radialStdDiameterMm: radialStdMm * 2,
       meanRadiusMm,
       maxRadiusMm,
-      extremeSpreadMm: calculateExtremeSpread(points)
+      extremeSpreadMm: analysis.extremeSpreadMm,
+      analysis
     };
   }
 
@@ -76,7 +102,7 @@
     return {
       method: "minimum-enclosing-circle",
       count: points.length,
-      centroid: circle.center,
+      centroid: calculateCentroid(points),
       circle,
       radiusMm: circle.radiusMm,
       diameterMm: circle.radiusMm * 2,
@@ -144,6 +170,7 @@
     });
     const focusAmount = Number(options.focusAmount) || 0;
     const results = {};
+    const analysis = calculatePlottedArrowAnalysis(entries);
 
     ctx.save();
     if (showSimple) {
@@ -171,21 +198,28 @@
           isHovered: Boolean(hoverState.radial),
           focusAmount
         });
+        drawConfidenceEllipse(ctx, canvas, transform, radial.analysis.confidenceEllipse, THEMES.radial, {
+          isHovered: Boolean(hoverState.radial),
+          focusAmount
+        });
       }
+    }
+
+    if (analysis) {
+      drawMeanPoint(ctx, App.ViewportMath.worldToScreen(analysis.centroid, canvas, transform), {
+        isHovered: Boolean(hoverState.radial || hoverState.simple),
+        focusAmount
+      });
     }
     ctx.restore();
 
-    return results.radial || results.simple || null;
+    return results.radial || results.simple || analysis || null;
   }
 
   function drawSingleOverlay(ctx, canvas, transform, stats, theme, options = {}) {
     const centre = App.ViewportMath.worldToScreen(stats.circle.center, canvas, transform);
     const radiusPx = Math.max(2, stats.circle.radiusMm * transform.currentPxPerMm);
     drawGroupCircle(ctx, centre, radiusPx, theme, {
-      isHovered: Boolean(options.isHovered),
-      focusAmount: options.focusAmount || 0
-    });
-    drawCentroid(ctx, centre, theme, {
       isHovered: Boolean(options.isHovered),
       focusAmount: options.focusAmount || 0
     });
@@ -227,15 +261,47 @@
     ctx.restore();
   }
 
-  function drawCentroid(ctx, point, theme, options = {}) {
+  function drawConfidenceEllipse(ctx, canvas, transform, ellipse, theme, options = {}) {
+    if (!ellipse || ellipse.count < 2) return;
+
     const focus = options.isHovered ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
-    const arm = 5.8 + focus * 2.2;
+    const centre = App.ViewportMath.worldToScreen(ellipse.center, canvas, transform);
+    const majorPx = Math.max(2, ellipse.radiusXMm * transform.currentPxPerMm);
+    const minorPx = Math.max(2, ellipse.radiusYMm * transform.currentPxPerMm);
+
+    ctx.save();
+    ctx.translate(centre.x, centre.y);
+    ctx.rotate(ellipse.rotationRad);
+
+    ctx.beginPath();
+    ctx.ellipse(0, 0, majorPx, minorPx, 0, 0, Math.PI * 2);
+    ctx.fillStyle = focus > 0.01 ? blendRgba(theme.fill, theme.fillFocus, focus) : "rgba(85, 214, 190, 0.035)";
+    ctx.fill();
+
+    ctx.shadowColor = focus > 0.01 ? blendRgba(theme.glow, theme.glowFocus, focus) : theme.glow;
+    ctx.shadowBlur = 8 + focus * 8;
+    ctx.lineWidth = 1.45 + focus * 0.75;
+    ctx.setLineDash([9, 6]);
+    ctx.strokeStyle = "rgba(204, 255, 245, 0.78)";
+    ctx.stroke();
+
+    ctx.shadowColor = "transparent";
+    ctx.setLineDash([]);
+    ctx.lineWidth = 0.9;
+    ctx.strokeStyle = "rgba(1, 8, 13, 0.42)";
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawMeanPoint(ctx, point, options = {}) {
+    const focus = options.isHovered ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
+    const arm = 7.2 + focus * 2.4;
     ctx.save();
     ctx.lineCap = "round";
     ctx.shadowColor = "rgba(0, 0, 0, 0.44)";
     ctx.shadowBlur = 6 + focus * 3;
     ctx.strokeStyle = "rgba(1, 8, 13, 0.62)";
-    ctx.lineWidth = 2.7 + focus * 0.7;
+    ctx.lineWidth = 3 + focus * 0.8;
     ctx.beginPath();
     ctx.moveTo(point.x - arm, point.y);
     ctx.lineTo(point.x + arm, point.y);
@@ -245,14 +311,14 @@
 
     ctx.shadowColor = "transparent";
     ctx.strokeStyle = "rgba(255, 255, 255, 0.72)";
-    ctx.lineWidth = 1.1;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.arc(point.x, point.y, 2.8 + focus * 0.7, 0, Math.PI * 2);
-    ctx.fillStyle = theme.marker;
+    ctx.arc(point.x, point.y, 3.4 + focus * 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 209, 102, 0.96)";
     ctx.fill();
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.15;
     ctx.strokeStyle = "rgba(255, 255, 255, 0.68)";
     ctx.stroke();
     ctx.restore();
@@ -306,6 +372,46 @@
       }
     }
     return max;
+  }
+
+  function calculateConfidenceEllipse(points, centroid) {
+    if (points.length < 2) {
+      return {
+        count: points.length,
+        center: centroid,
+        radiusXMm: 0,
+        radiusYMm: 0,
+        rotationRad: 0
+      };
+    }
+
+    const covariance = points.reduce((sum, point) => {
+      const dx = point.xMm - centroid.xMm;
+      const dy = point.yMm - centroid.yMm;
+      sum.xx += dx * dx;
+      sum.yy += dy * dy;
+      sum.xy += dx * dy;
+      return sum;
+    }, { xx: 0, yy: 0, xy: 0 });
+    covariance.xx /= points.length;
+    covariance.yy /= points.length;
+    covariance.xy /= points.length;
+
+    const trace = covariance.xx + covariance.yy;
+    const diff = covariance.xx - covariance.yy;
+    const root = Math.sqrt(diff * diff + 4 * covariance.xy * covariance.xy);
+    const majorVariance = Math.max(0, (trace + root) / 2);
+    const minorVariance = Math.max(0, (trace - root) / 2);
+
+    return {
+      count: points.length,
+      center: centroid,
+      radiusXMm: Math.sqrt(majorVariance),
+      radiusYMm: Math.sqrt(minorVariance),
+      rotationRad: majorVariance > 0.000001
+        ? 0.5 * Math.atan2(2 * covariance.xy, diff)
+        : 0
+    };
   }
 
   function smallestEnclosingCircle(points) {
@@ -430,6 +536,7 @@
   App.GroupingRenderer = {
     getVisiblePlottedEntries,
     calculateGroupStats,
+    calculatePlottedArrowAnalysis,
     calculateRadialGroupStats,
     calculateSimpleGroupStats,
     drawGroupingOverlay,

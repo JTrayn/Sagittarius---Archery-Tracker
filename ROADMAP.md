@@ -19,8 +19,8 @@ This roadmap captures likely future directions. It is not a strict commitment or
 
 ## Target faces
 
-- Add custom target-face builder.
-- Allow custom zone labels, values, colours, border colours, and line widths.
+- Expand the custom target-face builder with richer presets.
+- Add duplicate helpers for custom target-face zones.
 - Allow import/export of target-face definitions.
 - Add target-face preview in selection UI.
 
@@ -32,13 +32,11 @@ This roadmap captures likely future directions. It is not a strict commitment or
 
 ## Analysis
 
-- Score trend over time.
-- Average score per arrow.
+- Expand Trends view with more comparison modes.
+- Deeper average score breakdowns by end, distance, and target face.
 - End-by-end consistency.
 - X count and miss trends.
-- Group size trends.
-- Group centre offset over time.
-- Horizontal/vertical dispersion.
+- Horizontal/vertical dispersion trends.
 - Compare scorecards by target face, distance, date, or equipment.
 
 ## Export/printing

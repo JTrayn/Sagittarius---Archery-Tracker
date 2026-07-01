@@ -15,7 +15,9 @@
       hoveredArrow: null,
       visibleEndIndex: null,
       showRadialGrouping: true,
-      showSimpleGrouping: false
+      showSimpleGrouping: false,
+      displayMode: "target",
+      targetFaceVisibility: 1
     },
     dirty: false
   };
@@ -118,6 +120,21 @@
     notify("grouping");
   }
 
+  function setTargetFaceVisibility(visibility) {
+    const normalized = App.Geometry.clamp(Number(visibility) || 1, 0.35, 1);
+    if (Math.abs(state.viewport.targetFaceVisibility - normalized) < 0.001) return;
+    state.viewport.targetFaceVisibility = normalized;
+    notify("targetFaceVisibility");
+  }
+
+  function setViewportDisplayMode(mode) {
+    const nextMode = mode === "trends" ? "trends" : "target";
+    if (state.viewport.displayMode === nextMode) return;
+    state.viewport.displayMode = nextMode;
+    state.viewport.hoveredArrow = null;
+    notify("viewportDisplay");
+  }
+
   function setShowGrouping(showGrouping) {
     setGroupingOverlay("radial", showGrouping);
   }
@@ -162,6 +179,8 @@
     setVisibleEndIndex,
     setShowGrouping,
     setGroupingOverlay,
+    setViewportDisplayMode,
+    setTargetFaceVisibility,
     setHoveredArrow
   };
 })();

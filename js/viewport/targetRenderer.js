@@ -1,13 +1,15 @@
 (function () {
   const App = window.ArcheryApp;
 
-  function drawTarget(ctx, canvas, transform, targetFace) {
+  function drawTarget(ctx, canvas, transform, targetFace, options = {}) {
     const center = App.ViewportMath.getCanvasCenter(canvas);
     const x = center.x + transform.currentPanX;
     const y = center.y + transform.currentPanY;
     const zones = targetFace.zones.slice().sort((a, b) => b.radiusMm - a.radiusMm);
+    const visibility = normalizeTargetVisibility(options.visibility);
 
     ctx.save();
+    applyTargetVisibility(ctx, visibility);
     drawSoftShadow(ctx, x, y, targetFace.diameterMm * transform.currentPxPerMm / 2);
 
     zones.forEach(zone => {
@@ -25,6 +27,25 @@
     drawRingLabels(ctx, x, y, zones, transform, targetFace);
     drawCentreLabel(ctx, x, y, transform, targetFace);
     ctx.restore();
+  }
+
+  function normalizeTargetVisibility(value) {
+    return App.Geometry.clamp(Number(value) || 1, 0.35, 1);
+  }
+
+  function applyTargetVisibility(ctx, visibility) {
+    if (visibility >= 0.995) return;
+
+    const progress = (visibility - 0.35) / 0.65;
+    const saturation = 0.42 + progress * 0.58;
+    const brightness = 0.68 + progress * 0.32;
+    const opacity = 0.72 + progress * 0.28;
+
+    if ("filter" in ctx) {
+      ctx.filter = `saturate(${Math.round(saturation * 100)}%) brightness(${Math.round(brightness * 100)}%) opacity(${Math.round(opacity * 100)}%)`;
+    } else {
+      ctx.globalAlpha *= opacity;
+    }
   }
 
   function drawSoftShadow(ctx, x, y, radiusPx) {
@@ -77,8 +98,8 @@
 
   function drawRingLabels(ctx, centerX, centerY, zones, transform, targetFace) {
     if (transform.currentPxPerMm < 0.34) return;
+    const labelSettings = getLabelSettings(targetFace);
     ctx.save();
-    ctx.font = "800 12px Inter, system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -86,15 +107,38 @@
       if (zone.label === "X") return;
       const radiusPx = zone.radiusMm * transform.currentPxPerMm;
       if (radiusPx < 34) return;
+      ctx.font = `800 ${getLabelSizePx(zone.labelSize)}px Inter, system-ui, sans-serif`;
       const labelRadiusPx = radiusPx - Math.min(24, Math.max(12, 16 * transform.currentPxPerMm));
-      const angle = targetFace.family === "Indoor Archery WA" ? -Math.PI / 2 : -Math.PI / 4;
+      const angle = getLabelAngle(labelSettings.position);
       const x = centerX + Math.cos(angle) * labelRadiusPx;
       const y = centerY + Math.sin(angle) * labelRadiusPx;
-      ctx.fillStyle = labelTextColour(zone.fill);
+      ctx.fillStyle = labelSettings.autoContrast ? labelTextColour(zone.fill) : (zone.labelFill || labelTextColour(zone.fill));
       ctx.globalAlpha = 0.72;
       ctx.fillText(zone.label, x, y);
     });
     ctx.restore();
+  }
+
+  function getLabelSettings(targetFace) {
+    const labels = targetFace.labels || {};
+    return {
+      position: labels.position || (targetFace.family === "Indoor Archery WA" ? "vertical" : "diagonal"),
+      autoContrast: labels.autoContrast !== false
+    };
+  }
+
+  function getLabelAngle(position) {
+    if (position === "vertical") return -Math.PI / 2;
+    if (position === "horizontal") return 0;
+    if (position === "diagonal-left") return -Math.PI * 3 / 4;
+    return -Math.PI / 4;
+  }
+
+  function getLabelSizePx(size) {
+    if (size === "small") return 10;
+    if (size === "large") return 15;
+    if (size === "x-large") return 18;
+    return 12;
   }
 
   function labelTextColour(fill) {

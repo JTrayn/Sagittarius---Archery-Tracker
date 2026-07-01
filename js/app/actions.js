@@ -100,6 +100,14 @@
     App.State.setGroupingOverlay(kind, enabled);
   }
 
+  function setViewportDisplayMode(mode) {
+    App.State.setViewportDisplayMode(mode);
+  }
+
+  function setTargetFaceVisibility(visibility) {
+    App.State.setTargetFaceVisibility(visibility);
+  }
+
   function setManualScore(scoreOption) {
     const state = App.State.getState();
     const arrow = App.State.getSelectedArrow();
@@ -186,6 +194,10 @@
     if (!state.scorecard) return false;
     const face = App.TargetFaces.getTargetFace(targetFaceId);
     if (state.scorecard.activeViewTargetFaceId === face.id) return false;
+    if (App.ScoringEngine.hasManualScores(state.scorecard)) {
+      App.Toast.show("Clear manual scores before changing target face", "danger");
+      return false;
+    }
     state.scorecard.activeViewTargetFaceId = face.id;
     state.scorecard.updatedAt = App.Dates.nowIso();
     state.dirty = true;
@@ -274,6 +286,8 @@
     setVisibleEndIndex,
     setShowGrouping,
     setGroupingOverlay,
+    setViewportDisplayMode,
+    setTargetFaceVisibility,
     setManualScore,
     clearSelectedArrow,
     advanceSelection,

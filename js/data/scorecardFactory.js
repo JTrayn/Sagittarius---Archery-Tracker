@@ -24,8 +24,9 @@
     const now = App.Dates.nowIso();
     const endCount = Math.max(1, Number(options.ends || DEFAULT_SCORECARD.ends));
     const arrowsPerEnd = Math.max(1, Number(options.arrowsPerEnd || DEFAULT_SCORECARD.arrowsPerEnd));
-    const targetFaceId = options.targetFaceId || DEFAULT_TARGET_FACE_ID;
-    const face = App.TargetFaces.getTargetFace(targetFaceId);
+    const requestedTargetFaceId = options.targetFaceId || DEFAULT_TARGET_FACE_ID;
+    const face = App.TargetFaces.getTargetFace(requestedTargetFaceId);
+    const targetFaceId = face.id;
 
     return {
       id: App.Ids.makeId("scorecard"),

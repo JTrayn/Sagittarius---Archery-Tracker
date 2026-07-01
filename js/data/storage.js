@@ -143,6 +143,18 @@
     clearLastOpenScorecardId(scorecardId);
   }
 
+  function clearAllScorecards() {
+    readIndex().forEach(item => {
+      if (!item || !item.id) return;
+      localStorage.removeItem(STORAGE_KEYS.SCORECARD_PREFIX + item.id);
+      localStorage.removeItem(STORAGE_KEYS.LEGACY_PREFIX + item.id);
+    });
+    writeIndex([]);
+    clearLastOpenScorecardId();
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_INDEX);
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_LAST_ID);
+  }
+
   function renameScorecard(scorecardId, name) {
     const scorecard = loadScorecard(scorecardId);
     if (!scorecard) return null;
@@ -190,6 +202,7 @@
     loadScorecard,
     listScorecards,
     deleteScorecard,
+    clearAllScorecards,
     renameScorecard,
     duplicateScorecard,
     setLastOpenScorecardId,

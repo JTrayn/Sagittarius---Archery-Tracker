@@ -10,9 +10,9 @@ The project started as an iterative ChatGPT-built app. Preserve the existing UX 
 
 ## Current version
 
-v0.5.2
+v0.7.6
 
-v0.5.2 is a repository-preparation/documentation release. App functionality is intentionally unchanged from v0.5.1 unless noted elsewhere.
+v0.7.6 refines Trends record-card layout, metric explanations, Global records copy, and leaderboard styling.
 
 ## Core terminology
 
@@ -37,10 +37,13 @@ The app is a client-side static web app.
 Core concepts:
 
 - Target faces are defined as real-world radial score zones.
+- Custom target-face diameter is derived from the outermost zone, not edited separately.
+- Scorecard distance is scorecard metadata, not custom target-face metadata.
 - Arrow positions are stored in millimetres relative to the target centre.
 - Scores are derived from arrow position and the active target face.
 - Manual score entries are supported separately from plotted arrows.
 - Scorecard data is saved locally in browser storage.
+- Custom target faces are saved locally in browser storage and merged into target-face APIs.
 - Existing saved data may require migration from older localStorage keys.
 
 Important coordinate rule:
@@ -64,6 +67,15 @@ Important coordinate rule:
 - Indoor Archery WA Series 1
 - Indoor Archery WA Series 2
 - Indoor Archery WA Series 3
+- Locally saved custom target faces
+
+Custom target faces:
+
+- Store zones as physical radii in millimetres.
+- Preserve custom zone order for editor/manual-score presentation.
+- Use radius sorting only where scoring/rendering needs physical inner-to-outer or outer-to-inner order.
+- Store shared label settings for position and auto-contrast.
+- Store per-zone label size and label colour for custom target faces.
 
 Indoor Archery WA zones:
 
@@ -77,7 +89,7 @@ Indoor Archery WA zones:
 
 ## Viewport modes
 
-The viewport has three modes.
+The target viewport has three interaction modes.
 
 ### Plot
 
@@ -111,6 +123,15 @@ Default mode rules:
 - Incomplete saved scorecards open in Plot mode and select the first empty arrow.
 - Completed saved scorecards open in Locked mode with no arrow selected.
 
+## Viewport display
+
+The right panel has two display surfaces.
+
+- **Target** shows the plotted target face and existing plotting/editing controls.
+- **Trends** replaces the target canvas with saved-scorecard progress graphs and trend filters.
+
+Trends are derived from saved scorecards and cached in memory using a saved-scorecard/target-face fingerprint. Do not store separate persisted trend records unless a later performance need is proven.
+
 ## Current UI direction
 
 The UI should remain modern, clean, dark, cohesive, and polished.
@@ -130,6 +151,7 @@ Important UI preferences:
 - Keep the larger score text size in the scorecard cells.
 - Preserve the prominent total score pill at the top of the scorecard panel.
 - Keep the Save button beside the total score pill.
+- Scoresheet end rows include Total, Run, Avg Arrow, and Avg Centre columns.
 - Status belongs in the same metadata row as Shot on / Scoring as.
 - Do not show Round type in the current UI; notes should take the full lower notes area.
 
@@ -139,28 +161,50 @@ Current export image features:
 
 - Current target view PNG
 - Complete scorecard target PNG
+- End-coloured target PNG
 - End sheet PNG
-- Export options for labels, radial grouping, and simple grouping
+- Export options for labels, target visibility, dispersion/radial grouping, and enclosing/simple grouping
+- Optional scorecard table on target image exports
+- Scorecard JSON export bundles referenced custom target-face definitions.
 - End sheet score badges use target-zone colours
 
 ## Grouping features
 
 Two grouping modes exist.
 
-### Radial
+### Dispersion / Radial
 
 - Cyan theme
 - Uses centroid and radial standard deviation / dispersion circle
+- Also draws a confidence ellipse based on plotted-arrow covariance
 - Tooltip shows radius only
 - Tooltip appears only when hovering over the group ring
 
-### Simple
+### Enclosing / Simple
 
 - Red theme
 - Uses minimum enclosing circle
 - Tooltip appears only when hovering over the group ring
 
+Current user-facing viewport labels should say **Dispersion** and **Enclosing**. Internal code may still use radial/simple terminology for the existing state and renderer APIs.
+
+Grouping overlays share a gold mean point of impact marker based on the plotted-arrow centroid. The viewport HUD shows the visible arrows' MPI offset from target centre and horizontal/vertical spread.
+
 Hovering over grouping rings subtly darkens/desaturates the target and slightly emphasizes the hovered grouping ring.
+
+## Trends features
+
+Current Trends metrics:
+
+- Avg centre distance in millimetres.
+- 70m-equivalent centre distance in millimetres.
+- Enclosing group diameter in millimetres.
+- 70m-equivalent enclosing group diameter in millimetres.
+- Mean point of impact offset in millimetres.
+- 70m-equivalent mean point of impact offset in millimetres.
+- Average arrow score.
+
+Prefer physical millimetre metrics and 70m-equivalent normalized physical metrics for cross-scorecard comparisons. Raw totals are useful only when target face, distance, and arrow count are controlled together.
 
 ## Development preferences
 
@@ -204,7 +248,7 @@ Potential future features include:
 
 - User-defined arrow diameter.
 - Equipment tracking.
-- Custom target-face builder.
+- Custom target-face import/export and richer presets.
 - More detailed scorecard history analysis.
 - Trend charts.
 - Shot grouping over time.

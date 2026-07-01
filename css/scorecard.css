@@ -32,7 +32,9 @@
 
 .end-label,
 .total-cell,
-.running-cell {
+.running-cell,
+.average-arrow-cell,
+.average-centre-cell {
   height: 46px;
   background: rgba(255, 255, 255, 0.035);
   color: var(--muted);
@@ -47,15 +49,25 @@
   width: 52px;
 }
 
-.running-cell {
+.average-centre-cell {
   border-right: 1px solid var(--border);
   border-radius: 0 14px 14px 0;
 }
 
 .total-cell,
-.running-cell {
+.running-cell,
+.average-arrow-cell,
+.average-centre-cell {
   color: var(--text);
   min-width: 52px;
+}
+
+.average-arrow-cell,
+.average-centre-cell {
+  min-width: 78px;
+  color: #d6e2ee;
+  font-size: 0.82rem;
+  font-weight: 850;
 }
 
 .arrow-cell {
@@ -218,6 +230,19 @@
 
 .scorecard-name-field {
   min-width: 0;
+}
+
+.target-face-field {
+  min-width: 0;
+}
+
+.target-face-field label {
+  min-width: 0;
+}
+
+.target-face-manager-btn {
+  min-height: 42px;
+  padding-inline: 0.72rem;
 }
 
 .scorecard-summary {
@@ -574,7 +599,7 @@
 }
 
 .scorecard-footer-stats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .scorecard-footer-fields {
@@ -606,6 +631,6 @@
   }
 
   .scorecard-footer-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

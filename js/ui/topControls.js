@@ -8,9 +8,11 @@
     els.saveScorecardBtn = document.getElementById("saveScorecardBtn");
     els.loadScorecardBtn = document.getElementById("loadScorecardBtn");
     els.exportScorecardBtn = document.getElementById("exportScorecardBtn");
+    els.generateDummyDataBtn = document.getElementById("generateDummyDataBtn");
     els.importScorecardInput = document.getElementById("importScorecardInput");
     els.scorecardNameInput = document.getElementById("scorecardNameInput");
     els.targetFaceSelect = document.getElementById("targetFaceSelect");
+    els.manageTargetFacesBtn = document.getElementById("manageTargetFacesBtn");
     els.distanceInput = document.getElementById("distanceInput");
     els.shotAtInput = document.getElementById("shotAtInput");
     els.scorecardTopMeta = document.getElementById("scorecardTopMeta");
@@ -31,7 +33,18 @@
     els.saveScorecardBtn.addEventListener("click", saveScorecardFromPanel);
     els.loadScorecardBtn.addEventListener("click", App.ScorecardBrowser.openScorecardBrowser);
     els.exportScorecardBtn.addEventListener("click", exportCurrentScorecard);
+    els.generateDummyDataBtn.addEventListener("click", generateDummyData);
     els.importScorecardInput.addEventListener("change", importScorecardFile);
+    els.manageTargetFacesBtn.addEventListener("click", () => {
+      const currentFaceId = App.State.getState().scorecard?.activeViewTargetFaceId || App.Constants.DEFAULT_TARGET_FACE_ID;
+      App.TargetFaceManager.open({
+        sourceFaceId: currentFaceId,
+        onChange: () => {
+          refreshTargetFaceSelect(App.State.getState().scorecard?.activeViewTargetFaceId || App.Constants.DEFAULT_TARGET_FACE_ID);
+          App.State.notify("targetFacesChanged");
+        }
+      });
+    });
 
     els.scorecardNameInput.addEventListener("change", event => {
       App.Actions.updateScorecardMeta({ name: event.target.value.trim() || "Untitled Scorecard" });
@@ -77,7 +90,16 @@
   }
 
   function populateTargetFaceSelect() {
-    els.targetFaceSelect.innerHTML = renderTargetFaceOptions(App.Constants.DEFAULT_TARGET_FACE_ID);
+    refreshTargetFaceSelect(App.Constants.DEFAULT_TARGET_FACE_ID);
+  }
+
+  function refreshTargetFaceSelect(selectedId) {
+    const html = renderTargetFaceOptions(selectedId);
+    if (els.targetFaceSelect.innerHTML !== html) {
+      els.targetFaceSelect.innerHTML = html;
+    }
+    els.targetFaceSelect.value = selectedId;
+    if (App.CustomSelect) App.CustomSelect.refresh(els.targetFaceSelect);
   }
 
   function render(state) {
@@ -86,10 +108,11 @@
       els.scorecardNameInput.value = "";
       els.distanceInput.value = "";
       els.shotAtInput.value = "";
-      els.targetFaceSelect.value = App.Constants.DEFAULT_TARGET_FACE_ID;
+      refreshTargetFaceSelect(App.Constants.DEFAULT_TARGET_FACE_ID);
       els.scorecardTopMeta.innerHTML = "";
       els.scorecardFooter.innerHTML = "";
       els.manualScorePanel.innerHTML = "";
+      setTargetFaceLock(false);
       updateScoreTotalPill(null);
       return;
     }
@@ -98,18 +121,36 @@
     const summary = App.ScoreFormatting.formatSummary(scorecard, targetFace);
     const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
     const isComparisonView = originalFace.id !== targetFace.id;
+    const hasManualScores = App.ScoringEngine.hasManualScores(scorecard);
 
     els.scorecardPanelTitle.textContent = "Scorecard setup";
     setInputValuePreservingFocus(els.scorecardNameInput, scorecard.name || "");
     setInputValuePreservingFocus(els.distanceInput, scorecard.distanceM || targetFace.defaultDistanceM || "");
     setInputValuePreservingFocus(els.shotAtInput, App.Dates.toDateTimeLocalValue(scorecard.shotAt || scorecard.createdAt));
-    els.targetFaceSelect.value = scorecard.activeViewTargetFaceId;
+    refreshTargetFaceSelect(scorecard.activeViewTargetFaceId);
+    setTargetFaceLock(hasManualScores);
     if (App.CustomSelect) App.CustomSelect.enhance(els.targetFaceSelect);
 
     updateScoreTotalPill(summary);
     renderTopMeta(scorecard, targetFace, originalFace, isComparisonView, state.dirty);
     renderManualScoreButtons(state, targetFace);
     renderFooter(scorecard, summary);
+  }
+
+  function setTargetFaceLock(isLocked) {
+    const title = isLocked
+      ? "Target face cannot be changed while manual scores are recorded."
+      : "";
+    els.targetFaceSelect.disabled = isLocked;
+    els.targetFaceSelect.title = title;
+    if (App.CustomSelect) App.CustomSelect.refresh(els.targetFaceSelect);
+
+    const customSelect = els.targetFaceSelect.nextElementSibling;
+    if (customSelect && customSelect.classList.contains("custom-select")) {
+      customSelect.title = title;
+      const trigger = customSelect.querySelector(".custom-select-trigger");
+      if (trigger) trigger.title = title;
+    }
   }
 
   function updateScoreTotalPill(summary) {
@@ -128,11 +169,11 @@
     els.scorecardTopMeta.innerHTML = `
       <div class="scorecard-meta-item">
         <span>Shot on</span>
-        <strong title="${escapeHtml(originalFace.name)}">${escapeHtml(originalFace.shortName || originalFace.name)}</strong>
+        <strong title="${escapeHtml(originalFace.name)}">${escapeHtml(originalFace.name)}</strong>
       </div>
       <div class="scorecard-meta-item ${isComparisonView ? "compare" : ""}">
         <span>Scoring as</span>
-        <strong title="${escapeHtml(targetFace.name)}">${escapeHtml(targetFace.shortName || targetFace.name)}</strong>
+        <strong title="${escapeHtml(targetFace.name)}">${escapeHtml(targetFace.name)}</strong>
       </div>
       <div class="scorecard-meta-item save-status-inline ${isDirty ? "is-dirty" : "is-saved"}">
         <span>Status</span>
@@ -145,6 +186,14 @@
     const notes = escapeHtml(scorecard.notes || "");
     els.scorecardFooter.innerHTML = `
       <div class="scorecard-footer-stats">
+        <div class="footer-stat" title="Average score across recorded plotted and manual arrows">
+          <span>Avg score</span>
+          <strong>${summary.averageScoreText}</strong>
+        </div>
+        <div class="footer-stat" title="Average plotted-arrow distance from target centre">
+          <span>Avg centre</span>
+          <strong>${summary.averageDistanceText}</strong>
+        </div>
         <div class="footer-stat">
           <span>X count</span>
           <strong>${summary.totals.xCount}</strong>
@@ -253,7 +302,7 @@
       targetSelect.addEventListener("change", event => {
         if (distanceManuallyEdited) return;
         const face = App.TargetFaces.getTargetFace(event.target.value);
-        distanceInput.value = face.defaultDistanceM || defaults.distanceM;
+        if (face.defaultDistanceM) distanceInput.value = face.defaultDistanceM;
       });
 
       modalBody.querySelector("[data-close-modal]").addEventListener("click", App.Modal.close);
@@ -284,6 +333,33 @@
     downloadScorecardJson(scorecard);
   }
 
+  async function generateDummyData() {
+    if (!(await App.Modal.confirm({
+      title: "Generate dummy data",
+      message: "This temporary dev tool clears saved scorecards and creates 200 plotted scorecards for Trends testing.",
+      confirmText: "Generate",
+      cancelText: "Cancel",
+      variant: "warning"
+    }))) {
+      return;
+    }
+
+    try {
+      const generated = App.DevDataGenerator.generateScorecards();
+      const newest = generated[generated.length - 1] || null;
+      if (newest) {
+        App.Storage.setLastOpenScorecardId(newest.id);
+        App.State.setScorecard(newest, { dirty: false });
+      } else {
+        App.State.notify("dummyData");
+      }
+      App.Toast.show(`Generated ${generated.length} dummy scorecards`, "success");
+    } catch (error) {
+      console.error(error);
+      App.Toast.show("Could not generate dummy data", "danger");
+    }
+  }
+
   async function importScorecardFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -296,6 +372,7 @@
       try {
         const scorecard = JSON.parse(String(reader.result));
         validateImportedScorecard(scorecard);
+        importBundledCustomTargetFaces(scorecard);
         App.Actions.importScorecard(scorecard);
         App.Toast.show("Scorecard imported", "success");
       } catch (error) {
@@ -309,7 +386,10 @@
   }
 
   function downloadScorecardJson(scorecard) {
-    const blob = new Blob([JSON.stringify(scorecard, null, 2)], { type: "application/json" });
+    const exportData = App.Storage.structuredCloneSafe(scorecard);
+    const customTargetFaces = getReferencedCustomTargetFaces(scorecard);
+    if (customTargetFaces.length) exportData.customTargetFaces = customTargetFaces;
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const safeName = (scorecard.name || "archery-scorecard").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
@@ -327,10 +407,33 @@
     }
   }
 
+  function getReferencedCustomTargetFaces(scorecard) {
+    const ids = new Set([
+      scorecard.originalTargetFaceId,
+      scorecard.activeViewTargetFaceId
+    ].filter(Boolean));
+    return Array.from(ids)
+      .map(id => App.TargetFaces.getTargetFace(id))
+      .filter(face => face && face.isCustom)
+      .map(face => App.Storage.structuredCloneSafe(face));
+  }
+
+  function importBundledCustomTargetFaces(scorecard) {
+    if (!Array.isArray(scorecard.customTargetFaces)) return;
+    scorecard.customTargetFaces.forEach(face => {
+      try {
+        App.TargetFaces.saveCustomTargetFace(face);
+      } catch (error) {
+        console.warn("Could not import custom target face", error);
+      }
+    });
+    delete scorecard.customTargetFaces;
+  }
+
   function renderTargetFaceOptions(selectedId) {
     const groups = App.TargetFaces.getTargetFaceGroups();
     return Object.entries(groups).map(([family, faces]) => {
-      const options = faces.map(face => `<option value="${face.id}" ${face.id === selectedId ? "selected" : ""}>${face.name}</option>`).join("");
+      const options = faces.map(face => `<option value="${escapeHtml(face.id)}" ${face.id === selectedId ? "selected" : ""}>${escapeHtml(face.name)}</option>`).join("");
       return `<optgroup label="${escapeHtml(family)}">${options}</optgroup>`;
     }).join("");
   }

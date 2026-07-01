@@ -1,5 +1,200 @@
 # Sagittarius - Archery Tracker
 
+## v0.7.6 changes
+
+v0.7.6 polishes the Trends Records area and metric explanations.
+
+- Top 5 totals now lives inside the selected Records component.
+- Global records replaces Comparable records and explains the three 70m-equivalent stats.
+- The Trends chart now describes the selected metric instead of using generic trend text.
+- The metric dropdown is ordered by related raw/70m-equivalent physical metrics, with Avg Arrow last.
+- Top 3 leaderboard rank badges are gold, silver, and bronze.
+
+## v0.7.5 changes
+
+v0.7.5 refines Trends records and removes noisy percentage metrics.
+
+- Removed Score % and Avg arrow % from Trends/Records.
+- Added 70m eq group and 70m eq MPI trend metrics.
+- Added an Arrows filter to selected Records.
+- Added a Top 5 totals leaderboard scoped to selected target face, distance, and arrow count.
+- Moved Target Face Manager to the top header beside New Scorecard.
+- Shifted the Trends chart styling toward the app's blue accent.
+
+## v0.7.4 changes
+
+v0.7.4 refines the Trends Records layout and improves trend-view responsiveness with larger saved-scorecard sets.
+
+- Records now has more vertical room and a cleaner two-part layout.
+- The target-face/distance selectors are grouped with the same-face/distance PB cards they control.
+- Timeline x-axis labels now include the year.
+- Trend analytics are cached in memory until saved scorecards or target-face definitions change.
+
+## v0.7.3 changes
+
+v0.7.3 refines Trends records, timeline labels, and generated test data.
+
+- Dummy data now creates 200 scorecards with distance-scaled group sizes, noisier off-days, and more realistic long-term progression.
+- Timeline charts now show multiple x-axis date labels instead of only start/end labels.
+- Records now use a simpler face + distance selector layout.
+- Records include a visual target-face preview plus same-face/distance PBs and cross-context comparable PBs.
+
+## v0.7.2 changes
+
+v0.7.2 expands Trends into a stronger progress and records view.
+
+- Added a **Timeline / Scorecards** spacing toggle for the Trends chart.
+- Added **70m eq centre**, a distance-adjusted accuracy metric based on average centre and shooting distance.
+- Added standard distance filter options for 10, 18, 20, 30, 40, 50, 60, 70, 80, 90, and 100m.
+- Replaced the bottom recent-scorecard list with target-face Records/PB cards grouped by distance.
+- Trend tooltips now open to the left of the cursor when there is not enough room on the right.
+
+## v0.7.1 changes
+
+v0.7.1 polishes Trends view controls and adds a temporary dummy-data generator for graph testing.
+
+- Moved the Trends chart title out of the graph plotting area.
+- Kept the Target / Trends display toggle anchored while the surrounding controls change.
+- Custom dropdown menus near the viewport edge now align inward.
+- Added a temporary **Generate Dummy Data** topbar button that clears saved scorecards and creates 50 plotted scorecards over roughly two years.
+
+## v0.7.0 changes
+
+v0.7.0 adds the first saved-scorecard Trends view.
+
+- Added a **Target / Trends** display toggle in the right panel.
+- Trends view graphs saved scorecards over time.
+- Added trend metrics for Avg Centre, Score %, Group Size, and MPI Offset.
+- Added date range, distance, and target-face filters.
+- Trend points show scorecard context on hover and can open the saved scorecard.
+- Trend records are derived from saved scorecards; no storage migration is required.
+
+## v0.6.7 changes
+
+v0.6.7 refines the optional scorecard table in target image exports.
+
+- Scorecard tables now render to the left of the exported target face.
+- Target faces remain fitted in the right-side export area.
+- Exported arrow score cells are fixed square cells instead of stretching horizontally.
+
+## v0.6.6 changes
+
+v0.6.6 adds an optional scorecard table to target image exports.
+
+- Added a **Scorecard table** export option for target-style PNG exports.
+- All-end target exports include the full scorecard with the target face.
+- Single-end target exports include only that end's scorecard row.
+- Exported scorecard cells use target-zone colours and include Total, Run, Avg Arrow, and Avg Centre.
+
+## v0.6.5 changes
+
+v0.6.5 adds an end-coloured complete target export.
+
+- Added an **End-coloured target** PNG export.
+- Plotted arrows are coloured by end on one complete target face.
+- Dispersion and Enclosing export overlays render individual per-end rings using the same colours as the arrows.
+- Added a compact end-colour key to the exported image.
+
+## v0.6.4 changes
+
+v0.6.4 adds per-end average stats to the scoresheet.
+
+- Added **Avg Arrow** and **Avg Centre** columns after Total and Run.
+- Avg Arrow includes plotted and manual scores recorded in that end.
+- Avg Centre uses plotted arrows only, because manual scores do not have physical positions.
+
+## v0.6.3 changes
+
+v0.6.3 improves the custom target-face editor layout.
+
+- The scoring-zones editor now spans the full modal width below the metadata/preview row.
+- The scoring-zones table no longer needs horizontal scrolling at normal modal width.
+
+## v0.6.2 changes
+
+v0.6.2 makes target labels configurable per scoring zone.
+
+- Moved label size and colour into each scoring-zone row.
+- Kept label position and auto-contrast as shared target-label settings.
+- Auto contrast now disables the per-zone label colour pickers while enabled.
+- Moved derived target diameter into a read-only metadata field near name/short name/family.
+
+## v0.6.1 changes
+
+v0.6.1 refines the custom target-face editor.
+
+- Removed overall target diameter and default distance from the custom-face editor; custom face diameter is now derived from the outermost zone, and distance remains scorecard metadata.
+- Added target label controls for position, size, and colour/auto-contrast.
+- Added drag-and-drop reordering for custom target-face zones.
+- Custom target-face zone order is preserved for editor/manual-score presentation while scoring and rendering still use physical radii.
+
+## v0.6.0 changes
+
+v0.6.0 adds the first custom target-face workflow.
+
+- Added a **Faces** manager beside the scorecard target selector.
+- Built-in target faces remain read-only, but can be duplicated into editable custom faces.
+- Custom faces are saved locally and appear in target-face selectors for new and existing scorecards.
+- The editor supports target metadata, zone labels/scores, zone diameters, colours, border colours, border widths, target-label settings, validation, and a live preview.
+- Scorecard JSON export now bundles referenced custom target-face definitions so custom-face scorecards can be imported on another browser.
+
+## v0.5.9 changes
+
+v0.5.9 refines viewport controls and export visibility.
+
+- Regrouped viewport controls into clearer View, Mode, Canvas, Overlays, and Export clusters.
+- Added target visibility to the Export Image options.
+- Exported current target, full target, and end sheet PNGs now respect the export target visibility setting.
+
+## v0.5.8 changes
+
+v0.5.8 expands plotted-arrow viewport analysis.
+
+- Added a confidence ellipse to the **Dispersion** grouping overlay.
+- Added a gold mean point of impact marker for plotted arrows.
+- The viewport HUD now shows mean point of impact offset from centre plus horizontal and vertical spread for the currently visible arrows.
+- No saved-scorecard migration is required because these values are derived from plotted arrow positions.
+
+## v0.5.7 changes
+
+v0.5.7 restores the previous header mark for readability at the current app-header size.
+
+- Restored the text-based Sagittarius brand mark.
+- Removed the temporary supplied logo image from the app.
+
+## v0.5.6 changes
+
+v0.5.6 makes a small UI polish pass.
+
+- Replaced the header text mark with the supplied Sagittarius logo image.
+- Renamed grouping controls to **Dispersion** and **Enclosing**.
+- Restyled **Export Image** as a normal viewport button.
+- Shot on and Scoring as metadata now show full target-face names with ellipsis overflow.
+
+## v0.5.5 changes
+
+v0.5.5 adds a live viewport control for reducing target-face visual dominance while inspecting plotted arrows and grouping overlays.
+
+- Added a Target slider to the viewport toolbar.
+- The slider dims and desaturates the target face while keeping plotted arrows, labels, grouping overlays, scale, and HUD elements fully visible.
+- Target fade is viewport-only UI state and does not alter scorecard data. Export Image has its own target visibility option.
+
+## v0.5.4 changes
+
+v0.5.4 prevents target-face comparisons from producing impossible manual scores.
+
+- Locked the target-face selector while a scorecard contains manual score entries.
+- Target-face comparison unlocks again after manual scores are cleared.
+- No saved-scorecard migration is required because the lock is derived from existing arrow data.
+
+## v0.5.3 changes
+
+v0.5.3 adds two derived scorecard analysis stats to the scorecard footer.
+
+- Added average arrow score, calculated from recorded plotted and manual arrows.
+- Added average plotted-arrow distance from target centre, calculated from plotted arrows only.
+- No saved-scorecard migration is required because both stats are derived from existing scorecard data.
+
 ## v0.5.2 changes
 
 v0.5.2 prepares the project for GitHub/Codex-based development. App functionality is unchanged from v0.5.1.
@@ -245,7 +440,7 @@ Milestone 3 adds target-face flexibility and comparison scoring.
 - When viewing/scoring against a different target face, the scorecard strip displays a **Scoring as** comparison chip.
 - The viewport HUD also shows the original shot-on target when it differs from the active target.
 - Target swapping no longer automatically fits the viewport. This preserves physical scale so smaller faces remain visibly smaller unless you intentionally press **Fit**.
-- The New Scorecard modal auto-updates the distance to the selected target face default unless the distance field has already been edited manually.
+- The New Scorecard modal auto-updates the distance to a selected built-in target face default unless the distance field has already been edited manually. Custom target faces leave the scorecard distance unchanged.
 - Indoor Archery WA target faces include the custom X/8/7/5 scoring model:
   - X = 8 points
   - 8 = 8 points
@@ -365,7 +560,7 @@ Manual scores are stored separately from plotted positions:
 
 ## Important files
 
-- `js/data/targetFaces.js` — built-in target face definitions.
+- `js/data/targetFaces.js` — built-in and locally saved custom target face definitions/APIs.
 - `js/data/scorecardFactory.js` — creates new scorecard data.
 - `js/data/storage.js` — localStorage persistence and saved-scorecard summaries.
 - `js/scoring/scoringEngine.js` — scoring logic.
@@ -375,13 +570,62 @@ Manual scores are stored separately from plotted positions:
 - `js/viewport/exportRenderer.js` — clean PNG exports for target images and end sheets.
 - `js/scorecard/ScorecardView.js` — scorecard rendering and selection.
 - `js/ui/topControls.js` — app-level controls, editable scorecard panel metadata, new scorecard modal, import/export.
+- `js/ui/targetFaceManager.js` — custom target-face library/editor UI.
 - `js/ui/scorecardBrowser.js` — saved-scorecard browser and saved-scorecard actions.
 
 ## Version
 
-0.5.0
+0.7.6
 
-v0.5.0 — Scorecard panel layout refinement: removed Details, moved Save into the scorecard panel, setup metadata above the arrow grid, and stats/notes/round type below it.
+v0.7.6 - Trends Records layout polish, Global records explanations, metric-specific chart subtitles, reordered metric dropdown, and medal-coloured leaderboard ranks.
+
+v0.7.5 - Trends percentage metrics removed, Records arrow-count filter, scoped Top 5 totals leaderboard, topbar Target Face Manager, and bluer chart styling.
+
+v0.7.4 - Larger Trends Records panel, grouped record selectors, year-aware timeline labels, and cached trend analytics.
+
+v0.7.3 - Trends Records redesign, richer timeline labels, and more realistic 200-scorecard dummy data.
+
+v0.7.2 - Trends chart spacing toggle, distance-adjusted accuracy, expanded distance filters, and Records/PB panel.
+
+v0.7.1 - Trends control polish and temporary dummy scorecard data generator.
+
+v0.7.0 - Saved-scorecard Trends view with filtered progress graphs.
+
+v0.6.7 - Export scorecard tables render left of the target face with square arrow score cells.
+
+v0.6.6 - Optional scorecard table on target image exports, scoped to the visible end for single-end exports.
+
+v0.6.5 - End-coloured complete target export with matching per-end grouping rings.
+
+v0.6.4 - Scoresheet end rows show Avg Arrow and Avg Centre columns.
+
+v0.6.3 - Custom target-face scoring-zones editor uses the full modal width.
+
+v0.6.2 - Per-zone target label size/colour controls and shared auto-contrast handling.
+
+v0.6.1 - Custom target-face editor refinement: derived diameter, scorecard-owned distance, label controls, and drag-and-drop zone ordering.
+
+v0.6.0 - Custom target-face manager/editor with local custom-face storage and scorecard JSON bundling.
+
+v0.5.9 - Viewport control grouping and export target visibility slider.
+
+v0.5.8 - Viewport analysis: confidence ellipse, mean point of impact marker, and visible-arrow offset/spread HUD stats.
+
+v0.5.7 - Restored the previous text-based header mark.
+
+v0.5.6 - UI polish: supplied header logo, clearer grouping labels, normal Export Image button, and full target-face names in metadata.
+
+v0.5.5 - Target fade viewport control: live target-face dim/desaturate slider for easier arrow and grouping inspection.
+
+v0.5.4 - Manual-score target lock: target-face comparison is disabled while manual score entries exist.
+
+v0.5.3 - Scorecard footer average stats: average arrow score and average plotted-arrow distance from target centre.
+
+v0.5.2 - Codex/repository preparation: added repository guidance and workflow documentation without app behaviour changes.
+
+v0.5.1 - Scorecard panel refinement: restored the top total pill, moved Save beside it, moved status into the metadata row, and gave Notes the full lower footer.
+
+v0.5.0 - Scorecard panel layout refinement: removed Details, moved Save into the scorecard panel, setup metadata above the arrow grid, and stats/notes/round type below it.
 
 0.4.2
 

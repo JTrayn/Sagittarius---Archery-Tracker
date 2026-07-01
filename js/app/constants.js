@@ -2,7 +2,7 @@
   window.ArcheryApp = window.ArcheryApp || {};
 
   window.ArcheryApp.Constants = {
-    APP_VERSION: "0.5.2",
+    APP_VERSION: "0.7.6",
     SCHEMA_VERSION: 1,
     DEFAULT_TARGET_FACE_ID: "wa_122cm_full",
     DEFAULT_SCORECARD: {
@@ -15,6 +15,8 @@
       SCORECARD_INDEX: "sagittarius.scorecards.index.v1",
       SCORECARD_PREFIX: "sagittarius.scorecard.v1.",
       LAST_SCORECARD_ID: "sagittarius.lastScorecardId.v1",
+      CUSTOM_TARGET_FACE_INDEX: "sagittarius.customTargetFaces.index.v1",
+      CUSTOM_TARGET_FACE_PREFIX: "sagittarius.customTargetFace.v1.",
       LEGACY_INDEX: "archeryScore.sessions.index.v1",
       LEGACY_PREFIX: "archeryScore.session.v1.",
       LEGACY_LAST_ID: "archeryScore.lastSessionId.v1"

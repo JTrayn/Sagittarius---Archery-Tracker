@@ -25,21 +25,52 @@
       }
     });
 
+    const trendsView = new App.TrendsView({
+      root: document.getElementById("trendsView"),
+      canvas: document.getElementById("trendsCanvas"),
+      summary: document.getElementById("trendsSummary"),
+      records: document.getElementById("trendsRecords"),
+      tooltip: document.getElementById("trendsTooltip"),
+      metricSelect: document.getElementById("trendMetricSelect"),
+      rangeSelect: document.getElementById("trendRangeSelect"),
+      distanceSelect: document.getElementById("trendDistanceSelect"),
+      targetSelect: document.getElementById("trendTargetSelect"),
+      spacingTimelineBtn: document.getElementById("trendSpacingTimelineBtn"),
+      spacingScorecardsBtn: document.getElementById("trendSpacingScorecardsBtn"),
+      modeHint: document.getElementById("viewportModeHint")
+    });
+
+    const targetViewBtn = document.getElementById("targetViewBtn");
+    const trendsViewBtn = document.getElementById("trendsViewBtn");
+    const targetControlClusters = Array.from(document.querySelectorAll(".target-control-cluster"));
+    const trendsControlCluster = document.querySelector(".trends-control-cluster");
+    const targetCanvas = document.getElementById("targetCanvas");
+    const trendsViewEl = document.getElementById("trendsView");
+    const viewportHud = document.getElementById("viewportHud");
+    const zoomHud = document.getElementById("zoomHud");
     const plotModeBtn = document.getElementById("plotModeBtn");
     const editModeBtn = document.getElementById("editModeBtn");
     const lockedModeBtn = document.getElementById("lockedModeBtn");
     const visibleEndSelect = document.getElementById("visibleEndSelect");
+    const targetFadeRange = document.getElementById("targetFadeRange");
+    const targetFadeValue = document.getElementById("targetFadeValue");
     const toggleLabelsBtn = document.getElementById("toggleLabelsBtn");
     const toggleRadialGroupingBtn = document.getElementById("toggleRadialGroupingBtn");
     const toggleSimpleGroupingBtn = document.getElementById("toggleSimpleGroupingBtn");
     const exportTargetImageBtn = document.getElementById("exportTargetImageBtn");
 
+    targetViewBtn.addEventListener("click", () => App.Actions.setViewportDisplayMode("target"));
+    trendsViewBtn.addEventListener("click", () => App.Actions.setViewportDisplayMode("trends"));
     plotModeBtn.addEventListener("click", () => App.Actions.setViewportMode("plot"));
     editModeBtn.addEventListener("click", () => App.Actions.setViewportMode("edit"));
     lockedModeBtn.addEventListener("click", () => App.Actions.setViewportMode("locked"));
 
     visibleEndSelect.addEventListener("change", event => {
       App.Actions.setVisibleEndIndex(event.target.value === "all" ? null : Number(event.target.value));
+    });
+
+    targetFadeRange.addEventListener("input", event => {
+      App.Actions.setTargetFaceVisibility(Number(event.target.value) / 100);
     });
 
     document.getElementById("fitTargetBtn").addEventListener("click", () => viewport.fitTarget(false));
@@ -65,14 +96,26 @@
       lockedModeBtn.classList.toggle("is-active", state.viewport.interactionMode === "locked");
       toggleLabelsBtn.textContent = "Labels";
       toggleLabelsBtn.classList.toggle("is-active", state.viewport.showArrowLabels);
-      toggleRadialGroupingBtn.textContent = "Radial";
+      toggleRadialGroupingBtn.textContent = "Dispersion";
       toggleRadialGroupingBtn.classList.toggle("is-active", state.viewport.showRadialGrouping);
-      toggleSimpleGroupingBtn.textContent = "Simple";
+      toggleSimpleGroupingBtn.textContent = "Enclosing";
       toggleSimpleGroupingBtn.classList.toggle("is-active", state.viewport.showSimpleGrouping);
+      updateViewportDisplayMode(state, {
+        targetViewBtn,
+        trendsViewBtn,
+        targetControlClusters,
+        trendsControlCluster,
+        targetCanvas,
+        trendsViewEl,
+        viewportHud,
+        zoomHud
+      });
+      updateTargetFadeControl(state, targetFadeRange, targetFadeValue);
       renderVisibleEndSelect(state, visibleEndSelect);
       App.TopControls.render(state);
       scorecard.render(state);
       viewport.setState(state);
+      trendsView.render(state);
       if (reason === "setScorecard") {
         window.requestAnimationFrame(() => viewport.fitTarget(true));
       }
@@ -111,6 +154,30 @@
     if (App.CustomSelect) App.CustomSelect.enhance(select);
   }
 
+  function updateViewportDisplayMode(state, elements) {
+    const showTrends = state.viewport.displayMode === "trends";
+    elements.targetViewBtn.classList.toggle("is-active", !showTrends);
+    elements.trendsViewBtn.classList.toggle("is-active", showTrends);
+    elements.targetControlClusters.forEach(cluster => cluster.classList.toggle("hidden", showTrends));
+    elements.trendsControlCluster.classList.toggle("hidden", !showTrends);
+    elements.targetCanvas.classList.toggle("hidden", showTrends);
+    elements.trendsViewEl.classList.toggle("hidden", !showTrends);
+    elements.viewportHud.classList.toggle("hidden", showTrends);
+    elements.zoomHud.classList.toggle("hidden", showTrends);
+  }
+
+  function updateTargetFadeControl(state, range, output) {
+    const visibility = App.Geometry.clamp(Number(state.viewport.targetFaceVisibility) || 1, 0.35, 1);
+    const percent = Math.round(visibility * 100);
+    updateVisibilityRangeControl(range, output, percent);
+  }
+
+  function updateVisibilityRangeControl(range, output, percent) {
+    if (range.value !== String(percent)) range.value = String(percent);
+    range.style.setProperty("--range-progress", `${((percent - 35) / 65) * 100}%`);
+    output.textContent = `${percent}%`;
+  }
+
   function openExportImageModal() {
     const state = App.State.getState();
     const scorecard = state.scorecard;
@@ -120,21 +187,31 @@
     }
     const targetFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId);
     const visibleText = state.viewport.visibleEndIndex === null ? "All ends" : `End ${state.viewport.visibleEndIndex + 1}`;
+    const targetVisibilityPercent = Math.round(App.Geometry.clamp(Number(state.viewport.targetFaceVisibility) || 1, 0.35, 1) * 100);
     const body = `<div class="export-modal-copy">
       <p>Export clean PNG images using the active target face and current scoring rules.</p>
       <div class="export-option-panel">
-        <strong>Include in exported image</strong>
+        <strong>Export image appearance</strong>
+        <label class="viewport-fade-control export-target-visibility-control" for="exportTargetVisibilityRange" title="Adjust target face visibility in exported PNG images">
+          <span>Target</span>
+          <input id="exportTargetVisibilityRange" type="range" name="targetVisibility" min="35" max="100" step="5" value="${targetVisibilityPercent}" />
+          <output id="exportTargetVisibilityValue" for="exportTargetVisibilityRange">${targetVisibilityPercent}%</output>
+        </label>
         <label class="export-check">
           <input type="checkbox" name="showLabels" ${state.viewport.showArrowLabels ? "checked" : ""} />
           <span>Arrow labels</span>
         </label>
         <label class="export-check">
           <input type="checkbox" name="showRadial" ${state.viewport.showRadialGrouping ? "checked" : ""} />
-          <span>Radial grouping ring</span>
+          <span>Dispersion grouping ring</span>
         </label>
         <label class="export-check">
           <input type="checkbox" name="showSimple" ${state.viewport.showSimpleGrouping ? "checked" : ""} />
-          <span>Simple grouping ring</span>
+          <span>Enclosing grouping ring</span>
+        </label>
+        <label class="export-check">
+          <input type="checkbox" name="includeScorecard" />
+          <span>Scorecard table</span>
         </label>
       </div>
       <div class="export-choice-list">
@@ -145,6 +222,10 @@
         <button class="export-choice" type="button" data-export-kind="full">
           <strong>Complete scorecard target</strong>
           <span>All plotted arrows on one full target image</span>
+        </button>
+        <button class="export-choice" type="button" data-export-kind="end-colour">
+          <strong>End-coloured target</strong>
+          <span>All plotted arrows coloured by end with matching grouping rings</span>
         </button>
         <button class="export-choice" type="button" data-export-kind="sheet">
           <strong>End sheet</strong>
@@ -157,6 +238,12 @@
     </div>`;
 
     App.Modal.open("Export Image", body, modalBody => {
+      const exportVisibilityRange = modalBody.querySelector("input[name='targetVisibility']");
+      const exportVisibilityValue = modalBody.querySelector("#exportTargetVisibilityValue");
+      updateVisibilityRangeControl(exportVisibilityRange, exportVisibilityValue, targetVisibilityPercent);
+      exportVisibilityRange.addEventListener("input", event => {
+        updateVisibilityRangeControl(exportVisibilityRange, exportVisibilityValue, Number(event.target.value) || 100);
+      });
       modalBody.querySelector("[data-close-modal]").addEventListener("click", App.Modal.close);
       modalBody.querySelectorAll("[data-export-kind]").forEach(button => {
         button.addEventListener("click", () => {
@@ -168,6 +255,8 @@
               App.ExportRenderer.exportVisibleTarget(scorecard, targetFace, state.viewport.visibleEndIndex, exportOptions);
             } else if (kind === "full") {
               App.ExportRenderer.exportFullScorecardTarget(scorecard, targetFace, exportOptions);
+            } else if (kind === "end-colour") {
+              App.ExportRenderer.exportEndColourTarget(scorecard, targetFace, exportOptions);
             } else if (kind === "sheet") {
               App.ExportRenderer.exportEndSheet(scorecard, targetFace, exportOptions);
             }
@@ -179,10 +268,13 @@
 
 
   function readExportOptions(modalBody) {
+    const visibilityPercent = Number(modalBody.querySelector("input[name='targetVisibility']")?.value) || 100;
     return {
       showArrowLabels: Boolean(modalBody.querySelector("input[name='showLabels']")?.checked),
       showRadialGrouping: Boolean(modalBody.querySelector("input[name='showRadial']")?.checked),
-      showSimpleGrouping: Boolean(modalBody.querySelector("input[name='showSimple']")?.checked)
+      showSimpleGrouping: Boolean(modalBody.querySelector("input[name='showSimple']")?.checked),
+      includeScorecard: Boolean(modalBody.querySelector("input[name='includeScorecard']")?.checked),
+      targetFaceVisibility: App.Geometry.clamp(visibilityPercent / 100, 0.35, 1)
     };
   }
 

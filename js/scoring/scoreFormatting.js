@@ -17,7 +17,13 @@
     const totals = App.ScoringEngine.calculateScorecardTotals(scorecard, targetFace);
     const arrowsText = `${totals.recordedArrows}/${totals.totalArrows} arrows`;
     const scoreText = `${totals.scorecardTotal}/${totals.possibleTotal}`;
-    return { totals, arrowsText, scoreText };
+    const averageScoreText = totals.averageArrowScore === null
+      ? "-"
+      : totals.averageArrowScore.toFixed(1);
+    const averageDistanceText = totals.averageDistanceFromCentreMm === null
+      ? "-"
+      : `${totals.averageDistanceFromCentreMm.toFixed(1)}mm`;
+    return { totals, arrowsText, scoreText, averageScoreText, averageDistanceText };
   }
 
   App.ScoreFormatting = {

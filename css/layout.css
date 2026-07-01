@@ -68,4 +68,5 @@
 
 .viewport-toolbar {
   padding-bottom: 13px;
+  align-items: flex-start;
 }
