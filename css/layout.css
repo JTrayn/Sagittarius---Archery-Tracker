@@ -1,0 +1,71 @@
+.app-shell {
+  height: 100vh;
+  padding: 18px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #051018;
+  font-size: 1.7rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 16px 34px rgba(85, 214, 190, 0.22);
+}
+
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(390px, 35fr) minmax(620px, 65fr);
+  gap: 14px;
+}
+
+.score-panel,
+.viewport-panel {
+  min-height: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.score-panel {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.viewport-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.panel-heading,
+.viewport-toolbar {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.viewport-toolbar {
+  padding-bottom: 13px;
+}

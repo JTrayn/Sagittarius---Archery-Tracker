@@ -1,0 +1,65 @@
+.canvas-wrap {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.05), transparent 30rem),
+    linear-gradient(135deg, rgba(2, 9, 15, 0.78), rgba(7, 18, 28, 0.92));
+}
+
+#targetCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+#targetCanvas.dragging {
+  cursor: grabbing;
+}
+
+.viewport-hud {
+  position: absolute;
+  pointer-events: none;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(151, 184, 212, 0.14);
+  background: rgba(7, 17, 27, 0.64);
+  color: var(--muted);
+  font-size: 0.8rem;
+  backdrop-filter: blur(10px);
+}
+
+.viewport-hud strong {
+  color: var(--text);
+}
+
+.viewport-hud.top-left {
+  left: 14px;
+  top: 14px;
+}
+
+.viewport-hud.bottom-right {
+  right: 14px;
+  bottom: 14px;
+}
+
+#targetCanvas[data-mode="edit"] {
+  cursor: default;
+}
+
+#targetCanvas[data-mode="edit"].hovering-arrow {
+  cursor: grab;
+}
+
+#targetCanvas[data-mode="edit"].moving-arrow {
+  cursor: grabbing;
+}
+
+#targetCanvas[data-mode="locked"] {
+  cursor: default;
+}
+
+#targetCanvas[data-mode="locked"].hovering-arrow {
+  cursor: pointer;
+}
