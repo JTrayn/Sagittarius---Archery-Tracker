@@ -12,23 +12,29 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
+    <header class="topbar app-commandbar">
       <div class="brand-block">
-        <div class="brand-mark">◎</div>
-        <div>
-          <h1>Sagittarius</h1>
-          <p id="appVersionLabel">Archery Tracker</p>
+        <div class="brand-mark" aria-hidden="true">◎</div>
+        <div class="brand-copy">
+          <div class="brand-title-row">
+            <h1>Sagittarius</h1>
+            <span class="brand-version" id="appVersionLabel">v0.9.0</span>
+          </div>
+          <p>Archery Tracker</p>
         </div>
       </div>
 
-      <div class="toolbar" id="topControls">
-        <button class="btn btn-primary" id="newScorecardBtn" type="button">New Scorecard</button>
-        <button class="btn" id="manageTargetFacesBtn" type="button">Target Face Manager</button>
-        <button class="btn" id="loadScorecardBtn" type="button">Load</button>
-        <button class="btn" id="exportScorecardBtn" type="button">Export JSON</button>
-        <label class="btn file-btn" for="importScorecardInput">Import JSON</label>
+      <div class="toolbar topbar-actions" id="topControls" aria-label="Application actions">
+        <button class="btn btn-primary" id="newScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">＋</span><span>New scorecard</span></button>
+        <button class="btn" id="loadScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">⌁</span><span>Load scorecard</span></button>
+        <button class="btn" id="saveScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">✓</span><span>Save scorecard</span></button>
+        <button class="btn" id="editScorecardBtn" type="button" aria-label="Edit scorecard details"><span class="btn-symbol" aria-hidden="true">✎</span><span>Edit scorecard</span></button>
+        <span class="topbar-save-status is-unsaved" id="topbarSaveStatus" aria-live="polite">Unsaved</span>
+        <button class="btn" id="manageTargetFacesBtn" type="button"><span class="btn-symbol" aria-hidden="true">◎</span><span>Target face manager</span></button>
+        <button class="btn" id="exportScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">⇩</span><span>Export</span></button>
+        <label class="btn file-btn" for="importScorecardInput"><span class="btn-symbol" aria-hidden="true">⇧</span><span>Import</span></label>
         <input id="importScorecardInput" type="file" accept="application/json,.json" hidden />
-        <button class="btn btn-dev" id="generateDummyDataBtn" type="button">Generate Dummy Data</button>
+        <button class="btn btn-dev" id="generateDummyDataBtn" type="button"><span class="btn-symbol" aria-hidden="true">✦</span><span>Dummy</span></button>
       </div>
     </header>
 
@@ -36,42 +42,26 @@
       <section class="score-panel glass-card">
         <div class="scorecard-overview">
           <div class="scorecard-overview-head">
-            <div>
-              <span class="panel-eyebrow">Scorecard</span>
-              <h2 id="scorecardPanelTitle">Scorecard setup</h2>
-            </div>
-            <div class="scorecard-score-actions">
-              <button class="btn btn-primary" id="saveScorecardBtn" type="button">Save</button>
-              <div class="score-total-pill" id="scorecardTotalPill" aria-label="Scorecard total">
-                <span class="score-total-value">0</span>
-                <span class="score-total-max">/ 0</span>
+            <div class="scorecard-title-cluster">
+              <div class="scorecard-title-block">
+                <span class="panel-eyebrow">Scorecard</span>
+                <div class="scorecard-title-main-row">
+                  <h2 id="scorecardDisplayName">New scorecard</h2>
+                </div>
+                <p class="scorecard-summary-line" id="scorecardPanelTitle">World Archery 122cm · 70m</p>
               </div>
+              <div class="score-pb-badge-slot" id="scorecardPbBadgeSlot" aria-live="polite"></div>
             </div>
           </div>
 
-          <div class="scorecard-edit-grid scorecard-primary-fields">
-            <label class="scorecard-name-field">
-              <span>Name</span>
-              <input id="scorecardNameInput" type="text" autocomplete="off" />
-            </label>
-            <div class="target-face-field">
-              <label>
-                <span>Target face</span>
-                <select id="targetFaceSelect"></select>
-              </label>
+          <div class="scorecard-scoreline" aria-label="Scorecard score summary">
+            <div class="score-total-pill score-total-text" id="scorecardTotalPill" aria-label="Scorecard total">
+              <span class="score-total-value">0</span>
+              <span class="score-total-max">/ 0</span>
             </div>
-            <label>
-              <span>Distance</span>
-              <div class="input-with-unit">
-                <input id="distanceInput" type="number" min="1" step="1" />
-                <span>m</span>
-              </div>
-            </label>
-            <label>
-              <span>Date</span>
-              <input id="shotAtInput" type="datetime-local" />
-            </label>
           </div>
+
+          <div class="scorecard-info-grid" id="scorecardInfoGrid"></div>
 
           <div class="scorecard-meta-strip" id="scorecardTopMeta"></div>
         </div>
@@ -83,13 +73,13 @@
         <div class="scorecard-footer" id="scorecardFooter"></div>
       </section>
 
+      <div class="workspace-splitter" id="workspaceSplitter" role="separator" aria-label="Resize scorecard and target viewport" aria-orientation="vertical" tabindex="0">
+        <span aria-hidden="true"></span>
+      </div>
+
       <section class="viewport-panel glass-card">
         <div class="viewport-toolbar">
           <div class="viewport-toolbar-copy">
-            <h2>Target viewport</h2>
-            <p id="viewportModeHint">Plot mode · left click to plot · drag empty space to pan</p>
-          </div>
-          <div class="viewport-actions">
             <div class="viewport-control-cluster viewport-display-cluster" aria-label="Viewport display controls">
               <span class="viewport-cluster-label">Display</span>
               <div class="viewport-control-group" aria-label="Viewport display">
@@ -97,41 +87,71 @@
                 <button class="btn btn-small btn-mode" id="trendsViewBtn" type="button">Trends</button>
               </div>
             </div>
-            <div class="viewport-control-cluster viewport-view-cluster target-control-cluster" aria-label="View controls">
-              <span class="viewport-cluster-label">View</span>
-              <label class="viewport-fade-control" for="targetFadeRange" title="Adjust target face visibility in the live viewport">
-                <span>Target</span>
-                <input id="targetFadeRange" type="range" min="35" max="100" step="5" value="100" />
-                <output id="targetFadeValue" for="targetFadeRange">100%</output>
-              </label>
+            <p id="viewportModeHint">Plot mode · left click to plot · drag empty space to pan</p>
+          </div>
+          <div class="viewport-actions">
+            <div class="viewport-control-cluster viewport-navigation-cluster viewport-view-cluster target-control-cluster" aria-label="Viewport navigation controls">
+              <span class="viewport-cluster-label">Navigate</span>
               <label class="viewport-select-label" for="visibleEndSelect">
                 <span>Show</span>
                 <select id="visibleEndSelect" class="viewport-select"></select>
               </label>
+              <button class="btn btn-small" id="fitTargetBtn" type="button" title="Fit the target to the viewport">Fit</button>
+              <button class="btn btn-small" id="resetViewBtn" type="button" title="Re-centre the target without changing zoom">Centre</button>
             </div>
-            <div class="viewport-control-cluster target-control-cluster" aria-label="Interaction mode controls">
-              <span class="viewport-cluster-label">Mode</span>
+            <div class="viewport-control-cluster target-control-cluster viewport-input-cluster" aria-label="Arrow interaction controls">
+              <span class="viewport-cluster-label">Input</span>
               <div class="viewport-control-group" aria-label="Interaction mode">
                 <button class="btn btn-small btn-mode is-active" id="plotModeBtn" type="button">Plot</button>
                 <button class="btn btn-small btn-mode" id="editModeBtn" type="button">Edit</button>
                 <button class="btn btn-small btn-mode" id="lockedModeBtn" type="button">Locked</button>
               </div>
             </div>
-            <div class="viewport-control-cluster target-control-cluster" aria-label="Canvas view controls">
-              <span class="viewport-cluster-label">Canvas</span>
-              <button class="btn btn-small" id="fitTargetBtn" type="button">Fit</button>
-              <button class="btn btn-small" id="resetViewBtn" type="button">Centre</button>
-            </div>
-            <div class="viewport-control-cluster target-control-cluster" aria-label="Overlay controls">
-              <span class="viewport-cluster-label">Overlays</span>
-              <button class="btn btn-small btn-toggle is-active" id="toggleLabelsBtn" type="button">Labels</button>
-              <div class="viewport-control-group group-control-group" aria-label="Grouping overlays">
-                <button class="btn btn-small btn-toggle btn-toggle-radial is-active" id="toggleRadialGroupingBtn" type="button" title="Show radial standard-deviation dispersion ring">Dispersion</button>
-                <button class="btn btn-small btn-toggle btn-toggle-simple" id="toggleSimpleGroupingBtn" type="button" title="Show minimum enclosing circle">Enclosing</button>
+            <div class="viewport-control-cluster target-control-cluster overlay-control-cluster viewport-analysis-cluster" aria-label="Analysis controls">
+              <span class="viewport-cluster-label">Analysis</span>
+              <div class="viewport-overlay-dropdown" id="overlayDropdown">
+                <button class="btn btn-small btn-toggle overlay-menu-trigger dropdown-trigger" id="overlayMenuBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                  <span class="dropdown-trigger-label">Overlays</span>
+                  <span class="dropdown-trigger-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="viewport-overlay-menu" id="overlayMenu" role="menu" aria-label="Overlays" hidden>
+                  <button class="viewport-overlay-menu-item" type="button" role="menuitemcheckbox" data-overlay-toggle="labels" aria-checked="true" title="Show arrow sequence labels">
+                    <span class="overlay-menu-check" aria-hidden="true"></span>
+                    <span class="overlay-menu-copy"><strong>Labels</strong><small>Arrow sequence numbers</small></span>
+                  </button>
+                  <button class="viewport-overlay-menu-item" type="button" role="menuitemcheckbox" data-overlay-toggle="radial" aria-checked="false" title="Show radial standard-deviation dispersion ring">
+                    <span class="overlay-menu-check" aria-hidden="true"></span>
+                    <span class="overlay-menu-copy"><strong>Dispersion</strong><small>Radial standard-deviation ring</small></span>
+                  </button>
+                  <button class="viewport-overlay-menu-item" type="button" role="menuitemcheckbox" data-overlay-toggle="simple" aria-checked="false" title="Show minimum enclosing circle">
+                    <span class="overlay-menu-check" aria-hidden="true"></span>
+                    <span class="overlay-menu-copy"><strong>Enclosing</strong><small>Minimum circle around plotted arrows</small></span>
+                  </button>
+                  <button class="viewport-overlay-menu-item" type="button" role="menuitemcheckbox" data-overlay-toggle="dna" aria-checked="false" title="Show Shot DNA Intelligence overlay">
+                    <span class="overlay-menu-check" aria-hidden="true"></span>
+                    <span class="overlay-menu-copy"><strong>DNA</strong><small>Shot Pattern Intelligence layer</small></span>
+                  </button>
+                  <button class="viewport-overlay-menu-item" type="button" role="menuitemcheckbox" data-overlay-toggle="ringBreakLuck" aria-checked="false" title="Colour arrows by Ring Break Luck">
+                    <span class="overlay-menu-check" aria-hidden="true"></span>
+                    <span class="overlay-menu-copy"><strong>Ring Break Luck</strong><small>Green line-cutters, red near-misses</small></span>
+                  </button>
+                </div>
               </div>
+              <button class="btn btn-small" id="openIntelligenceBtn" type="button" title="Open Performance Intelligence">Intelligence</button>
             </div>
-            <div class="viewport-control-cluster viewport-export-cluster target-control-cluster" aria-label="Export controls">
-              <button class="btn btn-small" id="exportTargetImageBtn" type="button">Export Image</button>
+            <div class="viewport-control-cluster target-control-cluster extrapolate-control-cluster viewport-tools-cluster" aria-label="Projection and replay controls">
+              <span class="viewport-cluster-label">Tools</span>
+              <button class="btn btn-small btn-toggle" id="toggleTimelineBtn" type="button" aria-pressed="false">Timeline</button>
+              <button class="btn btn-small btn-toggle" id="toggleExtrapolateBtn" type="button" aria-pressed="false">Extrapolate</button>
+              <label class="viewport-fade-control extrapolate-distance-control is-disabled" for="extrapolateDistanceRange" title="Project plotted arrows from the real scorecard distance to another distance">
+                <span>To</span>
+                <input id="extrapolateDistanceRange" type="range" min="10" max="100" step="0.1" value="70" disabled />
+                <output id="extrapolateDistanceValue" for="extrapolateDistanceRange">70m</output>
+              </label>
+            </div>
+            <div class="viewport-control-cluster viewport-export-cluster target-control-cluster viewport-output-cluster" aria-label="Output controls">
+              <span class="viewport-cluster-label">Output</span>
+              <button class="btn btn-small" id="exportTargetImageBtn" type="button" title="Export target image">Export</button>
             </div>
             <div class="viewport-control-cluster trends-control-cluster hidden" aria-label="Trend controls">
               <span class="viewport-cluster-label">Trends</span>
@@ -176,6 +196,30 @@
           <canvas id="targetCanvas"></canvas>
           <div class="viewport-hud top-left" id="viewportHud"></div>
           <div class="viewport-hud bottom-right" id="zoomHud"></div>
+          <div class="viewport-mode-badge is-plot" id="viewportModeBadge" aria-live="polite">Plot</div>
+          <div class="viewport-extrapolation-warning hidden" id="extrapolationWarning" aria-live="polite"></div>
+          <div class="timeline-panel hidden" id="timelinePanel" aria-label="Timeline replay controls">
+            <div class="timeline-actions">
+              <button class="btn btn-small" id="timelinePlayPauseBtn" type="button">Play</button>
+              <button class="btn btn-small" id="timelineResetBtn" type="button">Reset</button>
+              <label class="timeline-select-label timeline-view-label" for="timelineViewModeSelect">
+                <span>View</span>
+                <select id="timelineViewModeSelect" class="viewport-select">
+                  <option value="scorecard">Full</option>
+                  <option value="ends">Ends</option>
+                </select>
+              </label>
+              <button class="btn btn-small btn-toggle timeline-end-fit-btn hidden" id="timelineEndZoomFitBtn" type="button" aria-pressed="false" title="Zoom each end target to fit its own plotted arrows">Zoom to Fit</button>
+              <label class="timeline-select-label timeline-speed-label" for="timelineSpeedSelect">
+                <span>Speed</span>
+                <select id="timelineSpeedSelect" class="viewport-select">
+                  <option value="0.5">0.5x</option>
+                  <option value="1">1x</option>
+                  <option value="2" selected>2x</option>
+                </select>
+              </label>
+            </div>
+          </div>
           <div class="trends-view hidden" id="trendsView">
             <div class="trends-summary" id="trendsSummary"></div>
             <div class="trends-chart-region">
@@ -208,7 +252,9 @@
   <script src="js/data/targetFaces.js"></script>
   <script src="js/data/scorecardFactory.js"></script>
   <script src="js/data/storage.js"></script>
+  <script src="js/scoring/extrapolation.js"></script>
   <script src="js/scoring/scoringEngine.js"></script>
+  <script src="js/scoring/ringBreakLuck.js"></script>
   <script src="js/scoring/scoreFormatting.js"></script>
   <script src="js/app/state.js"></script>
   <script src="js/app/actions.js"></script>
@@ -216,10 +262,17 @@
   <script src="js/viewport/targetRenderer.js"></script>
   <script src="js/viewport/arrowRenderer.js"></script>
   <script src="js/viewport/groupingRenderer.js"></script>
+  <script src="js/viewport/intelligenceOverlayRenderer.js"></script>
+  <script src="js/viewport/ringBreakLuckOverlayRenderer.js"></script>
+  <script src="js/viewport/timelineRenderer.js"></script>
   <script src="js/viewport/scaleRenderer.js"></script>
   <script src="js/viewport/interactionController.js"></script>
   <script src="js/viewport/TargetViewport.js"></script>
   <script src="js/analytics/historyAnalytics.js"></script>
+  <script src="js/analytics/personalBests.js"></script>
+  <script src="js/analytics/shotPattern.js"></script>
+  <script src="js/analytics/monteCarlo.js"></script>
+  <script src="js/analytics/sessionIntelligence.js"></script>
   <script src="js/analytics/TrendsView.js"></script>
   <script src="js/dev/dummyDataGenerator.js"></script>
   <script src="js/scorecard/ScorecardView.js"></script>

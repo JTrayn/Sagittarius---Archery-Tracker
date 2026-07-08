@@ -32,6 +32,10 @@
   backdrop-filter: blur(10px);
 }
 
+.viewport-hud:empty {
+  display: none;
+}
+
 .viewport-hud strong {
   color: var(--text);
 }
@@ -420,8 +424,7 @@
   gap: 3px;
 }
 
-.trends-arrow-volume-head span,
-.trends-arrow-volume-grid span {
+.trends-arrow-volume-head span {
   min-width: 0;
   overflow: hidden;
   color: var(--muted-2);
@@ -439,33 +442,6 @@
   font-weight: 950;
   letter-spacing: 0;
   line-height: 0.95;
-}
-
-.trends-arrow-volume-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.trends-arrow-volume-grid div {
-  min-width: 0;
-  display: grid;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid rgba(151, 184, 212, 0.10);
-  border-radius: 8px;
-  background: rgba(3, 10, 17, 0.25);
-}
-
-.trends-arrow-volume-grid strong {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--text);
-  font-size: 1.15rem;
-  font-weight: 950;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .trends-leaderboard {
@@ -696,4 +672,409 @@
     flex-direction: column;
     gap: 2px;
   }
+}
+
+/* v0.7.14-v0.7.16 trends polish */
+.trends-record-section-agnostic .trends-record-metric {
+  place-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.trends-record-section-agnostic .trends-record-metric span,
+.trends-record-section-agnostic .trends-record-metric strong,
+.trends-record-section-agnostic .trends-record-metric small {
+  text-align: center;
+}
+
+.trends-arrow-volume-chart {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px 9px 8px;
+  border: 1px solid rgba(151, 184, 212, 0.10);
+  border-radius: 8px;
+  background: rgba(3, 10, 17, 0.22);
+}
+
+.trends-arrow-volume-y-axis {
+  height: 116px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1px 0 18px;
+  color: rgba(188, 207, 224, 0.62);
+  font-size: 0.58rem;
+  font-weight: 850;
+  line-height: 1;
+  text-align: right;
+}
+
+.trends-arrow-volume-plot-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 2px;
+  scrollbar-color: rgba(47, 103, 166, 0.35) rgba(151, 184, 212, 0.08);
+  scrollbar-width: thin;
+}
+
+.trends-arrow-volume-plot-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.trends-arrow-volume-plot-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(151, 184, 212, 0.08);
+}
+
+.trends-arrow-volume-plot-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(47, 103, 166, 0.42);
+}
+
+.trends-arrow-volume-plot {
+  position: relative;
+  min-width: max(100%, calc(var(--month-count, 1) * 16px));
+  height: 134px;
+  padding: 0 2px 18px;
+}
+
+.trends-arrow-volume-gridlines {
+  position: absolute;
+  inset: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.trends-arrow-volume-gridlines span {
+  height: 1px;
+  background: rgba(151, 184, 212, 0.105);
+}
+
+.trends-arrow-volume-gridlines span:last-child {
+  background: rgba(151, 184, 212, 0.22);
+}
+
+.trends-arrow-volume-bars {
+  position: absolute;
+  inset: 0 0 0;
+  display: grid;
+  grid-template-columns: repeat(var(--month-count, 1), minmax(7px, 1fr));
+  gap: 3px;
+  align-items: end;
+  padding: 0 2px 0;
+}
+
+.trends-arrow-volume-bar {
+  position: relative;
+  min-width: 0;
+  height: 134px;
+  display: grid;
+  grid-template-rows: 116px 18px;
+  gap: 0;
+  align-items: end;
+  justify-items: center;
+}
+
+.trends-arrow-volume-bar-fill {
+  width: min(100%, 12px);
+  min-height: 0;
+  height: calc(var(--bar-level, 0) * 116px);
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(180deg, #3f78b8, #244b82);
+  box-shadow: 0 -4px 10px rgba(35, 74, 130, 0.16);
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.trends-arrow-volume-bar:hover .trends-arrow-volume-bar-fill {
+  filter: brightness(1.14);
+  transform: translateY(-1px);
+}
+
+.trends-arrow-volume-bar small {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(188, 207, 224, 0.62);
+  font-size: 0.54rem;
+  font-weight: 900;
+  line-height: 18px;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trends-arrow-volume-bar::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  z-index: 4;
+  min-width: max-content;
+  max-width: 220px;
+  padding: 6px 8px;
+  border: 1px solid rgba(151, 184, 212, 0.18);
+  border-radius: 8px;
+  background: rgba(5, 12, 20, 0.96);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+  color: var(--text);
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 110ms ease, transform 110ms ease;
+}
+
+.trends-arrow-volume-bar:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* v0.8.0: prominent warning whenever the target viewport is projecting arrows to another distance. */
+.viewport-extrapolation-warning {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  min-width: min(360px, calc(100% - 28px));
+  max-width: calc(100% - 28px);
+  transform: translateX(-50%);
+  padding: 9px 14px;
+  border: 1px solid rgba(122, 183, 255, 0.34);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(7, 32, 54, 0.90), rgba(5, 18, 31, 0.88)),
+    rgba(3, 10, 17, 0.82);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(14px);
+}
+
+.viewport-extrapolation-warning strong,
+.viewport-extrapolation-warning span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewport-extrapolation-warning strong {
+  color: #d9ecff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.viewport-extrapolation-warning span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+/* v0.8.1: compact timeline replay controls over the target viewport. */
+.timeline-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  transform: translateX(-50%);
+  padding: 8px 9px;
+  border: 1px solid rgba(125, 226, 255, 0.24);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(8, 28, 44, 0.90), rgba(5, 15, 25, 0.86)),
+    rgba(3, 10, 17, 0.82);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  backdrop-filter: blur(16px);
+}
+
+.timeline-readout {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.timeline-readout strong,
+.timeline-readout span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-readout strong {
+  color: #dff7ff;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.timeline-readout span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.timeline-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.timeline-panel .btn {
+  min-height: 32px;
+  padding: 0.42rem 0.66rem;
+}
+
+.timeline-speed-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted-2);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.timeline-speed-label select {
+  width: 72px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+
+/* v0.8.3: controls-only timeline panel. */
+.timeline-panel {
+  border-radius: 999px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.timeline-readout,
+.timeline-end-playback-label {
+  display: none;
+}
+
+.timeline-select-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted-2);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.timeline-select-label select {
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.timeline-view-label select {
+  width: 78px;
+}
+
+.timeline-end-playback-label select {
+  width: 116px;
+}
+
+.timeline-end-playback-label.is-hidden {
+  display: none;
+}
+
+.timeline-speed-label select {
+  width: 72px;
+}
+
+/* v0.8.5: keep timeline controls present but visually lighter when idle. */
+.timeline-panel {
+  opacity: 1;
+  transition: opacity 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.timeline-panel:not(:hover) {
+  opacity: 0.48;
+}
+
+.timeline-panel:hover {
+  opacity: 1;
+}
+
+/* v0.8.30: compact viewport interaction mode badge. */
+.viewport-mode-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  padding: 4px 9px 4px 8px;
+  border: 1px solid rgba(151, 184, 212, 0.16);
+  border-radius: 999px;
+  background: rgba(5, 14, 23, 0.58);
+  color: rgba(222, 242, 255, 0.92);
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.viewport-mode-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--mode-badge-colour, rgba(125, 226, 255, 0.95));
+  box-shadow: 0 0 10px var(--mode-badge-glow, rgba(125, 226, 255, 0.42));
+}
+
+.viewport-mode-badge.is-plot {
+  --mode-badge-colour: rgba(85, 214, 190, 0.98);
+  --mode-badge-glow: rgba(85, 214, 190, 0.48);
+  border-color: rgba(85, 214, 190, 0.23);
+}
+
+.viewport-mode-badge.is-edit {
+  --mode-badge-colour: rgba(255, 209, 102, 0.98);
+  --mode-badge-glow: rgba(255, 209, 102, 0.45);
+  border-color: rgba(255, 209, 102, 0.24);
+}
+
+.viewport-mode-badge.is-locked {
+  --mode-badge-colour: rgba(167, 184, 205, 0.92);
+  --mode-badge-glow: rgba(167, 184, 205, 0.32);
+  border-color: rgba(167, 184, 205, 0.18);
+  color: rgba(214, 225, 238, 0.82);
 }

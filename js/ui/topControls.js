@@ -6,31 +6,31 @@
   function init() {
     els.newScorecardBtn = document.getElementById("newScorecardBtn");
     els.saveScorecardBtn = document.getElementById("saveScorecardBtn");
+    els.editScorecardBtn = document.getElementById("editScorecardBtn");
     els.loadScorecardBtn = document.getElementById("loadScorecardBtn");
     els.exportScorecardBtn = document.getElementById("exportScorecardBtn");
     els.generateDummyDataBtn = document.getElementById("generateDummyDataBtn");
     els.importScorecardInput = document.getElementById("importScorecardInput");
-    els.scorecardNameInput = document.getElementById("scorecardNameInput");
-    els.targetFaceSelect = document.getElementById("targetFaceSelect");
     els.manageTargetFacesBtn = document.getElementById("manageTargetFacesBtn");
-    els.distanceInput = document.getElementById("distanceInput");
-    els.shotAtInput = document.getElementById("shotAtInput");
+    els.topbarSaveStatus = document.getElementById("topbarSaveStatus");
+    els.scorecardInfoGrid = document.getElementById("scorecardInfoGrid");
     els.scorecardTopMeta = document.getElementById("scorecardTopMeta");
     els.scorecardFooter = document.getElementById("scorecardFooter");
     els.manualScorePanel = document.getElementById("manualScorePanel");
     els.scorecardTotalPill = document.getElementById("scorecardTotalPill");
+    els.scorecardPbBadgeSlot = document.getElementById("scorecardPbBadgeSlot");
     els.scorecardPanelTitle = document.getElementById("scorecardPanelTitle");
+    els.scorecardDisplayName = document.getElementById("scorecardDisplayName");
     els.appVersionLabel = document.getElementById("appVersionLabel");
-    els.appVersionLabel.textContent = `Archery Tracker · v${App.Constants.APP_VERSION}`;
+    els.appVersionLabel.textContent = `v${App.Constants.APP_VERSION}`;
 
-    populateTargetFaceSelect();
-    if (App.CustomSelect) App.CustomSelect.enhance(els.targetFaceSelect);
     bindEvents();
   }
 
   function bindEvents() {
     els.newScorecardBtn.addEventListener("click", openNewScorecardModal);
     els.saveScorecardBtn.addEventListener("click", saveScorecardFromPanel);
+    els.editScorecardBtn.addEventListener("click", openEditScorecardModal);
     els.loadScorecardBtn.addEventListener("click", App.ScorecardBrowser.openScorecardBrowser);
     els.exportScorecardBtn.addEventListener("click", exportCurrentScorecard);
     els.generateDummyDataBtn.addEventListener("click", generateDummyData);
@@ -40,31 +40,9 @@
       App.TargetFaceManager.open({
         sourceFaceId: currentFaceId,
         onChange: () => {
-          refreshTargetFaceSelect(App.State.getState().scorecard?.activeViewTargetFaceId || App.Constants.DEFAULT_TARGET_FACE_ID);
           App.State.notify("targetFacesChanged");
         }
       });
-    });
-
-    els.scorecardNameInput.addEventListener("change", event => {
-      App.Actions.updateScorecardMeta({ name: event.target.value.trim() || "Untitled Scorecard" });
-    });
-
-    els.distanceInput.addEventListener("change", event => {
-      App.Actions.updateScorecardMeta({ distanceM: Math.max(1, Number(event.target.value) || 1) });
-    });
-
-    els.shotAtInput.addEventListener("change", event => {
-      App.Actions.updateScorecardMeta({ shotAt: App.Dates.fromDateTimeLocalValue(event.target.value) });
-    });
-
-    els.targetFaceSelect.addEventListener("change", event => {
-      const previous = App.State.getState().scorecard ? App.State.getState().scorecard.activeViewTargetFaceId : null;
-      const changed = App.Actions.changeTargetFace(event.target.value);
-      if (changed && previous !== event.target.value) {
-        const face = App.TargetFaces.getTargetFace(event.target.value);
-        App.Toast.show(`Viewing/scoring as ${face.shortName || face.name}`, "success");
-      }
     });
 
     els.manualScorePanel.addEventListener("click", event => {
@@ -75,13 +53,6 @@
         App.Toast.show(`Recorded ${option.label}`, "success");
       }
     });
-
-    els.scorecardFooter.addEventListener("change", event => {
-      const target = event.target;
-      if (target.id === "scorecardNotesInput") {
-        App.Actions.updateScorecardMeta({ notes: target.value.trim() });
-      }
-    });
   }
 
   function saveScorecardFromPanel() {
@@ -89,102 +60,120 @@
     App.Toast.show(saved ? "Scorecard saved" : "No scorecard to save", saved ? "success" : "danger");
   }
 
-  function populateTargetFaceSelect() {
-    refreshTargetFaceSelect(App.Constants.DEFAULT_TARGET_FACE_ID);
-  }
-
-  function refreshTargetFaceSelect(selectedId) {
-    const html = renderTargetFaceOptions(selectedId);
-    if (els.targetFaceSelect.innerHTML !== html) {
-      els.targetFaceSelect.innerHTML = html;
-    }
-    els.targetFaceSelect.value = selectedId;
-    if (App.CustomSelect) App.CustomSelect.refresh(els.targetFaceSelect);
-  }
-
   function render(state) {
     const scorecard = state.scorecard;
     if (!scorecard) {
-      els.scorecardNameInput.value = "";
-      els.distanceInput.value = "";
-      els.shotAtInput.value = "";
-      refreshTargetFaceSelect(App.Constants.DEFAULT_TARGET_FACE_ID);
-      els.scorecardTopMeta.innerHTML = "";
+      if (els.editScorecardBtn) els.editScorecardBtn.disabled = true;
+      if (els.saveScorecardBtn) els.saveScorecardBtn.disabled = true;
+      updateTopbarSaveStatus(true);
+      if (els.scorecardInfoGrid) els.scorecardInfoGrid.innerHTML = "";
+      if (els.scorecardTopMeta) els.scorecardTopMeta.innerHTML = "";
       els.scorecardFooter.innerHTML = "";
       els.manualScorePanel.innerHTML = "";
-      setTargetFaceLock(false);
+      els.scorecardDisplayName.textContent = "No scorecard loaded";
+      els.scorecardPanelTitle.textContent = "Create or load a scorecard to begin.";
       updateScoreTotalPill(null);
       return;
     }
 
     const targetFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId);
-    const summary = App.ScoreFormatting.formatSummary(scorecard, targetFace);
+    const scoringOptions = App.Extrapolation.getProjectedScoreOptions(scorecard, state.viewport);
+    const scoringScorecard = App.TimelineRenderer.isActive(state.viewport)
+      ? App.TimelineRenderer.getScorecardForScoring(scorecard, state.viewport)
+      : scorecard;
+    const summary = App.ScoreFormatting.formatSummary(scoringScorecard, targetFace, scoringOptions);
     const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
     const isComparisonView = originalFace.id !== targetFace.id;
-    const hasManualScores = App.ScoringEngine.hasManualScores(scorecard);
 
-    els.scorecardPanelTitle.textContent = "Scorecard setup";
-    setInputValuePreservingFocus(els.scorecardNameInput, scorecard.name || "");
-    setInputValuePreservingFocus(els.distanceInput, scorecard.distanceM || targetFace.defaultDistanceM || "");
-    setInputValuePreservingFocus(els.shotAtInput, App.Dates.toDateTimeLocalValue(scorecard.shotAt || scorecard.createdAt));
-    refreshTargetFaceSelect(scorecard.activeViewTargetFaceId);
-    setTargetFaceLock(hasManualScores);
-    if (App.CustomSelect) App.CustomSelect.enhance(els.targetFaceSelect);
+    if (els.editScorecardBtn) els.editScorecardBtn.disabled = false;
+    if (els.saveScorecardBtn) els.saveScorecardBtn.disabled = false;
+    els.scorecardDisplayName.textContent = (scorecard.name || "Untitled Scorecard").trim() || "Untitled Scorecard";
+    els.scorecardPanelTitle.textContent = buildScorecardSummaryLine(scorecard, targetFace);
 
-    updateScoreTotalPill(summary);
+    updateScoreTotalPill(summary, getScorecardPbStatus(scorecard, targetFace, originalFace, state));
+    updateTopbarSaveStatus(state.dirty);
+    renderScorecardInfoGrid(scorecard, targetFace, originalFace, summary, state.dirty);
     renderTopMeta(scorecard, targetFace, originalFace, isComparisonView, state.dirty);
     renderManualScoreButtons(state, targetFace);
-    renderFooter(scorecard, summary);
+    renderFooter(scorecard, scoringScorecard, summary, scoringOptions, targetFace);
   }
 
-  function setTargetFaceLock(isLocked) {
-    const title = isLocked
-      ? "Target face cannot be changed while manual scores are recorded."
-      : "";
-    els.targetFaceSelect.disabled = isLocked;
-    els.targetFaceSelect.title = title;
-    if (App.CustomSelect) App.CustomSelect.refresh(els.targetFaceSelect);
-
-    const customSelect = els.targetFaceSelect.nextElementSibling;
-    if (customSelect && customSelect.classList.contains("custom-select")) {
-      customSelect.title = title;
-      const trigger = customSelect.querySelector(".custom-select-trigger");
-      if (trigger) trigger.title = title;
-    }
+  function buildScorecardSummaryLine(scorecard, targetFace) {
+    const faceName = targetFace.name || targetFace.shortName || "Target face";
+    const distance = Number(scorecard.distanceM || targetFace.defaultDistanceM || 0);
+    const distanceText = distance > 0 ? `${distance}m` : "Unknown distance";
+    const dateText = App.Dates.formatDateOnly(scorecard.shotAt || scorecard.createdAt);
+    return `${faceName} · ${distanceText} · ${dateText}`;
   }
 
-  function updateScoreTotalPill(summary) {
+  function renderScorecardInfoGrid(scorecard, targetFace, originalFace, summary, isDirty) {
+    // v0.8.76: the separate date/distance/target-face/status cards were removed.
+    // The same session metadata now lives in the compact subtitle under the scorecard title,
+    // while saved/unsaved state lives in the top application toolbar.
+    if (els.scorecardInfoGrid) els.scorecardInfoGrid.innerHTML = "";
+  }
+
+  function updateScoreTotalPill(summary, pbStatus = null) {
     if (!els.scorecardTotalPill) return;
     if (!summary) {
       els.scorecardTotalPill.innerHTML = `<span class="score-total-value">0</span><span class="score-total-max">/ 0</span>`;
+      renderPbBadgeSlot(null);
       return;
     }
+
     els.scorecardTotalPill.innerHTML = `
-      <span class="score-total-value">${summary.totals.scorecardTotal}</span>
-      <span class="score-total-max">/ ${summary.totals.possibleTotal}</span>
+      <span class="score-total-main">
+        <span class="score-total-value">${summary.totals.scorecardTotal}</span>
+        <span class="score-total-max">/ ${summary.totals.possibleTotal}</span>
+      </span>
     `;
+    renderPbBadgeSlot(pbStatus);
+  }
+
+  function renderPbBadgeSlot(pbStatus) {
+    if (!els.scorecardPbBadgeSlot) return;
+    const pbBadge = pbStatus?.isPb ? renderPbBadge(pbStatus) : "";
+    els.scorecardPbBadgeSlot.classList.toggle("has-pb", Boolean(pbBadge));
+    els.scorecardPbBadgeSlot.innerHTML = pbBadge;
+  }
+
+  function getScorecardPbStatus(scorecard, targetFace, originalFace, state) {
+    if (!scorecard || !App.PersonalBests) return null;
+    const isTimeline = App.TimelineRenderer.isActive(state.viewport);
+    const isExtrapolated = Boolean(state.viewport.extrapolation?.enabled);
+    const isComparisonView = targetFace.id !== originalFace.id;
+    if (isTimeline || isExtrapolated || isComparisonView) return null;
+    const status = App.PersonalBests.getScorecardPbStatus(scorecard);
+    return status?.isPb ? status : null;
+  }
+
+  function renderPbBadge(pbStatus) {
+    const title = escapeHtml(pbStatus.title || "Personal best for this scorecard category");
+    const label = pbStatus.isTied ? "Tied personal best" : "Personal best";
+    return `<span class="score-pb-badge" title="${title}" aria-label="${escapeHtml(label)}"><span class="score-pb-text">PB</span></span>`;
   }
 
   function renderTopMeta(scorecard, targetFace, originalFace, isComparisonView, isDirty) {
-    els.scorecardTopMeta.innerHTML = `
-      <div class="scorecard-meta-item">
-        <span>Shot on</span>
-        <strong title="${escapeHtml(originalFace.name)}">${escapeHtml(originalFace.name)}</strong>
-      </div>
-      <div class="scorecard-meta-item ${isComparisonView ? "compare" : ""}">
-        <span>Scoring as</span>
-        <strong title="${escapeHtml(targetFace.name)}">${escapeHtml(targetFace.name)}</strong>
-      </div>
-      <div class="scorecard-meta-item save-status-inline ${isDirty ? "is-dirty" : "is-saved"}">
-        <span>Status</span>
-        <strong>${isDirty ? "Unsaved" : "Saved"}</strong>
-      </div>
-    `;
+    if (els.scorecardTopMeta) els.scorecardTopMeta.innerHTML = "";
   }
 
-  function renderFooter(scorecard, summary) {
-    const notes = escapeHtml(scorecard.notes || "");
+  function updateTopbarSaveStatus(isDirty) {
+    if (!els.topbarSaveStatus) return;
+    const dirty = Boolean(isDirty);
+    els.topbarSaveStatus.textContent = dirty ? "Unsaved" : "Saved";
+    els.topbarSaveStatus.classList.toggle("is-unsaved", dirty);
+    els.topbarSaveStatus.classList.toggle("is-saved", !dirty);
+    els.topbarSaveStatus.setAttribute("aria-label", dirty ? "Scorecard has unsaved changes" : "Scorecard saved locally");
+  }
+
+  function renderFooter(scorecard, scoringScorecard, summary, scoringOptions, targetFace) {
+    const notes = (scorecard.notes || "").trim();
+    const mpi = calculateScorecardMpi(scoringScorecard, scoringOptions);
+    const mpiTitle = formatScorecardMpiTitle(mpi);
+    const ringBreakLuck = App.RingBreakLuck?.calculateScorecardLuck(scoringScorecard, targetFace, scoringOptions);
+    const luckAdjustedScore = App.RingBreakLuck?.calculateLuckAdjustedScore(scoringScorecard, targetFace, scoringOptions);
     els.scorecardFooter.innerHTML = `
+      <div class="scorecard-footer-heading">Scorecard analysis</div>
       <div class="scorecard-footer-stats">
         <div class="footer-stat" title="Average score across recorded plotted and manual arrows">
           <span>Avg score</span>
@@ -194,6 +183,10 @@
           <span>Avg centre</span>
           <strong>${summary.averageDistanceText}</strong>
         </div>
+        <div class="footer-stat" title="${escapeHtml(mpiTitle)}">
+          <span>MPI</span>
+          <strong class="footer-mpi-value">${renderFooterMpi(mpi)}</strong>
+        </div>
         <div class="footer-stat">
           <span>X count</span>
           <strong>${summary.totals.xCount}</strong>
@@ -202,18 +195,129 @@
           <span>Misses</span>
           <strong>${summary.totals.missCount}</strong>
         </div>
-        <div class="footer-stat">
-          <span>Arrows</span>
-          <strong>${summary.arrowsText}</strong>
+        <div class="footer-stat" title="${escapeHtml(formatRingBreakLuckTitle(ringBreakLuck))}">
+          <span>Ring Break Luck</span>
+          <strong>${formatRingBreakLuckValue(ringBreakLuck)}</strong>
+        </div>
+        <div class="footer-stat" title="${escapeHtml(formatLuckAdjustedScoreTitle(luckAdjustedScore))}">
+          <span>Luck adjusted score</span>
+          <strong>${formatLuckAdjustedScoreValue(luckAdjustedScore)}</strong>
         </div>
       </div>
-      <div class="scorecard-footer-fields">
-        <label class="scorecard-notes-field">
-          <span>Notes</span>
-          <textarea id="scorecardNotesInput" rows="3" placeholder="Conditions, focus points, quick observations...">${notes}</textarea>
-        </label>
+      <div class="scorecard-note-preview ${notes ? "" : "is-empty"}">
+        <span>Notes</span>
+        <p>${notes ? escapeHtml(notes) : "No notes yet. Use Edit to add conditions, focus points, or observations."}</p>
       </div>
     `;
+  }
+
+  function calculateScorecardMpi(scorecard, scoringOptions = {}) {
+    const positions = [];
+    (scorecard?.ends || []).forEach(end => {
+      (end.arrows || []).forEach(arrow => {
+        if (!arrow?.position) return;
+        const point = scoringOptions.extrapolation
+          ? App.Extrapolation.transformPosition(arrow.position, scoringOptions.extrapolation)
+          : arrow.position;
+        if (!point || !Number.isFinite(Number(point.xMm)) || !Number.isFinite(Number(point.yMm))) return;
+        positions.push({ xMm: Number(point.xMm), yMm: Number(point.yMm) });
+      });
+    });
+    if (!positions.length) return null;
+    const centroid = positions.reduce((sum, position) => ({
+      xMm: sum.xMm + position.xMm,
+      yMm: sum.yMm + position.yMm
+    }), { xMm: 0, yMm: 0 });
+    centroid.xMm /= positions.length;
+    centroid.yMm /= positions.length;
+    return {
+      count: positions.length,
+      xMm: centroid.xMm,
+      yMm: centroid.yMm,
+      distanceMm: Math.hypot(centroid.xMm, centroid.yMm),
+      angleDeg: Math.atan2(centroid.yMm, centroid.xMm) * 180 / Math.PI
+    };
+  }
+
+  function renderFooterMpi(mpi) {
+    if (!mpi) return "—";
+    const distanceText = formatMpiDistance(mpi.distanceMm);
+    if (mpi.distanceMm < 0.5) {
+      return `<span class="footer-mpi-inline"><span>${distanceText}</span><span class="footer-mpi-dot" aria-hidden="true"></span></span>`;
+    }
+    const angle = Number.isFinite(mpi.angleDeg) ? mpi.angleDeg.toFixed(2) : "0";
+    return `<span class="footer-mpi-inline"><span>${distanceText}</span><span class="footer-mpi-arrow" style="--mpi-angle: ${angle}deg" aria-hidden="true">${renderMpiArrowSvg()}</span></span>`;
+  }
+
+  function formatRingBreakLuckValue(ringBreakLuck) {
+    if (!ringBreakLuck) return "—";
+    return String(ringBreakLuck.score);
+  }
+
+  function formatRingBreakLuckTitle(ringBreakLuck) {
+    if (!ringBreakLuck) {
+      return "Ring Break Luck requires plotted arrows. Manual-only scores are ignored because there is no arrow position to compare against a ring boundary.";
+    }
+    const windowText = formatSmallMm(ringBreakLuck.sensitivityWindowMm);
+    const breakWord = ringBreakLuck.qualifyingBreakCount === 1 ? "borderline arrow" : "borderline arrows";
+    const arrowWord = ringBreakLuck.plottedCount === 1 ? "plotted arrow" : "plotted arrows";
+    return `Ring Break Luck: ${ringBreakLuck.score}/100 (${ringBreakLuck.label}). 50 is neutral. It measures line-cutter luck by checking whether plotted arrows landed just inside or just outside a ring boundary. Only arrows within ${windowText} of a line affect the lucky/unlucky balance; other plotted arrows are neutral. ${ringBreakLuck.luckyBreakCount} barely in, ${ringBreakLuck.unluckyBreakCount} barely out, ${ringBreakLuck.qualifyingBreakCount} ${breakWord} from ${ringBreakLuck.plottedCount} ${arrowWord}.`;
+  }
+
+  function formatLuckAdjustedScoreValue(adjusted) {
+    if (!adjusted || !Number.isFinite(Number(adjusted.displayScore))) return "—";
+    return String(adjusted.displayScore);
+  }
+
+  function formatLuckAdjustedScoreTitle(adjusted) {
+    if (!adjusted) {
+      return "Luck Adjusted Score requires recorded arrows and uses plotted close-boundary arrows when available. Manual-only arrows remain scored as recorded.";
+    }
+    const net = Number(adjusted.netLuckPoints) || 0;
+    const direction = net > 0.05
+      ? `removing ${formatScorePoints(Math.abs(net))} of net favourable line-break value`
+      : net < -0.05
+        ? `adding ${formatScorePoints(Math.abs(net))} of net unfavourable line-break value`
+        : "no meaningful net line-break adjustment";
+    const breakWord = adjusted.qualifyingScoreBreakCount === 1 ? "score-changing borderline arrow" : "score-changing borderline arrows";
+    const sameScoreText = adjusted.ignoredSameScoreBreakCount > 0
+      ? ` Same-score boundaries such as X/10 ignored for score adjustment: ${adjusted.ignoredSameScoreBreakCount}.`
+      : "";
+    return `Luck Adjusted Score: ${adjusted.displayScore} from actual ${adjusted.actualScore}, ${direction}. It estimates the score with neutral 50/100 Ring Break Luck by weighting only close boundary arrows that change score value. ${adjusted.qualifyingScoreBreakCount} ${breakWord}: ${adjusted.luckyScoreBreakCount} favourable, ${adjusted.unluckyScoreBreakCount} unfavourable.${sameScoreText}`;
+  }
+
+  function formatScorePoints(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "0 points";
+    const text = amount >= 10 ? amount.toFixed(1) : amount.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    return `${text} point${Math.abs(amount - 1) < 0.0001 ? "" : "s"}`;
+  }
+
+  function formatSmallMm(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return "—";
+    return `${amount.toFixed(amount % 1 === 0 ? 0 : 1)}mm`;
+  }
+
+  function formatScorecardMpiTitle(mpi) {
+    if (!mpi) return "Mean Point of Impact requires plotted arrows and ignores manual-only scores.";
+    return `Mean Point of Impact: ${formatMpiDistance(mpi.distanceMm)} from centre · ${formatAxisOffset(mpi.xMm, "right", "left")} · ${formatAxisOffset(mpi.yMm, "low", "high")} · based on ${mpi.count} plotted arrow${mpi.count === 1 ? "" : "s"}.`;
+  }
+
+  function formatMpiDistance(value) {
+    if (!Number.isFinite(value)) return "—";
+    if (value >= 100) return `${Math.round(value)}mm`;
+    return `${value.toFixed(1)}mm`;
+  }
+
+  function formatAxisOffset(value, positiveLabel, negativeLabel) {
+    const amount = Number(value) || 0;
+    const label = amount >= 0 ? positiveLabel : negativeLabel;
+    return `${Math.abs(amount).toFixed(1)}mm ${label}`;
+  }
+
+  function renderMpiArrowSvg() {
+    return `<svg viewBox="0 0 18 18" focusable="false" aria-hidden="true"><path d="M3 9h10.2M9.7 5.4 13.3 9l-3.6 3.6"/></svg>`;
   }
 
   function renderManualScoreButtons(state, targetFace) {
@@ -225,13 +329,16 @@
         <span>${escapeHtml(selectionText)}</span>
       </div>
       <div class="manual-score-buttons">
-        ${options.map(option => `<button class="manual-score-btn ${option.isMiss ? "miss" : ""}" type="button" data-score-option='${JSON.stringify(option)}' title="${option.label} = ${option.value}">${option.label}</button>`).join("")}
+        ${options.map(option => `<button class="manual-score-btn ${option.isMiss ? "miss" : ""}" type="button" data-score-option='${JSON.stringify(option)}' title="${option.label} = ${option.value}" ${state.viewport.timeline?.enabled ? "disabled" : ""}>${option.label}</button>`).join("")}
       </div>
     `;
   }
 
   function getSelectedArrowText(state, targetFace) {
     const arrow = App.State.getSelectedArrow();
+    if (state.viewport.timeline?.enabled) {
+      return "Timeline replay · manual scoring disabled";
+    }
     if (!arrow || !state.selected) {
       return state.viewport.interactionMode === "locked"
         ? "Locked mode · no arrow selected"
@@ -239,15 +346,9 @@
     }
     const endIndex = state.selected.endIndex;
     const arrowIndex = state.selected.arrowIndex;
-    const score = App.ScoringEngine.scoreArrow(arrow, targetFace);
+    const score = App.ScoringEngine.scoreArrow(arrow, targetFace, App.Extrapolation.getProjectedScoreOptions(App.State.getState().scorecard, App.State.getState().viewport));
     const scoreText = score ? ` · currently ${score.label}` : " · empty";
     return `Selected End ${endIndex + 1}, Arrow ${arrowIndex + 1}${scoreText}`;
-  }
-
-  function setInputValuePreservingFocus(input, value) {
-    const next = String(value ?? "");
-    if (document.activeElement === input) return;
-    if (input.value !== next) input.value = next;
   }
 
   async function openNewScorecardModal() {
@@ -324,6 +425,93 @@
     });
   }
 
+  function openEditScorecardModal() {
+    const state = App.State.getState();
+    const scorecard = state.scorecard;
+    if (!scorecard) {
+      App.Toast.show("No scorecard to edit", "danger");
+      return;
+    }
+    const targetFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId);
+    const hasManualScores = App.ScoringEngine.hasManualScores(scorecard);
+    const body = `<form class="modal-form edit-scorecard-form" id="editScorecardForm">
+      <div class="edit-scorecard-intro">
+        <strong>Edit scorecard</strong>
+        <span>Update the details shown at the top of the scorecard.</span>
+      </div>
+      <label>
+        <span>Scorecard name</span>
+        <input name="name" type="text" value="${escapeHtml(scorecard.name || "Untitled Scorecard")}" autocomplete="off" />
+      </label>
+      <div class="form-grid">
+        <label>
+          <span>Distance</span>
+          <input name="distanceM" type="number" min="1" step="1" value="${Number(scorecard.distanceM || targetFace.defaultDistanceM || 1)}" />
+        </label>
+        <label>
+          <span>Scorecard date/time</span>
+          <input name="shotAt" type="datetime-local" value="${App.Dates.toDateTimeLocalValue(scorecard.shotAt || scorecard.createdAt)}" />
+        </label>
+      </div>
+      <label class="edit-target-face-field ${hasManualScores ? "is-locked" : ""}">
+        <span>Target face</span>
+        <select name="targetFaceId" ${hasManualScores ? "disabled" : ""}>
+          ${renderTargetFaceOptions(scorecard.activeViewTargetFaceId)}
+        </select>
+        ${hasManualScores ? `<small>Target face is locked while manual scores are recorded.</small>` : ""}
+      </label>
+      <label>
+        <span>Notes</span>
+        <textarea name="notes" rows="5" placeholder="Conditions, focus points, quick observations...">${escapeHtml(scorecard.notes || "")}</textarea>
+      </label>
+      <div class="form-actions">
+        <button class="btn" type="button" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>`;
+
+    App.Modal.open("Edit scorecard", body, modalBody => {
+      if (App.CustomSelect) App.CustomSelect.enhanceAll(modalBody);
+      const formEl = modalBody.querySelector("#editScorecardForm");
+      const targetSelect = formEl.querySelector("select[name='targetFaceId']");
+      const distanceInput = formEl.querySelector("input[name='distanceM']");
+      let distanceManuallyEdited = false;
+      distanceInput.addEventListener("input", () => { distanceManuallyEdited = true; });
+      if (targetSelect && !targetSelect.disabled) {
+        targetSelect.addEventListener("change", event => {
+          if (distanceManuallyEdited) return;
+          const face = App.TargetFaces.getTargetFace(event.target.value);
+          if (face.defaultDistanceM) distanceInput.value = face.defaultDistanceM;
+        });
+      }
+      modalBody.querySelector("[data-close-modal]").addEventListener("click", App.Modal.close);
+      formEl.addEventListener("submit", event => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const nextName = String(form.get("name") || "Untitled Scorecard").trim() || "Untitled Scorecard";
+        const nextDistance = Math.max(1, Number(form.get("distanceM")) || 1);
+        const nextShotAt = App.Dates.fromDateTimeLocalValue(String(form.get("shotAt") || ""));
+        const nextNotes = String(form.get("notes") || "").trim();
+        const nextTargetFaceId = hasManualScores
+          ? scorecard.activeViewTargetFaceId
+          : String(form.get("targetFaceId") || scorecard.activeViewTargetFaceId);
+
+        const updates = {
+          name: nextName,
+          distanceM: nextDistance,
+          shotAt: nextShotAt,
+          notes: nextNotes
+        };
+        App.Actions.updateScorecardMeta(updates);
+        if (nextTargetFaceId !== scorecard.activeViewTargetFaceId) {
+          App.Actions.changeTargetFace(nextTargetFaceId);
+        }
+        App.Modal.close();
+        App.Toast.show("Scorecard details updated", "success");
+      });
+    });
+  }
+
   function exportCurrentScorecard() {
     const scorecard = App.State.getState().scorecard;
     if (!scorecard) {
@@ -334,26 +522,35 @@
   }
 
   async function generateDummyData() {
-    if (!(await App.Modal.confirm({
+    const value = await App.Modal.prompt({
       title: "Generate dummy data",
-      message: "This temporary dev tool clears saved scorecards and creates 200 plotted scorecards for Trends testing.",
-      confirmText: "Generate",
-      cancelText: "Cancel",
-      variant: "warning"
-    }))) {
+      message: "Enter how many dummy scorecards to create from 0 to 200. This clears all saved scorecards first. Enter 0 to clear saved scorecards without generating replacements.",
+      defaultValue: "200",
+      placeholder: "0-200",
+      confirmText: "Apply",
+      cancelText: "Cancel"
+    });
+
+    if (value === null) return;
+
+    const count = Number(String(value).trim());
+    if (!Number.isInteger(count) || count < 0 || count > 200) {
+      App.Toast.show("Enter a whole number from 0 to 200", "danger");
       return;
     }
 
     try {
-      const generated = App.DevDataGenerator.generateScorecards();
+      const generated = App.DevDataGenerator.generateScorecards(count);
       const newest = generated[generated.length - 1] || null;
       if (newest) {
         App.Storage.setLastOpenScorecardId(newest.id);
         App.State.setScorecard(newest, { dirty: false });
+        App.Toast.show(`Generated ${generated.length} dummy scorecards`, "success");
       } else {
-        App.State.notify("dummyData");
+        const starter = App.ScorecardFactory.createScorecard(App.Constants.DEFAULT_SCORECARD);
+        App.State.setScorecard(starter, { dirty: true });
+        App.Toast.show("Cleared saved scorecards", "success");
       }
-      App.Toast.show(`Generated ${generated.length} dummy scorecards`, "success");
     } catch (error) {
       console.error(error);
       App.Toast.show("Could not generate dummy data", "danger");

@@ -1,11 +1,13 @@
 (function () {
   const App = window.ArcheryApp;
 
-  const SCORECARD_COUNT = 200;
+  const DEFAULT_SCORECARD_COUNT = 200;
+  const MAX_SCORECARD_COUNT = 200;
   const DISTANCES_M = [10, 18, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   const DAY_MS = 24 * 60 * 60 * 1000;
 
-  function generateScorecards() {
+  function generateScorecards(count = DEFAULT_SCORECARD_COUNT) {
+    const scorecardCount = normalizeCount(count);
     const faces = App.TargetFaces.listBuiltInTargetFaces();
     const now = new Date();
     const startTime = now.getTime() - 730 * DAY_MS;
@@ -13,8 +15,8 @@
 
     App.Storage.clearAllScorecards();
 
-    for (let index = 0; index < SCORECARD_COUNT; index += 1) {
-      const progress = SCORECARD_COUNT <= 1 ? 1 : index / (SCORECARD_COUNT - 1);
+    for (let index = 0; index < scorecardCount; index += 1) {
+      const progress = scorecardCount <= 1 ? 1 : index / (scorecardCount - 1);
       const distanceM = DISTANCES_M[randomInt(0, DISTANCES_M.length - 1)];
       const targetFace = chooseTargetFace(faces, distanceM);
       const shotAt = makeShotDate(startTime, now.getTime(), progress);
@@ -36,6 +38,12 @@
     }
 
     return scorecards;
+  }
+
+  function normalizeCount(count) {
+    const numeric = Number(count);
+    if (!Number.isFinite(numeric)) return DEFAULT_SCORECARD_COUNT;
+    return Math.min(MAX_SCORECARD_COUNT, Math.max(0, Math.trunc(numeric)));
   }
 
   function chooseTargetFace(faces, distanceM) {

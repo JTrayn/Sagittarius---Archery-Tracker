@@ -179,6 +179,8 @@
             <span></span>
             <span>Label</span>
             <span>Size</span>
+            <span>Pos.</span>
+            <span>Depth</span>
             <span>Colour</span>
             <span>Score</span>
             <span>Diameter</span>
@@ -206,16 +208,19 @@
       <section class="target-face-label-panel">
         <div class="target-face-section-head">
           <strong>Target labels</strong>
-          <span>Shared placement</span>
+          <span>Shared angle and ring depth</span>
         </div>
         <div class="target-face-label-grid">
           <label>
-            <span>Position</span>
+            <span>Angle</span>
             <select name="labelPosition">
-              ${renderOption("diagonal", "Diagonal top right", settings.position)}
-              ${renderOption("vertical", "Vertical top", settings.position)}
-              ${renderOption("horizontal", "Horizontal right", settings.position)}
-              ${renderOption("diagonal-left", "Diagonal top left", settings.position)}
+              ${renderSharedLabelPositionOptions(settings.position)}
+            </select>
+          </label>
+          <label>
+            <span>Depth</span>
+            <select name="labelDepth">
+              ${renderSharedLabelDepthOptions(settings.depth)}
             </select>
           </label>
           <label class="target-face-label-auto">
@@ -233,10 +238,13 @@
         <button class="icon-btn target-face-zone-drag" type="button" draggable="true" data-zone-drag aria-label="Drag zone ${index + 1}">::</button>
         <input name="label" type="text" value="${escapeHtml(zone.label)}" aria-label="Zone label" />
         <select name="labelSize" data-custom-native aria-label="Zone label size">
-          ${renderOption("small", "Small", zone.labelSize || "medium")}
-          ${renderOption("medium", "Medium", zone.labelSize || "medium")}
-          ${renderOption("large", "Large", zone.labelSize || "medium")}
-          ${renderOption("x-large", "XL", zone.labelSize || "medium")}
+          ${renderLabelSizeOptions(zone.labelSize || "medium")}
+        </select>
+        <select name="labelPosition" data-custom-native aria-label="Zone label position">
+          ${renderZoneLabelPositionOptions(zone.labelPosition || "")}
+        </select>
+        <select name="labelDepth" data-custom-native aria-label="Zone label depth">
+          ${renderZoneLabelDepthOptions(zone.labelDepth || "")}
         </select>
         <input name="labelFill" type="color" value="${escapeHtml(zone.labelFill || "#121820")}" aria-label="Zone label colour" ${draft?.labels?.autoContrast !== false ? "disabled" : ""} />
         <input name="score" type="number" step="1" value="${zone.score}" aria-label="Zone score" />
@@ -334,7 +342,10 @@
     const zones = Array.from(form.querySelectorAll("[data-zone-row]")).map((row, index) => ({
       id: row.dataset.zoneId || draft.zones[index]?.id,
       label: row.querySelector("input[name='label']").value.trim(),
+      targetLabel: getPreservedTargetLabel(row, index),
       labelSize: row.querySelector("select[name='labelSize']").value,
+      labelPosition: row.querySelector("select[name='labelPosition']").value,
+      labelDepth: row.querySelector("select[name='labelDepth']").value,
       labelFill: row.querySelector("input[name='labelFill']").value,
       score: Number(row.querySelector("input[name='score']").value),
       radiusMm: Number(row.querySelector("input[name='diameterMm']").value) / 2,
@@ -351,10 +362,19 @@
       description: form.querySelector("textarea[name='description']").value.trim(),
       labels: {
         position: form.querySelector("select[name='labelPosition']").value,
+        depth: form.querySelector("select[name='labelDepth']").value,
         autoContrast: form.querySelector("input[name='labelAutoColour']").checked
       },
       zones
     };
+  }
+
+  function getPreservedTargetLabel(row, index) {
+    const nextLabel = row.querySelector("input[name='label']")?.value.trim() || "";
+    const original = draft?.zones?.[index] || {};
+    const originalLabel = String(original.label || "").trim();
+    const targetLabel = String(original.targetLabel || "").trim();
+    return targetLabel && nextLabel === originalLabel ? targetLabel : "";
   }
 
   function saveEditor() {
@@ -464,7 +484,8 @@
     clone.name = `${face.name} Copy`;
     clone.shortName = `${face.shortName || "Custom"} Copy`.slice(0, 18);
     clone.labels = {
-      position: face.labels?.position || (face.family === "Indoor Archery WA" ? "vertical" : "diagonal"),
+      position: face.labels?.position || "horizontal",
+      depth: face.labels?.depth || "middle",
       autoContrast: face.labels?.autoContrast !== false
     };
     clone.family = "Custom target faces";
@@ -479,7 +500,8 @@
       shortName: "Custom",
       family: "Custom target faces",
       labels: {
-        position: "diagonal",
+        position: "horizontal",
+        depth: "middle",
         autoContrast: true
       },
       zones: [
@@ -519,9 +541,84 @@
   function normalizeLabelSettings(labels) {
     const source = labels || {};
     return {
-      position: ["diagonal", "vertical", "horizontal", "diagonal-left"].includes(source.position) ? source.position : "diagonal",
+      position: normalizeSharedLabelPosition(source.position) || "horizontal",
+      depth: normalizeLabelDepth(source.depth) || "middle",
       autoContrast: source.autoContrast !== undefined ? source.autoContrast !== false : source.fill === "auto" || !source.fill
     };
+  }
+
+  function renderSharedLabelPositionOptions(selectedValue) {
+    return [
+      ["vertical", "Vertical up"],
+      ["diagonal", "Diagonal top right"],
+      ["horizontal", "Horizontal right"],
+      ["diagonal-down-right", "Diagonal bottom right"],
+      ["vertical-down", "Vertical down"],
+      ["diagonal-down-left", "Diagonal bottom left"],
+      ["horizontal-left", "Horizontal left"],
+      ["diagonal-left", "Diagonal top left"]
+    ].map(([value, label]) => renderOption(value, label, selectedValue)).join("");
+  }
+
+  function renderSharedLabelDepthOptions(selectedValue) {
+    return [
+      ["inner", "Near inner edge"],
+      ["middle", "Middle of zone"],
+      ["outer", "Near outer edge"]
+    ].map(([value, label]) => renderOption(value, label, selectedValue)).join("");
+  }
+
+  function renderZoneLabelDepthOptions(selectedValue) {
+    return [
+      ["", "Shared"],
+      ["inner", "Near inner"],
+      ["middle", "Middle"],
+      ["outer", "Near outer"]
+    ].map(([value, label]) => renderOption(value, label, selectedValue)).join("");
+  }
+
+  function renderZoneLabelPositionOptions(selectedValue) {
+    return [
+      ["", "Shared"],
+      ["center", "Center"],
+      ["vertical", "Vertical up"],
+      ["diagonal", "Diagonal top right"],
+      ["horizontal", "Horizontal right"],
+      ["diagonal-down-right", "Diagonal bottom right"],
+      ["vertical-down", "Vertical down"],
+      ["diagonal-down-left", "Diagonal bottom left"],
+      ["horizontal-left", "Horizontal left"],
+      ["diagonal-left", "Diagonal top left"]
+    ].map(([value, label]) => renderOption(value, label, selectedValue)).join("");
+  }
+
+  function renderLabelSizeOptions(selectedValue) {
+    return [
+      ["small", "Small"],
+      ["medium", "Medium"],
+      ["large", "Large"],
+      ["x-large", "XL"],
+      ["xx-large", "2XL"],
+      ["xxx-large", "3XL"],
+      ["huge", "4XL"]
+    ].map(([value, label]) => renderOption(value, label, selectedValue)).join("");
+  }
+
+  function normalizeSharedLabelPosition(value) {
+    return [
+      "diagonal",
+      "vertical",
+      "horizontal",
+      "diagonal-left",
+      "vertical-down",
+      "horizontal-left",
+      "diagonal-down-right",
+      "diagonal-down-left"
+    ].includes(value) ? value : "";
+  }
+
+  function normalizeLabelDepth(value) {
+    return ["inner", "middle", "outer"].includes(value) ? value : "";
   }
 
   function renderOption(value, label, selectedValue) {

@@ -25,6 +25,7 @@
     const end = state.scorecard.ends[endIndex];
     if (!end || !end.arrows[arrowIndex]) return;
     state.selected = { endIndex, arrowIndex };
+    state.viewport.scorecardFocus = null;
     App.State.notify("selectArrow");
   }
 
@@ -38,6 +39,10 @@
   function plotSelectedArrow(position) {
     const state = App.State.getState();
     const arrow = App.State.getSelectedArrow();
+    if (state.viewport.timeline?.enabled) {
+      App.Toast.show("Exit Timeline before editing arrows", "danger");
+      return false;
+    }
     if (state.viewport.interactionMode !== "plot") {
       App.Toast.show("Switch to Plot mode before plotting arrows", "danger");
       return false;
@@ -58,6 +63,7 @@
     };
     arrow.manualScore = null;
     state.scorecard.updatedAt = App.Dates.nowIso();
+    state.viewport.scorecardFocus = null;
     state.dirty = true;
     advanceSelection();
     App.State.notify("plotArrow");
@@ -69,6 +75,7 @@
     if (!state.scorecard) return false;
     const end = state.scorecard.ends[endIndex];
     if (!end || !end.arrows[arrowIndex]) return false;
+    if (state.viewport.timeline?.enabled) return false;
     if (state.viewport.interactionMode !== "edit") return false;
 
     const arrow = end.arrows[arrowIndex];
@@ -78,6 +85,7 @@
     };
     arrow.manualScore = null;
     state.selected = { endIndex, arrowIndex };
+    state.viewport.scorecardFocus = null;
     state.scorecard.updatedAt = App.Dates.nowIso();
     state.dirty = true;
     App.State.notify(options.reason || "moveArrow");
@@ -92,12 +100,28 @@
     App.State.setVisibleEndIndex(endIndex);
   }
 
+  function setScorecardFocus(type, index) {
+    App.State.setScorecardFocus({ type, index });
+  }
+
+  function clearScorecardFocus() {
+    App.State.clearScorecardFocus();
+  }
+
   function setShowGrouping(showGrouping) {
     App.State.setShowGrouping(showGrouping);
   }
 
   function setGroupingOverlay(kind, enabled) {
     App.State.setGroupingOverlay(kind, enabled);
+  }
+
+  function setIntelligenceOverlay(enabled) {
+    App.State.setIntelligenceOverlay(enabled);
+  }
+
+  function setRingBreakLuckOverlay(enabled) {
+    App.State.setRingBreakLuckOverlay(enabled);
   }
 
   function setViewportDisplayMode(mode) {
@@ -108,9 +132,53 @@
     App.State.setTargetFaceVisibility(visibility);
   }
 
+  function setExtrapolationEnabled(enabled) {
+    App.State.setExtrapolationEnabled(enabled);
+  }
+
+  function setExtrapolationDistance(distanceM) {
+    App.State.setExtrapolationDistance(distanceM);
+  }
+
+  function resetExtrapolationDistanceToScorecard() {
+    App.State.resetExtrapolationDistanceToScorecard();
+  }
+
+  function setTimelineEnabled(enabled) {
+    App.State.setTimelineEnabled(enabled);
+  }
+
+  function setTimelinePlaying(playing) {
+    App.State.setTimelinePlaying(playing);
+  }
+
+  function resetTimeline() {
+    App.State.resetTimeline();
+  }
+
+  function setTimelineSpeed(speed) {
+    App.State.setTimelineSpeed(speed);
+  }
+
+  function setTimelineViewMode(mode) {
+    App.State.setTimelineViewMode(mode);
+  }
+
+  function setTimelineEndPlaybackMode(mode) {
+    App.State.setTimelineEndPlaybackMode(mode);
+  }
+
+  function setTimelineEndZoomToFit(enabled) {
+    App.State.setTimelineEndZoomToFit(enabled);
+  }
+
   function setManualScore(scoreOption) {
     const state = App.State.getState();
     const arrow = App.State.getSelectedArrow();
+    if (state.viewport.timeline?.enabled) {
+      App.Toast.show("Exit Timeline before editing scores", "danger");
+      return false;
+    }
     if (state.viewport.interactionMode === "locked") {
       App.Toast.show("Switch out of Locked mode before editing scores", "danger");
       return false;
@@ -128,6 +196,7 @@
       isMiss: Boolean(scoreOption.isMiss)
     };
     state.scorecard.updatedAt = App.Dates.nowIso();
+    state.viewport.scorecardFocus = null;
     state.dirty = true;
     advanceSelection();
     App.State.notify("manualScore");
@@ -137,6 +206,10 @@
   function clearSelectedArrow() {
     const state = App.State.getState();
     const arrow = App.State.getSelectedArrow();
+    if (state.viewport.timeline?.enabled) {
+      App.Toast.show("Exit Timeline before clearing arrows", "danger");
+      return;
+    }
     if (state.viewport.interactionMode === "locked") {
       App.Toast.show("Switch out of Locked mode before clearing arrows", "danger");
       return;
@@ -144,6 +217,7 @@
     if (!arrow) return;
     arrow.position = null;
     arrow.manualScore = null;
+    state.viewport.scorecardFocus = null;
     state.dirty = true;
     App.State.notify("clearArrow");
   }
@@ -185,7 +259,13 @@
     const state = App.State.getState();
     if (!state.scorecard) return;
     Object.assign(state.scorecard, updates, { updatedAt: App.Dates.nowIso() });
-    state.dirty = true;
+    if (Object.prototype.hasOwnProperty.call(updates, "distanceM")) {
+      state.viewport.extrapolation = App.Extrapolation.makeStateForScorecard(state.scorecard, {
+        ...state.viewport.extrapolation,
+        targetDistanceM: updates.distanceM
+      });
+    }
+    App.State.refreshDirtyFromBaseline();
     App.State.notify("scorecardMeta");
   }
 
@@ -200,7 +280,7 @@
     }
     state.scorecard.activeViewTargetFaceId = face.id;
     state.scorecard.updatedAt = App.Dates.nowIso();
-    state.dirty = true;
+    App.State.refreshDirtyFromBaseline();
     App.State.notify("targetFace");
     return true;
   }
@@ -212,6 +292,7 @@
     state.scorecard = saved;
     App.Storage.setLastOpenScorecardId(saved.id);
     state.dirty = false;
+    App.State.setCleanBaseline(saved);
     App.State.notify("save");
     return saved;
   }
@@ -236,6 +317,7 @@
       state.scorecard = saved;
       App.Storage.setLastOpenScorecardId(saved.id);
       state.dirty = false;
+      App.State.setCleanBaseline(saved);
       App.State.notify("renameSavedScorecard");
       return saved;
     }
@@ -284,10 +366,24 @@
     moveArrow,
     setViewportMode,
     setVisibleEndIndex,
+    setScorecardFocus,
+    clearScorecardFocus,
     setShowGrouping,
     setGroupingOverlay,
+    setIntelligenceOverlay,
+    setRingBreakLuckOverlay,
     setViewportDisplayMode,
     setTargetFaceVisibility,
+    setExtrapolationEnabled,
+    setExtrapolationDistance,
+    resetExtrapolationDistanceToScorecard,
+    setTimelineEnabled,
+    setTimelinePlaying,
+    resetTimeline,
+    setTimelineSpeed,
+    setTimelineViewMode,
+    setTimelineEndPlaybackMode,
+    setTimelineEndZoomToFit,
     setManualScore,
     clearSelectedArrow,
     advanceSelection,

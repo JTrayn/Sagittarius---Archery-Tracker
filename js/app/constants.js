@@ -2,7 +2,7 @@
   window.ArcheryApp = window.ArcheryApp || {};
 
   window.ArcheryApp.Constants = {
-    APP_VERSION: "0.7.12",
+    APP_VERSION: "0.9.0",
     SCHEMA_VERSION: 1,
     DEFAULT_TARGET_FACE_ID: "wa_122cm_full",
     DEFAULT_SCORECARD: {
@@ -32,6 +32,16 @@
       ARROW_SCORING_RADIUS_MM: 2.4,
       ARROW_MIN_RADIUS_PX: 5.5,
       ARROW_HIT_EXTRA_PX: 10
+    },
+    EXTRAPOLATION: {
+      MIN_DISTANCE_M: 10,
+      MAX_DISTANCE_M: 100,
+      STEP_M: 0.1,
+      SCALE_EASE: 0.18
+    },
+    RING_BREAK_LUCK: {
+      SENSITIVITY_WINDOW_MM: 3,
+      EVIDENCE_WEIGHT_CAP: 8
     }
   };
 })();

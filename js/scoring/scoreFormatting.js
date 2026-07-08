@@ -13,8 +13,8 @@
     return `score-${label}`;
   }
 
-  function formatSummary(scorecard, targetFace) {
-    const totals = App.ScoringEngine.calculateScorecardTotals(scorecard, targetFace);
+  function formatSummary(scorecard, targetFace, options = {}) {
+    const totals = App.ScoringEngine.calculateScorecardTotals(scorecard, targetFace, options);
     const arrowsText = `${totals.recordedArrows}/${totals.totalArrows} arrows`;
     const scoreText = `${totals.scorecardTotal}/${totals.possibleTotal}`;
     const averageScoreText = totals.averageArrowScore === null

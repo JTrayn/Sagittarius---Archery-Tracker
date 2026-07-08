@@ -2,6 +2,7 @@
   const App = window.ArcheryApp;
 
   function getCanvasRect(canvas) {
+    if (canvas.__archeryRenderRect) return canvas.__archeryRenderRect;
     if (canvas.__archeryExportRect) return canvas.__archeryExportRect;
     const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
     if (rect && rect.width > 0 && rect.height > 0) return rect;

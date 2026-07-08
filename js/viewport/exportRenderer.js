@@ -10,8 +10,12 @@
     headerHeight: 220,
     groupFitMinSpanMm: 160,
     groupFitPaddingMm: 26,
+    missFitPaddingMm: 28,
+    arrowLabelFitPaddingMm: 18,
     groupFitMaxPxPerMm: 12,
-    groupFocusAmount: 1
+    groupFocusAmount: 1,
+    zoomViewportBorderInsetPx: 3,
+    zoomViewportBorderRadiusPx: 30
   };
 
   const SCORECARD_PANEL = {
@@ -44,50 +48,41 @@
     "#38bdf8"
   ];
 
+  const EXPORT_DARKENING = {
+    defaultStrengthPercent: 100,
+    minTargetVisibility: 0.35
+  };
+
   function exportVisibleTarget(scorecard, targetFace, visibleEndIndex, options = {}) {
     const label = visibleEndIndex === null ? "visible-target" : `end-${visibleEndIndex + 1}`;
     const title = visibleEndIndex === null ? "Visible target" : `End ${visibleEndIndex + 1}`;
-    const canvas = renderTargetImage(scorecard, targetFace, {
+    const canvas = renderTargetImage(scorecard, targetFace, normalizeExportImageOptions(options, {
       visibleEndIndex,
       title,
       subtitle: options.subtitle || makeSubtitle(scorecard, targetFace),
-      showArrowLabels: options.showArrowLabels !== false,
-      showRadialGrouping: options.showRadialGrouping !== false,
-      showSimpleGrouping: options.showSimpleGrouping === true,
-      includeScorecard: options.includeScorecard === true,
-      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
-    });
+    }));
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-${label}.png`);
   }
 
   function exportFullScorecardTarget(scorecard, targetFace, options = {}) {
-    const canvas = renderTargetImage(scorecard, targetFace, {
+    const canvas = renderTargetImage(scorecard, targetFace, normalizeExportImageOptions(options, {
       visibleEndIndex: null,
       title: "Full scorecard target",
-      subtitle: makeSubtitle(scorecard, targetFace),
-      showArrowLabels: options.showArrowLabels !== false,
-      showRadialGrouping: options.showRadialGrouping !== false,
-      showSimpleGrouping: options.showSimpleGrouping === true,
-      includeScorecard: options.includeScorecard === true,
-      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
-    });
+      subtitle: makeSubtitle(scorecard, targetFace)
+    }));
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-full-target.png`);
   }
 
   function exportEndColourTarget(scorecard, targetFace, options = {}) {
-    const canvas = renderEndColourTargetImage(scorecard, targetFace, {
+    const canvas = renderEndColourTargetImage(scorecard, targetFace, normalizeExportImageOptions(options, {
       title: "End-coloured target",
-      subtitle: makeSubtitle(scorecard, targetFace),
-      showArrowLabels: options.showArrowLabels !== false,
-      showRadialGrouping: options.showRadialGrouping !== false,
-      showSimpleGrouping: options.showSimpleGrouping === true,
-      includeScorecard: options.includeScorecard === true,
-      targetFaceVisibility: normalizeTargetVisibility(options.targetFaceVisibility)
-    });
+      subtitle: makeSubtitle(scorecard, targetFace)
+    }));
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-end-coloured-target.png`);
   }
 
   function exportEndSheet(scorecard, targetFace, options = {}) {
+    const renderOptions = normalizeExportImageOptions(options);
     const canvas = document.createElement("canvas");
     canvas.width = EXPORT.sheetWidth;
     canvas.height = EXPORT.sheetHeight;
@@ -105,20 +100,47 @@
     const usableHeight = canvas.height - top - EXPORT.margin;
     const cellWidth = (usableWidth - gap * (columns - 1)) / columns;
     const cellHeight = (usableHeight - gap * (rows - 1)) / rows;
+    const forceEndViewportFrame = shouldFrameAllEndSheetViewports(scorecard, targetFace, renderOptions);
 
     scorecard.ends.forEach((end, endIndex) => {
       const col = endIndex % columns;
       const row = Math.floor(endIndex / columns);
       const x = EXPORT.margin + col * (cellWidth + gap);
       const y = top + row * (cellHeight + gap);
-      drawEndCell(ctx, scorecard, targetFace, endIndex, x, y, cellWidth, cellHeight, options);
+      drawEndCell(ctx, scorecard, targetFace, endIndex, x, y, cellWidth, cellHeight, {
+        ...renderOptions,
+        forceEndViewportFrame
+      });
     });
 
     delete canvas.__archeryExportRect;
     downloadCanvas(canvas, `${safeFileName(scorecard.name || "archery-scorecard")}-end-sheet.png`);
   }
 
+  function normalizeExportImageOptions(options = {}, overrides = {}) {
+    const merged = { ...options, ...overrides };
+    const darkenTarget = merged.darkenTarget === true;
+    const darkeningStrength = normalizeTargetDarkeningStrength(merged, darkenTarget);
+
+    return {
+      ...merged,
+      visibleEndIndex: merged.visibleEndIndex ?? null,
+      title: merged.title || "Target image",
+      subtitle: merged.subtitle || "",
+      showArrowLabels: merged.showArrowLabels !== false,
+      showRadialGrouping: merged.showRadialGrouping !== false,
+      showSimpleGrouping: merged.showSimpleGrouping === true,
+      includeScorecard: merged.includeScorecard === true,
+      zoomToGroup: merged.zoomToGroup === true,
+      darkenTarget,
+      targetDarkeningStrength: darkeningStrength,
+      targetFaceVisibility: targetVisibilityForDarkeningStrength(darkeningStrength),
+      perEndGrouping: merged.perEndGrouping === true
+    };
+  }
+
   function renderTargetImage(scorecard, targetFace, options = {}) {
+    options = normalizeExportImageOptions(options);
     const canvas = document.createElement("canvas");
     const scorecardLayout = makeScorecardExportLayout(scorecard, targetFace, options.visibleEndIndex ?? null, options.includeScorecard === true);
     const exportLayout = makeTargetExportLayout(scorecardLayout);
@@ -129,22 +151,22 @@
     drawExportBackground(ctx, canvas.width, canvas.height);
     drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
 
+    const focusBounds = getExportFocusBounds(scorecard, targetFace, options.visibleEndIndex ?? null, options);
+    const zoomViewport = isZoomedViewport(targetFace, focusBounds, options);
     const targetPadding = getTargetViewportPadding(canvas, {
       top: EXPORT.headerHeight + 76,
       right: EXPORT.margin,
       bottom: EXPORT.margin,
       left: exportLayout.targetLeft
-    }, options);
-    const transform = makeFitTransform(canvas, targetFace, targetPadding, getExportFocusBounds(scorecard, targetFace, options.visibleEndIndex ?? null, options));
+    }, zoomViewport);
+    const transform = makeFitTransform(canvas, targetFace, targetPadding, focusBounds);
     const targetRect = getPaddedRect(canvas, targetPadding);
+    targetRect.rounded = zoomViewport;
 
     drawInsideRect(ctx, targetRect, () => {
       App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
-        visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+        visibility: getEffectiveTargetVisibility(options)
       });
-      if (hasVisibleGrouping(scorecard, options.visibleEndIndex ?? null, options)) {
-        drawExportGroupFocusScrim(ctx, targetRect, EXPORT.groupFocusAmount);
-      }
       App.ArrowRenderer.drawArrows(
         ctx,
         canvas,
@@ -166,6 +188,7 @@
         });
       }
     });
+    if (zoomViewport) drawZoomViewportBorder(ctx, targetRect);
 
     if (scorecardLayout) {
       drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
@@ -176,6 +199,7 @@
   }
 
   function renderEndColourTargetImage(scorecard, targetFace, options = {}) {
+    options = normalizeExportImageOptions(options);
     const canvas = document.createElement("canvas");
     const scorecardLayout = makeScorecardExportLayout(scorecard, targetFace, null, options.includeScorecard === true);
     const exportLayout = makeTargetExportLayout(scorecardLayout);
@@ -188,25 +212,26 @@
     drawExportBackground(ctx, canvas.width, canvas.height);
     drawTargetHeader(ctx, canvas, scorecard, targetFace, options);
 
+    const focusBounds = getExportFocusBounds(scorecard, targetFace, null, { ...options, perEndGrouping: true });
+    const zoomViewport = isZoomedViewport(targetFace, focusBounds, options);
     const targetPadding = getTargetViewportPadding(canvas, {
       top: EXPORT.headerHeight + 76,
       right: EXPORT.margin,
       bottom: EXPORT.margin + 185,
       left: exportLayout.targetLeft
-    }, options);
-    const transform = makeFitTransform(canvas, targetFace, targetPadding, getExportFocusBounds(scorecard, targetFace, null, { ...options, perEndGrouping: true }));
+    }, zoomViewport);
+    const transform = makeFitTransform(canvas, targetFace, targetPadding, focusBounds);
     const targetRect = getPaddedRect(canvas, targetPadding);
+    targetRect.rounded = zoomViewport;
 
     drawInsideRect(ctx, targetRect, () => {
       App.TargetRenderer.drawTarget(ctx, canvas, transform, targetFace, {
-        visibility: normalizeTargetVisibility(options.targetFaceVisibility)
+        visibility: getEffectiveTargetVisibility(options)
       });
-      if (hasVisibleEndColourGrouping(endGroups, options)) {
-        drawExportGroupFocusScrim(ctx, targetRect, EXPORT.groupFocusAmount);
-      }
       drawEndColourArrows(ctx, canvas, transform, endGroups, options.showArrowLabels !== false);
       drawEndColourGrouping(ctx, canvas, transform, endGroups, options);
     });
+    if (zoomViewport) drawZoomViewportBorder(ctx, targetRect);
     drawEndColourLegend(ctx, endGroups, canvas.height - EXPORT.margin - 112, exportLayout.targetLeft, EXPORT.targetWidth - EXPORT.margin * 2);
     if (scorecardLayout) {
       drawExportScorecardPanel(ctx, scorecardLayout, EXPORT.margin, getSideScorecardY(scorecardLayout));
@@ -252,37 +277,51 @@
       height: height - labelSpace - inset
     };
     const tempCanvas = makeVirtualCanvas(targetBox.width, targetBox.height);
-    const transform = makeFitTransform(tempCanvas, targetFace, { top: 16, right: 16, bottom: 16, left: 16 }, getExportFocusBounds(scorecard, targetFace, endIndex, options));
+    const focusBounds = getExportFocusBounds(scorecard, targetFace, endIndex, options);
+    const zoomViewport = isZoomedViewport(targetFace, focusBounds, options);
+    const frameViewport = zoomViewport || options.forceEndViewportFrame === true;
+    const tempPadding = getTargetViewportPadding(tempCanvas, { top: 16, right: 16, bottom: 16, left: 16 }, frameViewport);
+    const transform = makeFitTransform(tempCanvas, targetFace, tempPadding, focusBounds);
     const tempCtx = tempCanvas.getContext("2d");
+    const tempRect = getPaddedRect(tempCanvas, tempPadding);
+    tempRect.rounded = frameViewport;
     tempCtx.clearRect(0, 0, targetBox.width, targetBox.height);
-    App.TargetRenderer.drawTarget(tempCtx, tempCanvas, transform, targetFace, {
-      visibility: normalizeTargetVisibility(options.targetFaceVisibility)
-    });
-    if (hasVisibleGrouping(scorecard, endIndex, options)) {
-      drawExportGroupFocusScrim(tempCtx, getPaddedRect(tempCanvas, { top: 16, right: 16, bottom: 16, left: 16 }), EXPORT.groupFocusAmount);
-    }
-    App.ArrowRenderer.drawArrows(
-      tempCtx,
-      tempCanvas,
-      transform,
-      scorecard,
-      targetFace,
-      { endIndex: -1, arrowIndex: -1 },
-      options.showArrowLabels !== false,
-      null,
-      { visibleEndIndex: endIndex }
-    );
-    if (options.showRadialGrouping !== false || options.showSimpleGrouping === true) {
-      App.GroupingRenderer.drawGroupingOverlay(tempCtx, tempCanvas, transform, scorecard, {
-        visibleEndIndex: endIndex,
-        showRadial: options.showRadialGrouping !== false,
-        showSimple: options.showSimpleGrouping === true,
-        showLabel: false,
-        focusAmount: EXPORT.groupFocusAmount
+    drawInsideRect(tempCtx, tempRect, () => {
+      App.TargetRenderer.drawTarget(tempCtx, tempCanvas, transform, targetFace, {
+        visibility: getEffectiveTargetVisibility(options)
       });
-    }
+      App.ArrowRenderer.drawArrows(
+        tempCtx,
+        tempCanvas,
+        transform,
+        scorecard,
+        targetFace,
+        { endIndex: -1, arrowIndex: -1 },
+        options.showArrowLabels !== false,
+        null,
+        { visibleEndIndex: endIndex }
+      );
+      if (options.showRadialGrouping !== false || options.showSimpleGrouping === true) {
+        App.GroupingRenderer.drawGroupingOverlay(tempCtx, tempCanvas, transform, scorecard, {
+          visibleEndIndex: endIndex,
+          showRadial: options.showRadialGrouping !== false,
+          showSimple: options.showSimpleGrouping === true,
+          showLabel: false,
+          focusAmount: EXPORT.groupFocusAmount
+        });
+      }
+    });
+    if (frameViewport) drawZoomViewportBorder(tempCtx, tempRect);
     delete tempCanvas.__archeryExportRect;
     ctx.drawImage(tempCanvas, targetBox.x, targetBox.y);
+  }
+
+  function shouldFrameAllEndSheetViewports(scorecard, targetFace, options = {}) {
+    if (!scorecard || !Array.isArray(scorecard.ends) || !scorecard.ends.length) return false;
+    return scorecard.ends.some((_end, endIndex) => {
+      const focusBounds = getExportFocusBounds(scorecard, targetFace, endIndex, options);
+      return isZoomedViewport(targetFace, focusBounds, options);
+    });
   }
 
   function getPlottedEndGroups(scorecard) {
@@ -815,8 +854,8 @@
     };
   }
 
-  function getTargetViewportPadding(canvas, padding, options = {}) {
-    if (options.zoomToGroup !== true) return padding;
+  function getTargetViewportPadding(canvas, padding, useSquareViewport = false) {
+    if (!useSquareViewport) return padding;
 
     const rect = App.ViewportMath.getCanvasRect(canvas);
     const availableWidth = Math.max(1, rect.width - padding.left - padding.right);
@@ -833,39 +872,57 @@
   }
 
   function drawInsideRect(ctx, rect, draw) {
+    const clipRect = rect.rounded ? getZoomViewportBorderRect(rect) : rect;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    if (rect.rounded) {
+      roundRect(ctx, clipRect.x, clipRect.y, clipRect.width, clipRect.height, EXPORT.zoomViewportBorderRadiusPx);
+    } else {
+      ctx.rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+    }
     ctx.clip();
     draw();
     ctx.restore();
   }
 
-  function drawExportGroupFocusScrim(ctx, rect, amount) {
-    const alpha = App.Geometry.clamp(amount || 0, 0, 1);
-    if (alpha <= 0.01) return;
+  function getZoomViewportBorderRect(rect) {
+    const inset = EXPORT.zoomViewportBorderInsetPx;
+    return {
+      x: rect.x + inset,
+      y: rect.y + inset,
+      width: Math.max(1, rect.width - inset * 2),
+      height: Math.max(1, rect.height - inset * 2)
+    };
+  }
 
+  function drawZoomViewportBorder(ctx, rect) {
+    const borderRect = getZoomViewportBorderRect(rect);
     ctx.save();
     ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.width, rect.height);
-    ctx.clip();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = "rgba(1, 6, 12, 0.48)";
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-
-    const gradient = ctx.createRadialGradient(
-      rect.x + rect.width / 2,
-      rect.y + rect.height / 2,
-      0,
-      rect.x + rect.width / 2,
-      rect.y + rect.height / 2,
-      Math.max(rect.width, rect.height) * 0.72
-    );
-    gradient.addColorStop(0, "rgba(5, 14, 23, 0.16)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.38)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    roundRect(ctx, borderRect.x, borderRect.y, borderRect.width, borderRect.height, EXPORT.zoomViewportBorderRadiusPx);
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(20, 61, 102, 0.96)";
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(90, 139, 188, 0.48)";
+    ctx.stroke();
     ctx.restore();
+  }
+
+  function getEffectiveTargetVisibility(options = {}) {
+    if (!shouldDarkenTarget(options)) return 1;
+    return normalizeTargetVisibility(options.targetFaceVisibility);
+  }
+
+  function shouldDarkenTarget(options = {}) {
+    return options.darkenTarget === true;
+  }
+
+  function isZoomedViewport(targetFace, focusBounds, options = {}) {
+    if (options.zoomToGroup !== true || !focusBounds) return false;
+    const targetDiameterMm = Math.max(1, Number(targetFace?.diameterMm) || 1);
+    const focusSpanMm = Math.max(Number(focusBounds.widthMm) || targetDiameterMm, Number(focusBounds.heightMm) || targetDiameterMm);
+    return focusSpanMm < targetDiameterMm * 0.985;
   }
 
   function makeFitTransform(canvas, targetFace, padding, focusBounds = null) {
@@ -896,56 +953,74 @@
   }
 
   function getExportFocusBounds(scorecard, targetFace, visibleEndIndex, options = {}) {
-    if (options.zoomToGroup !== true || !scorecard) return null;
+    if (!scorecard) return null;
+
+    const entries = collectExportEntries(scorecard, visibleEndIndex, options);
+    if (!entries.length) return null;
+
+    const zoomToGroup = options.zoomToGroup === true;
+    const targetRadius = Math.max(0, (Number(targetFace.diameterMm) || 0) / 2);
+    const arrowRadiusMm = App.Constants.VIEWPORT.ARROW_REAL_RADIUS_MM;
+    const hasArrowOutsideTarget = entries.some(entry => isEntryOutsideTarget(entry, targetRadius, arrowRadiusMm));
+
+    if (!zoomToGroup && !hasArrowOutsideTarget) return null;
 
     const bounds = createWorldBounds();
-    const addEntries = entries => {
-      entries.forEach(entry => {
-        if (entry.point) addCircleToBounds(bounds, entry.point, App.Constants.VIEWPORT.ARROW_REAL_RADIUS_MM);
-      });
-    };
+    if (!zoomToGroup) addTargetFaceBounds(bounds, targetRadius);
 
-    if (options.perEndGrouping === true) {
-      scorecard.ends.forEach((_end, endIndex) => {
-        const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, endIndex);
-        if (!entries.length) return;
-        addEntries(entries);
-        addGroupingBounds(bounds, entries, options);
-      });
-    } else {
-      const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex);
-      if (!entries.length) return null;
-      addEntries(entries);
-      addGroupingBounds(bounds, entries, options);
-    }
+    entries.forEach(entry => addCircleToBounds(bounds, entry.point, arrowRadiusMm));
+    addExportGroupingBounds(bounds, scorecard, visibleEndIndex, options);
 
     if (!bounds.hasValue) return null;
-    const targetRadius = (Number(targetFace.diameterMm) || 0) / 2;
+
     const rawWidth = Math.max(1, bounds.maxX - bounds.minX);
     const rawHeight = Math.max(1, bounds.maxY - bounds.minY);
-    const widthMm = Math.min(targetFace.diameterMm, Math.max(EXPORT.groupFitMinSpanMm, rawWidth + EXPORT.groupFitPaddingMm * 2));
-    const heightMm = Math.min(targetFace.diameterMm, Math.max(EXPORT.groupFitMinSpanMm, rawHeight + EXPORT.groupFitPaddingMm * 2));
+    const paddingMm = getExportFocusPaddingMm(options, zoomToGroup);
+    const widthMm = Math.max(zoomToGroup ? EXPORT.groupFitMinSpanMm : 1, rawWidth + paddingMm * 2);
+    const heightMm = Math.max(zoomToGroup ? EXPORT.groupFitMinSpanMm : 1, rawHeight + paddingMm * 2);
     const center = {
-      xMm: clampFocusCenter((bounds.minX + bounds.maxX) / 2, targetRadius, widthMm),
-      yMm: clampFocusCenter((bounds.minY + bounds.maxY) / 2, targetRadius, heightMm)
+      xMm: (bounds.minX + bounds.maxX) / 2,
+      yMm: (bounds.minY + bounds.maxY) / 2
     };
 
     return { center, widthMm, heightMm };
   }
 
-  function hasVisibleGrouping(scorecard, visibleEndIndex, options = {}) {
-    if (!scorecard || (!options.showRadialGrouping && !options.showSimpleGrouping)) return false;
-    return App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex).length >= 2;
+  function collectExportEntries(scorecard, visibleEndIndex, options = {}) {
+    if (!scorecard || !Array.isArray(scorecard.ends)) return [];
+    if (options.perEndGrouping === true) {
+      return scorecard.ends.flatMap((_end, endIndex) => App.GroupingRenderer.getVisiblePlottedEntries(scorecard, endIndex));
+    }
+    return App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex);
   }
 
-  function hasVisibleEndColourGrouping(endGroups, options = {}) {
-    if (!endGroups.length || (!options.showRadialGrouping && !options.showSimpleGrouping)) return false;
-    return endGroups.some(group => group.entries.length >= 2);
+  function isEntryOutsideTarget(entry, targetRadius, arrowRadiusMm) {
+    if (!entry?.point) return false;
+    const distanceMm = Math.hypot(entry.point.xMm, entry.point.yMm);
+    return distanceMm + arrowRadiusMm > targetRadius;
   }
 
-  function clampFocusCenter(value, targetRadius, spanMm) {
-    const limit = Math.max(0, targetRadius - spanMm / 2);
-    return App.Geometry.clamp(value, -limit, limit);
+  function addTargetFaceBounds(bounds, targetRadius) {
+    addCircleToBounds(bounds, { xMm: 0, yMm: 0 }, targetRadius);
+  }
+
+  function addExportGroupingBounds(bounds, scorecard, visibleEndIndex, options = {}) {
+    if (!options.showRadialGrouping && !options.showSimpleGrouping) return;
+
+    if (options.perEndGrouping === true) {
+      scorecard.ends.forEach((_end, endIndex) => {
+        const entries = App.GroupingRenderer.getVisiblePlottedEntries(scorecard, endIndex);
+        addGroupingBounds(bounds, entries, options);
+      });
+      return;
+    }
+
+    addGroupingBounds(bounds, App.GroupingRenderer.getVisiblePlottedEntries(scorecard, visibleEndIndex), options);
+  }
+
+  function getExportFocusPaddingMm(options = {}, zoomToGroup = false) {
+    const basePadding = zoomToGroup ? EXPORT.groupFitPaddingMm : EXPORT.missFitPaddingMm;
+    return basePadding + (options.showArrowLabels !== false ? EXPORT.arrowLabelFitPaddingMm : 0);
   }
 
   function addGroupingBounds(bounds, entries, options = {}) {
@@ -1070,6 +1145,32 @@
 
   function normalizeTargetVisibility(value) {
     return App.Geometry.clamp(Number(value) || 1, 0.35, 1);
+  }
+
+  function normalizeTargetDarkeningStrength(options = {}, darkenTarget = false) {
+    if (!darkenTarget) return 0;
+
+    const explicitStrength = Number(options.targetDarkeningStrength);
+    if (Number.isFinite(explicitStrength)) {
+      return App.Geometry.clamp(explicitStrength, 0, 100);
+    }
+
+    const legacyVisibility = Number(options.targetFaceVisibility);
+    if (Number.isFinite(legacyVisibility)) {
+      const normalizedVisibility = normalizeTargetVisibility(legacyVisibility);
+      return App.Geometry.clamp(
+        ((1 - normalizedVisibility) / (1 - EXPORT_DARKENING.minTargetVisibility)) * 100,
+        0,
+        100
+      );
+    }
+
+    return EXPORT_DARKENING.defaultStrengthPercent;
+  }
+
+  function targetVisibilityForDarkeningStrength(strengthPercent) {
+    const strength = App.Geometry.clamp(Number(strengthPercent) || 0, 0, 100) / 100;
+    return 1 - (1 - EXPORT_DARKENING.minTargetVisibility) * strength;
   }
 
   function formatAverageScore(value) {

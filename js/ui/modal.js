@@ -30,6 +30,7 @@
 
   function open(title, bodyHtml, afterRender) {
     resetBodyNode();
+    els.title.classList.remove("modal-title-with-help");
     els.title.textContent = title;
     els.body.innerHTML = bodyHtml;
     els.backdrop.classList.remove("hidden");

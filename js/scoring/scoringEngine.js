@@ -55,9 +55,14 @@
     };
   }
 
-  function scoreArrow(arrow, targetFace) {
+  function scoreArrow(arrow, targetFace, options = {}) {
     if (!arrow) return null;
-    if (arrow.position) return scorePosition(arrow.position, targetFace);
+    if (arrow.position) {
+      const position = options.extrapolation
+        ? App.Extrapolation.transformPosition(arrow.position, options.extrapolation)
+        : arrow.position;
+      return scorePosition(position, targetFace);
+    }
     if (arrow.manualScore) {
       return {
         label: arrow.manualScore.label,
@@ -71,11 +76,11 @@
     return null;
   }
 
-  function calculateEndTotal(end, targetFace) {
-    return calculateEndStats(end, targetFace).total;
+  function calculateEndTotal(end, targetFace, options = {}) {
+    return calculateEndStats(end, targetFace, options).total;
   }
 
-  function calculateEndStats(end, targetFace) {
+  function calculateEndStats(end, targetFace, options = {}) {
     let total = 0;
     let recordedArrows = 0;
     let plottedArrows = 0;
@@ -83,7 +88,7 @@
     let plottedDistanceTotalMm = 0;
 
     end.arrows.forEach(arrow => {
-      const score = scoreArrow(arrow, targetFace);
+      const score = scoreArrow(arrow, targetFace, options);
       if (!score) return;
       recordedArrows += 1;
       total += score.value;
@@ -103,7 +108,7 @@
     };
   }
 
-  function calculateScorecardTotals(scorecard, targetFace) {
+  function calculateScorecardTotals(scorecard, targetFace, options = {}) {
     let scorecardTotal = 0;
     let possibleTotal = 0;
     let recordedArrows = 0;
@@ -117,7 +122,7 @@
     scorecard.ends.forEach(end => {
       end.arrows.forEach(arrow => {
         possibleTotal += highestScore;
-        const score = scoreArrow(arrow, targetFace);
+        const score = scoreArrow(arrow, targetFace, options);
         if (!score) return;
         recordedArrows += 1;
         scorecardTotal += score.value;

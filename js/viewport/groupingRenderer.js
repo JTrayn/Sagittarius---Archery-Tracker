@@ -26,16 +26,22 @@
     }
   };
 
-  function getVisiblePlottedEntries(scorecard, visibleEndIndex = null) {
-    return App.ArrowRenderer.getVisibleArrowEntries(scorecard, visibleEndIndex)
+  function getVisiblePlottedEntries(scorecard, visibleEndIndex = null, options = {}) {
+    return App.ArrowRenderer.getVisibleArrowEntries(scorecard, visibleEndIndex, options)
+      .filter(entry => !options.timeline || App.TimelineRenderer.shouldRevealEntry(entry, { timeline: options.timeline }))
       .filter(entry => entry.arrow && entry.arrow.position)
-      .map(entry => ({
-        ...entry,
-        point: {
-          xMm: Number(entry.arrow.position.xMm) || 0,
-          yMm: Number(entry.arrow.position.yMm) || 0
-        }
-      }));
+      .map(entry => {
+        const point = options.extrapolation
+          ? App.Extrapolation.transformPosition(entry.arrow.position, options.extrapolation)
+          : entry.arrow.position;
+        return {
+          ...entry,
+          point: {
+            xMm: Number(point.xMm) || 0,
+            yMm: Number(point.yMm) || 0
+          }
+        };
+      });
   }
 
   function calculateGroupStats(entries) {
@@ -130,7 +136,7 @@
     };
     if (!pointer || !scorecard) return result;
 
-    const entries = getVisiblePlottedEntries(scorecard, options.visibleEndIndex);
+    const entries = getVisiblePlottedEntries(scorecard, options.visibleEndIndex, options);
     if (entries.length < 2) return result;
 
     if (options.showSimple === true) {
@@ -155,7 +161,7 @@
   }
 
   function drawGroupingOverlay(ctx, canvas, transform, scorecard, options = {}) {
-    const entries = getVisiblePlottedEntries(scorecard, options.visibleEndIndex);
+    const entries = getVisiblePlottedEntries(scorecard, options.visibleEndIndex, options);
     if (entries.length < 2) return null;
 
     const showRadial = options.showRadial !== false;
@@ -164,6 +170,8 @@
     const pointer = options.pointerScreen || null;
     const hoverState = options.hoverState || getGroupingHoverState(canvas, transform, scorecard, {
       visibleEndIndex: options.visibleEndIndex,
+      extrapolation: options.extrapolation,
+      timeline: options.timeline,
       showRadial,
       showSimple,
       pointerScreen: pointer
@@ -212,12 +220,54 @@
       drawMeanPoint(ctx, App.ViewportMath.worldToScreen(analysis.centroid, canvas, transform), {
         isHovered: Boolean(hoverState.radial || hoverState.simple),
         isFocused: showRadial || showSimple,
-        focusAmount
+        focusAmount,
+        pxPerMm: transform.currentPxPerMm
       });
     }
     ctx.restore();
 
     return results.radial || results.simple || analysis || null;
+  }
+
+  function drawGroupingOverlayStats(ctx, canvas, transform, overlay, options = {}) {
+    if (!overlay) return null;
+    const alpha = App.Geometry.clamp(Number(options.alpha ?? overlay.alpha ?? 1), 0, 1);
+    if (alpha <= 0.01) return null;
+    const showLabel = options.showLabel !== false;
+    const focusAmount = Number(options.focusAmount) || 0;
+    const hoverState = options.hoverState || {};
+    const radialTheme = options.theme || THEMES.radial;
+
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    if (overlay.radial && overlay.radial.count >= 2) {
+      drawSingleOverlay(ctx, canvas, transform, overlay.radial, radialTheme, {
+        pointer: options.pointerScreen || null,
+        showLabel,
+        labelOffset: 0,
+        isHovered: Boolean(hoverState.radial),
+        isFocused: true,
+        focusAmount
+      });
+      const ellipse = overlay.radial.analysis?.confidenceEllipse || overlay.analysis?.confidenceEllipse;
+      drawConfidenceEllipse(ctx, canvas, transform, ellipse, radialTheme, {
+        isHovered: Boolean(hoverState.radial),
+        isFocused: true,
+        focusAmount
+      });
+    }
+
+    if (overlay.analysis) {
+      drawMeanPoint(ctx, App.ViewportMath.worldToScreen(overlay.analysis.centroid, canvas, transform), {
+        isHovered: Boolean(hoverState.radial || hoverState.simple),
+        isFocused: true,
+        focusAmount,
+        pxPerMm: transform.currentPxPerMm,
+        fillStyle: radialTheme.marker || radialTheme.stroke
+      });
+    }
+    ctx.restore();
+    return overlay.radial || overlay.analysis || null;
   }
 
   function drawSingleOverlay(ctx, canvas, transform, stats, theme, options = {}) {
@@ -282,14 +332,14 @@
 
     ctx.beginPath();
     ctx.ellipse(0, 0, majorPx, minorPx, 0, 0, Math.PI * 2);
-    ctx.fillStyle = focus > 0.01 ? blendRgba(theme.fill, theme.fillFocus, focus) : "rgba(85, 214, 190, 0.055)";
+    ctx.fillStyle = focus > 0.01 ? blendRgba(theme.fill, theme.fillFocus, focus) : theme.fill;
     ctx.fill();
 
     ctx.shadowColor = focus > 0.01 ? blendRgba(theme.glow, theme.glowFocus, focus) : theme.glow;
     ctx.shadowBlur = 9 + focus * 13 + hoverBoost * 3;
     ctx.lineWidth = 1.65 + focus * 1.05 + hoverBoost * 0.35;
     ctx.setLineDash([9, 6]);
-    ctx.strokeStyle = "rgba(220, 255, 249, 0.9)";
+    ctx.strokeStyle = theme.strokeSoft || "rgba(220, 255, 249, 0.9)";
     ctx.stroke();
 
     ctx.shadowColor = "transparent";
@@ -303,21 +353,24 @@
   function drawMeanPoint(ctx, point, options = {}) {
     const focus = options.isFocused ? App.Geometry.clamp(options.focusAmount || 0, 0, 1) : 0;
     const hoverBoost = options.isHovered ? 1 : 0;
-    const radius = 3.9 + focus * 0.45 + hoverBoost * 0.25;
+    const baseRadius = App.Geometry.clamp((Number(options.pxPerMm) || 0.62) * 2.4, 1.45, 3.9);
+    const radius = baseRadius + focus * 0.35 + hoverBoost * 0.22;
+    const backplateRadius = radius + App.Geometry.clamp(radius * 0.52, 0.9, 2.1);
+    const fillStyle = options.fillStyle || "rgba(255, 209, 102, 0.96)";
     ctx.save();
     ctx.shadowColor = "rgba(0, 0, 0, 0.44)";
-    ctx.shadowBlur = 6 + focus * 3 + hoverBoost;
+    ctx.shadowBlur = 4 + focus * 2.5 + hoverBoost;
     ctx.beginPath();
-    ctx.arc(point.x, point.y, radius + 2.1, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, backplateRadius, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(1, 8, 13, 0.72)";
     ctx.fill();
 
     ctx.shadowColor = "transparent";
     ctx.beginPath();
     ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 209, 102, 0.96)";
+    ctx.fillStyle = fillStyle;
     ctx.fill();
-    ctx.lineWidth = 1.1;
+    ctx.lineWidth = Math.max(0.8, Math.min(1.1, radius * 0.28));
     ctx.strokeStyle = "rgba(255, 255, 255, 0.70)";
     ctx.stroke();
 
@@ -540,6 +593,7 @@
     calculateRadialGroupStats,
     calculateSimpleGroupStats,
     drawGroupingOverlay,
+    drawGroupingOverlayStats,
     getGroupingHoverState
   };
 })();

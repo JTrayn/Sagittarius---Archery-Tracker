@@ -8,6 +8,9 @@
     left: 72
   };
   const STANDARD_DISTANCES_M = [10, 18, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const DEFAULT_RECORD_TARGET_FACE_ID = "wa_122cm_full";
+  const DEFAULT_RECORD_DISTANCE_M = 70;
+  const DEFAULT_RECORD_ARROW_COUNT = 72;
   const FACE_DISTANCE_METRICS = [
     { key: "totalScore", label: "Total", lowerIsBetter: false, format: value => String(Math.round(value)) },
     { key: "averageArrowScore", label: "Avg arrow", lowerIsBetter: false },
@@ -159,22 +162,27 @@
       }
 
       if (!targetOptions.some(option => option.value === this.filters.recordsTargetFaceId)) {
-        this.filters.recordsTargetFaceId = this.filters.targetFaceId !== "all" && targetOptions.some(option => option.value === this.filters.targetFaceId)
+        const requestedTarget = this.filters.targetFaceId !== "all" && targetOptions.some(option => option.value === this.filters.targetFaceId)
           ? this.filters.targetFaceId
-          : targetOptions[0].value;
+          : null;
+        this.filters.recordsTargetFaceId = requestedTarget
+          || pickDefaultOption(targetOptions, DEFAULT_RECORD_TARGET_FACE_ID)
+          || targetOptions[0].value;
       }
 
       const targetFace = App.TargetFaces.getTargetFace(this.filters.recordsTargetFaceId);
       const faceRecords = this.records.filter(record => record.targetFaceId === this.filters.recordsTargetFaceId);
       const distanceOptions = uniqueSorted(faceRecords.map(record => record.distanceM).filter(Boolean));
       if (!distanceOptions.some(distance => String(distance) === String(this.filters.recordsDistanceM))) {
-        this.filters.recordsDistanceM = distanceOptions.length ? String(distanceOptions[0]) : "";
+        this.filters.recordsDistanceM = pickDefaultNumber(distanceOptions, DEFAULT_RECORD_DISTANCE_M)
+          || (distanceOptions.length ? String(distanceOptions[0]) : "");
       }
 
       const distanceRecords = faceRecords.filter(record => String(record.distanceM) === String(this.filters.recordsDistanceM));
       const arrowOptions = uniqueSorted(distanceRecords.map(record => getRecordArrowCount(record)).filter(Boolean));
       if (!arrowOptions.some(count => String(count) === String(this.filters.recordsArrowCount))) {
-        this.filters.recordsArrowCount = arrowOptions.length ? String(arrowOptions[arrowOptions.length - 1]) : "";
+        this.filters.recordsArrowCount = pickDefaultNumber(arrowOptions, DEFAULT_RECORD_ARROW_COUNT)
+          || (arrowOptions.length ? String(arrowOptions[arrowOptions.length - 1]) : "");
       }
 
       const selectedRecords = distanceRecords.filter(record => String(getRecordArrowCount(record)) === String(this.filters.recordsArrowCount));
@@ -462,48 +470,123 @@
 
   function renderArrowVolumeCounter(records) {
     const volume = getArrowVolume(records);
+    const monthly = getMonthlyArrowVolume(records);
+    const axisMax = getArrowVolumeAxisMax(monthly);
+    const axisTicks = getArrowVolumeAxisTicks(axisMax);
     return `
       <section class="trends-arrow-volume" aria-label="Arrows shot">
         <div class="trends-arrow-volume-head">
           <span>Arrows shot</span>
           <strong>${escapeHtml(formatInteger(volume.total))}</strong>
         </div>
-        <div class="trends-arrow-volume-grid">
-          <div>
-            <span>This week</span>
-            <strong>${escapeHtml(formatInteger(volume.week))}</strong>
+        <div class="trends-arrow-volume-chart" aria-label="Monthly arrows shot">
+          <div class="trends-arrow-volume-y-axis" aria-hidden="true">
+            ${axisTicks.map(value => `<span>${escapeHtml(formatInteger(value))}</span>`).join("")}
           </div>
-          <div>
-            <span>This month</span>
-            <strong>${escapeHtml(formatInteger(volume.month))}</strong>
+          <div class="trends-arrow-volume-plot-scroll">
+            <div class="trends-arrow-volume-plot" style="--month-count: ${monthly.length}; --axis-max: ${axisMax};">
+              <div class="trends-arrow-volume-gridlines" aria-hidden="true">
+                ${axisTicks.map(() => `<span></span>`).join("")}
+              </div>
+              <div class="trends-arrow-volume-bars">
+                ${monthly.map((item, index) => renderMonthlyArrowBar(item, axisMax, index, monthly.length)).join("")}
+              </div>
+            </div>
           </div>
         </div>
       </section>
     `;
   }
 
+  function renderMonthlyArrowBar(item, axisMax, index, totalMonths) {
+    const level = axisMax > 0 ? Math.max(0, item.total / axisMax) : 0;
+    const tickLabel = getMonthlyArrowTickLabel(item, index, totalMonths);
+    const tooltip = `${item.longLabel}: ${formatInteger(item.total)} arrows`;
+    const safeTooltip = escapeHtml(tooltip);
+    return `
+      <div class="trends-arrow-volume-bar" title="${safeTooltip}" data-tooltip="${safeTooltip}" style="--bar-level: ${roundCssNumber(level)}">
+        <span class="trends-arrow-volume-bar-fill"></span>
+        <small>${escapeHtml(tickLabel)}</small>
+      </div>
+    `;
+  }
+
   function getArrowVolume(records) {
-    const now = new Date();
-    const weekStart = getLocalWeekStart(now);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     return records.reduce((totals, record) => {
       const arrowCount = getRecordArrowCount(record);
       if (!arrowCount) return totals;
-      const shotAt = new Date(record.shotAt);
       totals.total += arrowCount;
-      if (Number.isNaN(shotAt.getTime())) return totals;
-      if (shotAt >= weekStart && shotAt <= now) totals.week += arrowCount;
-      if (shotAt >= monthStart && shotAt <= now) totals.month += arrowCount;
       return totals;
-    }, { total: 0, week: 0, month: 0 });
+    }, { total: 0 });
   }
 
-  function getLocalWeekStart(date) {
-    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-    start.setHours(0, 0, 0, 0);
-    return start;
+  function getMonthlyArrowVolume(records) {
+    const now = new Date();
+    const validRecords = records
+      .map(record => ({ record, shotAt: new Date(record.shotAt) }))
+      .filter(item => !Number.isNaN(item.shotAt.getTime()));
+    const firstDate = validRecords.length
+      ? validRecords.reduce((earliest, item) => item.shotAt < earliest ? item.shotAt : earliest, validRecords[0].shotAt)
+      : now;
+    const start = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthKeys = [];
+
+    for (let date = new Date(start); date <= end; date.setMonth(date.getMonth() + 1)) {
+      monthKeys.push({
+        key: getMonthKey(date),
+        date: new Date(date),
+        total: 0
+      });
+    }
+
+    const lookup = new Map(monthKeys.map(item => [item.key, item]));
+    validRecords.forEach(({ record, shotAt }) => {
+      const arrowCount = getRecordArrowCount(record);
+      if (!arrowCount) return;
+      const item = lookup.get(getMonthKey(shotAt));
+      if (item) item.total += arrowCount;
+    });
+
+    return monthKeys.map(item => ({
+      ...item,
+      label: new Intl.DateTimeFormat(undefined, { month: "short" }).format(item.date),
+      yearLabel: new Intl.DateTimeFormat(undefined, { year: "numeric" }).format(item.date),
+      longLabel: new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(item.date)
+    }));
   }
+
+  function getArrowVolumeAxisMax(monthly) {
+    const maxValue = Math.max(0, ...monthly.map(item => Number(item.total) || 0));
+    if (maxValue <= 0) return 100;
+    const roughStep = maxValue / 4;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const normalized = roughStep / magnitude;
+    const stepMultiplier = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+    const step = stepMultiplier * magnitude;
+    return Math.max(step * 4, Math.ceil(maxValue / step) * step);
+  }
+
+  function getArrowVolumeAxisTicks(axisMax) {
+    const step = axisMax / 4;
+    return [axisMax, axisMax - step, axisMax - step * 2, axisMax - step * 3, 0]
+      .map(value => Math.max(0, Math.round(value)));
+  }
+
+  function getMonthlyArrowTickLabel(item, index, totalMonths) {
+    if (totalMonths <= 6) return item.label;
+    if (index === 0) return item.label;
+    if (index === totalMonths - 1) return item.label;
+    if (item.date.getMonth() === 0) return item.yearLabel;
+    if (totalMonths <= 18 && index % 3 === 0) return item.label;
+    if (totalMonths <= 36 && index % 6 === 0) return item.label;
+    return "";
+  }
+
+  function getMonthKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  }
+
 
   function getBestRecord(records, metric) {
     return records
@@ -530,10 +613,42 @@
       const strokeWidth = Math.max(0.35, ((Number(zone.strokeWidthMm) || 0.8) / outerRadius) * 46);
       return `<circle cx="50" cy="50" r="${roundSvg(radius)}" fill="${escapeHtml(zone.fill)}" stroke="${escapeHtml(zone.stroke)}" stroke-width="${roundSvg(strokeWidth)}" />`;
     }).join("");
-    const centre = targetFace.centreLabel
-      ? `<text x="50" y="54" text-anchor="middle" font-size="15" font-weight="900" fill="${escapeHtml(targetFace.centreLabel.fill || "#ff3347")}">${escapeHtml(targetFace.centreLabel.text || "X")}</text>`
-      : `<path d="M45 50h10M50 45v10" stroke="rgba(4,12,18,0.7)" stroke-width="1.1" stroke-linecap="round" />`;
+    const centreZone = getCentreLabelZone(targetFace);
+    const centre = centreZone
+      ? `<text x="50" y="54" text-anchor="middle" font-size="15" font-weight="900" fill="${escapeHtml(getPreviewLabelColour(centreZone, targetFace))}">${escapeHtml(centreZone.targetLabel || centreZone.label)}</text>`
+      : targetFace.centreLabel
+        ? `<text x="50" y="54" text-anchor="middle" font-size="15" font-weight="900" fill="${escapeHtml(targetFace.centreLabel.fill || "#ff3347")}">${escapeHtml(targetFace.centreLabel.text || "X")}</text>`
+        : `<path d="M45 50h10M50 45v10" stroke="rgba(4,12,18,0.7)" stroke-width="1.1" stroke-linecap="round" />`;
     return `<svg viewBox="0 0 100 100" role="img" aria-label="${escapeHtml(targetFace.shortName || targetFace.name)} preview">${circles}${centre}</svg>`;
+  }
+
+  function getCentreLabelZone(targetFace) {
+    if (!Array.isArray(targetFace?.zones)) return null;
+    return targetFace.zones.find(zone => zone.labelPosition === "center" && String(zone.label || "").trim()) || null;
+  }
+
+  function getPreviewLabelColour(zone, targetFace) {
+    const autoContrast = targetFace?.labels?.autoContrast !== false;
+    return autoContrast ? previewLabelTextColour(zone.fill) : (zone.labelFill || previewLabelTextColour(zone.fill));
+  }
+
+  function previewLabelTextColour(fill) {
+    const normalized = String(fill || "").toLowerCase();
+    const darkFills = ["#20252b", "#2684d9", "#e44242", "#080b0f", "#000000", "#111111"];
+    return darkFills.includes(normalized) ? "#f8fbff" : "#121820";
+  }
+
+  function pickDefaultOption(options, preferredValue) {
+    const match = options.find(option => String(option.value) === String(preferredValue));
+    return match ? match.value : null;
+  }
+
+  function pickDefaultNumber(values, preferredValue) {
+    return values.some(value => Number(value) === Number(preferredValue)) ? String(preferredValue) : null;
+  }
+
+  function roundCssNumber(value) {
+    return Math.round(Number(value || 0) * 1000) / 1000;
   }
 
   function uniqueSorted(values) {
@@ -600,9 +715,9 @@
 
   function drawChartBackground(ctx, width, height) {
     const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "rgba(94, 167, 255, 0.12)");
-    gradient.addColorStop(0.58, "rgba(122, 183, 255, 0.055)");
-    gradient.addColorStop(1, "rgba(85, 214, 190, 0.025)");
+    gradient.addColorStop(0, "rgba(94, 167, 255, 0.075)");
+    gradient.addColorStop(0.62, "rgba(122, 183, 255, 0.032)");
+    gradient.addColorStop(1, "rgba(85, 214, 190, 0.014)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
   }
@@ -616,7 +731,7 @@
     ctx.fillStyle = "rgba(180, 201, 219, 0.72)";
     ctx.font = "760 12px Inter, system-ui, sans-serif";
     ctx.fillText(metric.description || "Saved scorecard trend over time.", 24, 32);
-    ctx.strokeStyle = "rgba(151, 184, 212, 0.18)";
+    ctx.strokeStyle = "rgba(151, 184, 212, 0.13)";
     ctx.lineWidth = 1;
     ctx.strokeRect(CHART.left, CHART.top, width - CHART.left - CHART.right, height - CHART.top - CHART.bottom);
     ctx.restore();
@@ -624,7 +739,7 @@
 
   function drawGridLines(ctx, plot, domain, metricKey) {
     ctx.save();
-    ctx.strokeStyle = "rgba(151, 184, 212, 0.12)";
+    ctx.strokeStyle = "rgba(151, 184, 212, 0.095)";
     ctx.fillStyle = "rgba(180, 201, 219, 0.72)";
     ctx.font = "760 11px Inter, system-ui, sans-serif";
     ctx.textAlign = "right";
@@ -646,7 +761,7 @@
     ctx.save();
     if (points.length > 1) {
       const areaGradient = ctx.createLinearGradient(0, plot.y, 0, plot.y + plot.height);
-      areaGradient.addColorStop(0, "rgba(94, 167, 255, 0.28)");
+      areaGradient.addColorStop(0, "rgba(94, 167, 255, 0.145)");
       areaGradient.addColorStop(1, "rgba(94, 167, 255, 0)");
       ctx.beginPath();
       points.forEach((point, index) => {
@@ -664,12 +779,12 @@
         if (index === 0) ctx.moveTo(point.x, point.y);
         else ctx.lineTo(point.x, point.y);
       });
-      ctx.strokeStyle = "rgba(94, 167, 255, 0.96)";
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(105, 174, 255, 0.9)";
+      ctx.lineWidth = 2;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
-      ctx.shadowColor = "rgba(94, 167, 255, 0.28)";
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = "rgba(94, 167, 255, 0.12)";
+      ctx.shadowBlur = 6;
       ctx.stroke();
     }
     ctx.restore();
@@ -680,12 +795,19 @@
     points.forEach(point => {
       const isHovered = hoveredPoint && hoveredPoint.record.id === point.record.id;
       ctx.beginPath();
-      ctx.arc(point.x, point.y, isHovered ? 7 : 5, 0, Math.PI * 2);
-      ctx.fillStyle = isHovered ? "#ffd166" : "#5ea7ff";
+      ctx.arc(point.x, point.y, isHovered ? 5.5 : 3.25, 0, Math.PI * 2);
+      ctx.fillStyle = isHovered ? "#ffd166" : "rgba(105, 174, 255, 0.95)";
       ctx.fill();
-      ctx.lineWidth = isHovered ? 3 : 2;
-      ctx.strokeStyle = "rgba(4, 14, 22, 0.92)";
+      ctx.lineWidth = isHovered ? 2.25 : 1.35;
+      ctx.strokeStyle = "rgba(4, 14, 22, 0.9)";
       ctx.stroke();
+      if (isHovered) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 209, 102, 0.2)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     });
     ctx.restore();
   }

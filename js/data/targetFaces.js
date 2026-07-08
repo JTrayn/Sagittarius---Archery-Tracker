@@ -24,18 +24,23 @@
       diameterMm,
       defaultDistanceM,
       description,
+      labels: {
+        position: "horizontal",
+        depth: "middle",
+        autoContrast: true
+      },
       zones: [
-        { id: "x", label: "X", score: 10, radiusMm: innerTenRadiusMm, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "10", label: "10", score: 10, radiusMm: ringWidth, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "9", label: "9", score: 9, radiusMm: ringWidth * 2, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "8", label: "8", score: 8, radiusMm: ringWidth * 3, fill: COLOURS.red, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "7", label: "7", score: 7, radiusMm: ringWidth * 4, fill: COLOURS.red, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "6", label: "6", score: 6, radiusMm: ringWidth * 5, fill: COLOURS.blue, stroke: "#111111", strokeWidthMm: 0.8 },
-        { id: "5", label: "5", score: 5, radiusMm: ringWidth * 6, fill: COLOURS.blue, stroke: "#111111", strokeWidthMm: 0.8 },
-        { id: "4", label: "4", score: 4, radiusMm: ringWidth * 7, fill: COLOURS.black, stroke: "#d8dde3", strokeWidthMm: 0.8 },
-        { id: "3", label: "3", score: 3, radiusMm: ringWidth * 8, fill: COLOURS.black, stroke: "#d8dde3", strokeWidthMm: 0.8 },
-        { id: "2", label: "2", score: 2, radiusMm: ringWidth * 9, fill: COLOURS.white, stroke: "#1f1f1f", strokeWidthMm: 0.8 },
-        { id: "1", label: "1", score: 1, radiusMm: ringWidth * 10, fill: COLOURS.white, stroke: "#1f1f1f", strokeWidthMm: 0.8 }
+        { id: "x", label: "X", targetLabel: "+", score: 10, radiusMm: innerTenRadiusMm, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelPosition: "center", labelSize: "small" },
+        { id: "10", label: "10", score: 10, radiusMm: ringWidth, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "9", label: "9", score: 9, radiusMm: ringWidth * 2, fill: COLOURS.gold, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "8", label: "8", score: 8, radiusMm: ringWidth * 3, fill: COLOURS.red, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "7", label: "7", score: 7, radiusMm: ringWidth * 4, fill: COLOURS.red, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "6", label: "6", score: 6, radiusMm: ringWidth * 5, fill: COLOURS.blue, stroke: "#111111", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "5", label: "5", score: 5, radiusMm: ringWidth * 6, fill: COLOURS.blue, stroke: "#111111", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "4", label: "4", score: 4, radiusMm: ringWidth * 7, fill: COLOURS.black, stroke: "#d8dde3", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "3", label: "3", score: 3, radiusMm: ringWidth * 8, fill: COLOURS.black, stroke: "#d8dde3", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "2", label: "2", score: 2, radiusMm: ringWidth * 9, fill: COLOURS.white, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" },
+        { id: "1", label: "1", score: 1, radiusMm: ringWidth * 10, fill: COLOURS.white, stroke: "#1f1f1f", strokeWidthMm: 0.8, labelSize: "small" }
       ]
     };
   }
@@ -47,7 +52,7 @@
     diameterMm: 1220,
     defaultDistanceM: 70,
     innerTenRadiusMm: 30.5,
-    description: "Standard 122cm 10-zone target face used for Olympic recurve at 70m. The X ring scores 10 and is displayed separately."
+    description: "Standard 122cm 10-zone target face used for Olympic recurve at 70m. The inner 10 ring scores 10 and is marked with a small centre +."
   });
 
   const WA_40CM_FULL = worldArcheryFullFace({
@@ -57,7 +62,7 @@
     diameterMm: 400,
     defaultDistanceM: 18,
     innerTenRadiusMm: 10,
-    description: "Standard 40cm indoor target face with 10 scoring rings. The X ring scores 10 and is displayed separately."
+    description: "Standard 40cm indoor target face with 10 scoring rings. The inner 10 ring scores 10 and is marked with a small centre +."
   });
 
   function inchesToRadiusMm(inches) {
@@ -74,19 +79,27 @@
       diameterMm: fiveIn * 25.4,
       defaultDistanceM: 18,
       description: `Indoor Archery WA Series ${series}. Zone diameters: X ${xIn}\", 8 ${eightIn}\", 7 ${sevenIn}\", 5 ${fiveIn}\". X scores 8.`,
-      centreLabel: {
-        text: "X",
-        fill: "#ff243a",
-        fontWeight: 950,
-        minPx: 18,
-        maxPx: 78,
-        scaleMm: xIn <= 0.5 ? 10 : 13
+      labels: {
+        position: "horizontal",
+        depth: "middle",
+        autoContrast: false
       },
       zones: [
-        { id: "x", label: "X", score: 8, radiusMm: inchesToRadiusMm(xIn), fill: COLOURS.indoorOrange, stroke: COLOURS.indoorWhiteBorder, strokeWidthMm: 0.9 },
-        { id: "8", label: "8", score: 8, radiusMm: inchesToRadiusMm(eightIn), fill: COLOURS.indoorBlack, stroke: COLOURS.indoorWhiteBorder, strokeWidthMm: 0.9 },
-        { id: "7", label: "7", score: 7, radiusMm: inchesToRadiusMm(sevenIn), fill: COLOURS.indoorYellow, stroke: COLOURS.indoorWhiteBorder, strokeWidthMm: 0.9 },
-        { id: "5", label: "5", score: 5, radiusMm: inchesToRadiusMm(fiveIn), fill: COLOURS.indoorBlack, stroke: COLOURS.indoorRedBorder, strokeWidthMm: 1.2, outerBorder: true }
+        {
+          id: "x",
+          label: "X",
+          score: 8,
+          radiusMm: inchesToRadiusMm(xIn),
+          fill: COLOURS.indoorOrange,
+          stroke: COLOURS.indoorWhiteBorder,
+          strokeWidthMm: 0.9,
+          labelPosition: "center",
+          labelSize: xIn <= 0.5 ? "xx-large" : "xxx-large",
+          labelFill: "#ff243a"
+        },
+        { id: "8", label: "8", score: 8, radiusMm: inchesToRadiusMm(eightIn), fill: COLOURS.indoorBlack, stroke: COLOURS.indoorWhiteBorder, strokeWidthMm: 0.9, labelSize: "large", labelFill: "#f8fbff" },
+        { id: "7", label: "7", score: 7, radiusMm: inchesToRadiusMm(sevenIn), fill: COLOURS.indoorYellow, stroke: COLOURS.indoorWhiteBorder, strokeWidthMm: 0.9, labelSize: "large", labelFill: "#121820" },
+        { id: "5", label: "5", score: 5, radiusMm: inchesToRadiusMm(fiveIn), fill: COLOURS.indoorBlack, stroke: COLOURS.indoorRedBorder, strokeWidthMm: 1.2, outerBorder: true, labelSize: "large", labelFill: "#f8fbff" }
       ]
     };
   }
@@ -230,6 +243,7 @@
     const normalizedZones = zones
       .map((zone, index) => normalizeCustomZone(zone, index, inheritedLabelSettings))
       .filter(Boolean);
+    migrateLegacyCentreLabel(source, normalizedZones);
     if (!normalizedZones.length) {
       normalizedZones.push(normalizeCustomZone({
         label: "10",
@@ -254,8 +268,7 @@
       family: String(source.family || "Custom target faces").trim() || "Custom target faces",
       description: String(source.description || "").trim(),
       diameterMm: roundMm(diameterMm),
-      labels: normalizeLabelSettings(source.labels || source.labelSettings || inferLabelSettings(source)),
-      ...(source.centreLabel ? { centreLabel: clonePlain(source.centreLabel) } : {}),
+      labels: normalizeLabelSettings(source.labels || source.labelSettings || inferLabelSettings(source), source.centreLabel),
       zones: normalizedZones,
       isBuiltIn: false,
       isCustom: true,
@@ -277,7 +290,10 @@
       stroke: normalizeColor(zone.stroke, "#1f1f1f"),
       strokeWidthMm: Math.max(0, Number(zone.strokeWidthMm) || 0),
       labelSize: normalizeLabelSize(zone.labelSize || inheritedLabelSettings.size),
-      labelFill: normalizeColor(zone.labelFill || (inheritedLabelSettings.fill === "auto" ? "" : inheritedLabelSettings.fill), "#121820")
+      labelFill: normalizeColor(zone.labelFill || (inheritedLabelSettings.fill === "auto" ? "" : inheritedLabelSettings.fill), "#121820"),
+      ...normalizeOptionalZoneTargetLabel(zone.targetLabel, label),
+      ...normalizeOptionalZoneLabelPosition(zone.labelPosition),
+      ...normalizeOptionalZoneLabelDepth(zone.labelDepth)
     };
   }
 
@@ -335,28 +351,108 @@
     return isValidColor(color) ? color : fallback;
   }
 
-  function normalizeLabelSettings(settings) {
-    const source = settings || {};
-    const position = ["diagonal", "vertical", "horizontal", "diagonal-left"].includes(source.position)
-      ? source.position
-      : "diagonal";
-    const autoContrast = source.autoContrast !== undefined
-      ? source.autoContrast !== false
-      : source.fill === "auto" || !source.fill;
+  function migrateLegacyCentreLabel(source, normalizedZones) {
+    const label = source?.centreLabel;
+    if (!label || !normalizedZones.length) return;
 
-    return { position, autoContrast };
+    const labelText = String(label.text || "X").trim().toLowerCase();
+    const centreZone = normalizedZones.find(zone => String(zone.label || "").trim().toLowerCase() === labelText)
+      || normalizedZones.reduce((smallest, zone) => zone.radiusMm < smallest.radiusMm ? zone : smallest, normalizedZones[0]);
+
+    if (!centreZone) return;
+    centreZone.labelPosition = "center";
+    centreZone.labelFill = normalizeColor(label.fill, centreZone.labelFill || "#ff3347");
+    centreZone.labelSize = centreZone.labelSize && centreZone.labelSize !== "medium"
+      ? centreZone.labelSize
+      : legacyCentreLabelSize(label);
+
+    normalizedZones.forEach(zone => {
+      if (!zone.labelFill || zone.labelFill === "#121820") {
+        zone.labelFill = labelTextColour(zone.fill);
+      }
+    });
+  }
+
+  function legacyCentreLabelSize(label) {
+    const maxPx = Number(label?.maxPx) || 0;
+    if (maxPx >= 72) return "xxx-large";
+    if (maxPx >= 56) return "xx-large";
+    return "x-large";
+  }
+
+  function normalizeLabelSettings(settings, legacyCentreLabel) {
+    const source = settings || {};
+    const position = normalizeSharedLabelPosition(source.position) || "horizontal";
+    const autoContrast = legacyCentreLabel
+      ? false
+      : source.autoContrast !== undefined
+        ? source.autoContrast !== false
+        : source.fill === "auto" || !source.fill;
+
+    return {
+      position,
+      depth: normalizeLabelDepth(source.depth) || "middle",
+      autoContrast
+    };
   }
 
   function inferLabelSettings(face) {
     if (face?.labels) return face.labels;
     return {
-      position: face?.family === "Indoor Archery WA" ? "vertical" : "diagonal",
-      autoContrast: true
+      position: "horizontal",
+      depth: "middle",
+      autoContrast: face?.family === "Indoor Archery WA" ? false : true
     };
   }
 
+  function normalizeOptionalZoneLabelPosition(value) {
+    const position = normalizeZoneLabelPosition(value);
+    return position ? { labelPosition: position } : {};
+  }
+
+  function normalizeOptionalZoneTargetLabel(value, scoreLabel) {
+    const label = String(value || "").trim();
+    if (!label || label === String(scoreLabel || "").trim()) return {};
+    return { targetLabel: label.slice(0, 8) };
+  }
+
+  function normalizeOptionalZoneLabelDepth(value) {
+    const depth = normalizeLabelDepth(value);
+    return depth ? { labelDepth: depth } : {};
+  }
+
+  function normalizeLabelDepth(value) {
+    const depth = String(value || "").trim();
+    return ["inner", "middle", "outer"].includes(depth) ? depth : "";
+  }
+
+  function normalizeSharedLabelPosition(value) {
+    const position = String(value || "").trim();
+    return [
+      "diagonal",
+      "vertical",
+      "horizontal",
+      "diagonal-left",
+      "vertical-down",
+      "horizontal-left",
+      "diagonal-down-right",
+      "diagonal-down-left"
+    ].includes(position) ? position : "";
+  }
+
+  function normalizeZoneLabelPosition(value) {
+    const position = String(value || "").trim();
+    return position === "center" || normalizeSharedLabelPosition(position) ? position : "";
+  }
+
   function normalizeLabelSize(value) {
-    return ["small", "medium", "large", "x-large"].includes(value) ? value : "medium";
+    return ["small", "medium", "large", "x-large", "xx-large", "xxx-large", "huge"].includes(value) ? value : "medium";
+  }
+
+  function labelTextColour(fill) {
+    const normalized = String(fill || "").toLowerCase();
+    const darkFills = ["#20252b", "#2684d9", "#e44242", "#080b0f", "#000000", "#111111"];
+    return darkFills.includes(normalized) ? "#f8fbff" : "#121820";
   }
 
   function isValidColor(value) {

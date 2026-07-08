@@ -11,21 +11,30 @@
 
     canvas.addEventListener("pointerdown", event => {
       if (event.button !== 0) return;
+      viewport.setPointerInteractionActive(true);
       const state = App.State.getState();
+      const hadScorecardFocus = Boolean(state.viewport.scorecardFocus);
+      if (hadScorecardFocus) App.Actions.clearScorecardFocus();
       const point = App.ViewportMath.getPointerPosition(event, canvas);
       viewport.pointerScreen = point;
       viewport.requestDraw();
 
-      const mode = state.viewport.interactionMode;
+      const mode = state.viewport.timeline?.enabled ? "locked" : state.viewport.interactionMode;
+      const extrapolation = App.Extrapolation.getTransform(state.scorecard, state.viewport);
       const isEditMode = mode === "edit";
       const isLockedMode = mode === "locked";
-      const canInspect = isEditMode || isLockedMode;
-      const hit = canInspect ? App.ArrowRenderer.getArrowHitAt(point, canvas, viewport.transform, state.scorecard, { visibleEndIndex: state.viewport.visibleEndIndex }) : null;
+      const separatedEndsTimeline = App.TimelineRenderer.isSeparatedEndsMode(state.viewport);
+      const canInspect = (isEditMode || isLockedMode) && !separatedEndsTimeline;
+      const hit = canInspect ? App.ArrowRenderer.getArrowHitAt(point, canvas, viewport.transform, state.scorecard, {
+        visibleEndIndex: state.viewport.visibleEndIndex,
+        extrapolation,
+        timeline: state.viewport.timeline?.enabled ? state.viewport.timeline : null
+      }) : null;
 
       canvas.setPointerCapture(event.pointerId);
       const pointerWorld = App.ViewportMath.screenToWorld(point, canvas, viewport.transform);
       const targetFace = state.scorecard ? App.TargetFaces.getTargetFace(state.scorecard.activeViewTargetFaceId) : null;
-      const startingScore = hit && hit.arrow && targetFace ? App.ScoringEngine.scoreArrow(hit.arrow, targetFace) : null;
+      const startingScore = hit && hit.arrow && targetFace ? App.ScoringEngine.scoreArrow(hit.arrow, targetFace, { extrapolation }) : null;
 
       pointerDown = {
         point,
@@ -37,8 +46,8 @@
         hit,
         lastScoreKey: scoreKey(startingScore),
         arrowOffset: hit && hit.arrow && hit.arrow.position ? {
-          xMm: hit.arrow.position.xMm - pointerWorld.xMm,
-          yMm: hit.arrow.position.yMm - pointerWorld.yMm
+          xMm: (hit.displayPosition?.xMm ?? hit.arrow.position.xMm) - pointerWorld.xMm,
+          yMm: (hit.displayPosition?.yMm ?? hit.arrow.position.yMm) - pointerWorld.yMm
         } : { xMm: 0, yMm: 0 }
       };
       dragging = false;
@@ -46,14 +55,17 @@
       if (hit) {
         event.preventDefault();
         canvas.classList.add("hovering-arrow");
-        App.Actions.selectArrow(hit.endIndex, hit.arrowIndex);
+        if (!state.viewport.timeline?.enabled) {
+          App.Actions.selectArrow(hit.endIndex, hit.arrowIndex);
+        }
         App.State.setHoveredArrow(hit);
       }
     });
 
     canvas.addEventListener("pointermove", event => {
       const state = App.State.getState();
-      const mode = state.viewport.interactionMode;
+      const mode = state.viewport.timeline?.enabled ? "locked" : state.viewport.interactionMode;
+      const extrapolation = App.Extrapolation.getTransform(state.scorecard, state.viewport);
       const isEditMode = mode === "edit";
       const isLockedMode = mode === "locked";
       const point = App.ViewportMath.getPointerPosition(event, canvas);
@@ -61,7 +73,7 @@
       viewport.requestDraw();
 
       if (!pointerDown) {
-        updateHoverState(canvas, viewport, point, state, isEditMode || isLockedMode);
+        updateHoverState(canvas, viewport, point, state, (isEditMode || isLockedMode) && !App.TimelineRenderer.isSeparatedEndsMode(state.viewport));
         return;
       }
 
@@ -79,8 +91,9 @@
           xMm: pointerWorld.xMm + pointerDown.arrowOffset.xMm,
           yMm: pointerWorld.yMm + pointerDown.arrowOffset.yMm
         };
-        maybeShowScoreChangeFeedback(viewport, pointerDown, world, state);
-        scheduleArrowMove(pointerDown.hit.endIndex, pointerDown.hit.arrowIndex, world);
+        maybeShowScoreChangeFeedback(viewport, pointerDown, world, state, extrapolation);
+        const storedWorld = App.Extrapolation.inverseTransformPosition(world, extrapolation);
+        scheduleArrowMove(pointerDown.hit.endIndex, pointerDown.hit.arrowIndex, storedWorld);
         return;
       }
 
@@ -103,31 +116,36 @@
       canvas.classList.remove("dragging", "moving-arrow");
 
       const state = App.State.getState();
-      const mode = state.viewport.interactionMode;
+      const mode = state.viewport.timeline?.enabled ? "locked" : state.viewport.interactionMode;
       const isEditMode = mode === "edit";
       const isLockedMode = mode === "locked";
 
       if (!dragging) {
         if ((isEditMode || isLockedMode) && pointerDown.hit) {
-          App.Actions.selectArrow(pointerDown.hit.endIndex, pointerDown.hit.arrowIndex);
+          if (!state.viewport.timeline?.enabled) {
+            App.Actions.selectArrow(pointerDown.hit.endIndex, pointerDown.hit.arrowIndex);
+          }
         } else if (mode === "plot") {
           const point = App.ViewportMath.getPointerPosition(event, canvas);
           const world = App.ViewportMath.screenToWorld(point, canvas, viewport.transform);
-          viewport.onPlot(world);
+          const extrapolation = App.Extrapolation.getTransform(state.scorecard, state.viewport);
+          viewport.onPlot(App.Extrapolation.inverseTransformPosition(world, extrapolation));
         }
       }
 
       pointerDown = null;
       dragging = false;
+      viewport.setPointerInteractionActive(false);
       const point = App.ViewportMath.getPointerPosition(event, canvas);
       viewport.pointerScreen = point;
       viewport.requestDraw();
-      updateHoverState(canvas, viewport, point, App.State.getState(), isEditMode || isLockedMode);
+      updateHoverState(canvas, viewport, point, App.State.getState(), (isEditMode || isLockedMode) && !App.TimelineRenderer.isSeparatedEndsMode(App.State.getState().viewport));
     });
 
     canvas.addEventListener("pointercancel", () => {
       pointerDown = null;
       dragging = false;
+      viewport.setPointerInteractionActive(false);
       viewport.pointerScreen = null;
       viewport.requestDraw();
       canvas.classList.remove("dragging", "moving-arrow");
@@ -143,8 +161,8 @@
 
     canvas.addEventListener("wheel", event => {
       event.preventDefault();
+      const state = App.State.getState();
       const point = App.ViewportMath.getPointerPosition(event, canvas);
-      const worldBefore = App.ViewportMath.screenToWorld(point, canvas, viewport.transform);
       const factor = Math.exp(-event.deltaY * 0.0017);
       const nextScale = App.Geometry.clamp(
         viewport.transform.targetPxPerMm * factor,
@@ -153,6 +171,22 @@
       );
       const center = App.ViewportMath.getCanvasCenter(canvas);
 
+      if (App.TimelineRenderer.isSeparatedEndsMode(state.viewport) && state.scorecard) {
+        const rect = canvas.getBoundingClientRect();
+        const targetFace = App.TargetFaces.getTargetFace(state.scorecard.activeViewTargetFaceId);
+        const baseScale = App.TimelineRenderer.getSeparatedEndsBaseScale(rect, targetFace);
+        const currentZoom = (Number(viewport.transform.targetPxPerMm) || baseScale) / baseScale;
+        const nextZoom = nextScale / baseScale;
+        const gridX = (point.x - center.x - viewport.transform.targetPanX) / currentZoom;
+        const gridY = (point.y - center.y - viewport.transform.targetPanY) / currentZoom;
+        viewport.transform.targetPxPerMm = nextScale;
+        viewport.transform.targetPanX = point.x - center.x - gridX * nextZoom;
+        viewport.transform.targetPanY = point.y - center.y - gridY * nextZoom;
+        viewport.requestDraw();
+        return;
+      }
+
+      const worldBefore = App.ViewportMath.screenToWorld(point, canvas, viewport.transform);
       viewport.transform.targetPxPerMm = nextScale;
       viewport.transform.targetPanX = point.x - center.x - worldBefore.xMm * nextScale;
       viewport.transform.targetPanY = point.y - center.y - worldBefore.yMm * nextScale;
@@ -174,7 +208,7 @@
 
 
 
-  function maybeShowScoreChangeFeedback(viewport, pointerDown, world, state) {
+  function maybeShowScoreChangeFeedback(viewport, pointerDown, world, state, extrapolation = null) {
     if (!pointerDown || !pointerDown.hit || !state.scorecard) return;
     const targetFace = App.TargetFaces.getTargetFace(state.scorecard.activeViewTargetFaceId);
     if (!targetFace) return;
@@ -201,7 +235,11 @@
       return;
     }
 
-    const hit = App.ArrowRenderer.getArrowHitAt(point, canvas, viewport.transform, state.scorecard, { visibleEndIndex: state.viewport.visibleEndIndex });
+    const hit = App.ArrowRenderer.getArrowHitAt(point, canvas, viewport.transform, state.scorecard, {
+      visibleEndIndex: state.viewport.visibleEndIndex,
+      extrapolation: App.Extrapolation.getTransform(state.scorecard, state.viewport),
+      timeline: state.viewport.timeline?.enabled ? state.viewport.timeline : null
+    });
     App.State.setHoveredArrow(hit);
     canvas.classList.toggle("hovering-arrow", Boolean(hit));
   }

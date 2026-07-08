@@ -2,66 +2,85 @@
 .viewport-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .viewport-actions {
   flex: 1 1 auto;
-  align-items: stretch;
-  row-gap: 7px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  row-gap: 6px;
+  align-content: center;
 }
 
 .viewport-toolbar-copy {
-  min-width: 166px;
-  padding-top: 2px;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding-top: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.viewport-toolbar-copy h2 {
+  white-space: nowrap;
+}
+
+.viewport-toolbar-copy p {
+  display: none;
 }
 
 .viewport-control-cluster {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 4px;
   min-width: 0;
-  min-height: 42px;
-  padding: 5px 7px;
-  border: 1px solid rgba(151, 184, 212, 0.13);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
-    rgba(3, 10, 17, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  min-height: 34px;
+  padding: 3px;
+  border: 1px solid rgba(151, 184, 212, 0.11);
+  border-radius: 999px;
+  background: rgba(3, 10, 17, 0.20);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
+}
+
+.viewport-control-cluster + .viewport-control-cluster::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: rgba(151, 184, 212, 0.12);
 }
 
 .viewport-cluster-label {
   flex: 0 0 auto;
-  padding-inline: 2px;
+  padding: 0 6px 0 7px;
   color: var(--muted-2);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 900;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.075em;
+  line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .viewport-view-cluster {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .viewport-display-cluster {
   flex: 0 0 auto;
-  margin-right: auto;
-}
-
-.viewport-export-cluster {
-  padding: 0;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
+  margin-right: 0;
 }
 
 .viewport-export-cluster .btn {
-  min-height: 42px;
+  min-height: 30px;
 }
 
 .btn {
@@ -125,7 +144,7 @@
   border-radius: 50%;
   border: 1px solid var(--border);
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.038);
   cursor: pointer;
   font-size: 1.4rem;
   line-height: 1;
@@ -197,11 +216,11 @@ select option {
 
 .stat-chip {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.038);
   color: var(--muted);
   border-radius: 999px;
   padding: 0.48rem 0.72rem;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .stat-chip strong {
@@ -499,7 +518,7 @@ textarea:focus {
   border: 1px solid rgba(85, 214, 190, 0.42);
   background: rgba(85, 214, 190, 0.12);
   color: var(--accent);
-  font-size: 0.68rem;
+  font-size: 0.88rem;
   font-weight: 850;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -676,59 +695,65 @@ textarea:focus {
 .viewport-select-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
   grid-template-columns: none;
   text-transform: none;
   letter-spacing: 0;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--muted);
 }
 
-.viewport-select-label span {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.68rem;
+.viewport-select-label > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .viewport-select {
-  height: 34px;
-  min-width: 112px;
+  height: 30px;
+  min-width: 96px;
   border-radius: 999px;
-  padding: 0 30px 0 12px;
-  font-size: 0.84rem;
+  padding: 0 26px 0 10px;
+  font-size: 0.78rem;
   background: rgba(255, 255, 255, 0.055);
 }
 
 .viewport-fade-control {
   display: grid;
-  grid-template-columns: auto 112px 42px;
+  grid-template-columns: auto 78px 34px;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
   text-transform: none;
   letter-spacing: 0;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
-.viewport-fade-control span {
+.viewport-fade-control > span {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
 }
 
 .viewport-fade-control output {
   color: var(--text);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 850;
   text-align: right;
 }
 
 .viewport-fade-control input[type="range"] {
   appearance: none;
-  width: 112px;
-  height: 26px;
+  width: 78px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -786,6 +811,14 @@ textarea:focus {
 
 .export-target-visibility-control input[type="range"] {
   width: 100%;
+}
+
+.export-target-visibility-control.is-disabled {
+  opacity: 0.48;
+}
+
+.export-target-visibility-control.is-disabled input[type="range"] {
+  cursor: not-allowed;
 }
 
 .export-modal-copy {
@@ -865,31 +898,59 @@ textarea:focus {
 
 .export-choice-list {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.export-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .export-choice {
   width: 100%;
   text-align: left;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.045);
+  border-radius: 20px;
+  padding: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.026)),
+    rgba(255, 255, 255, 0.035);
   color: var(--text);
   cursor: pointer;
   display: grid;
-  gap: 5px;
-  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+  gap: 8px;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 
 .export-choice:hover {
   transform: translateY(-1px);
   border-color: rgba(85, 214, 190, 0.62);
-  background: rgba(85, 214, 190, 0.10);
+  background:
+    linear-gradient(180deg, rgba(85, 214, 190, 0.115), rgba(85, 214, 190, 0.045)),
+    rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(85, 214, 190, 0.08);
+}
+
+.export-choice-card {
+  min-height: 218px;
+  text-align: center;
+  align-content: stretch;
+}
+
+.export-choice-preview {
+  width: 100%;
+  height: 158px;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid rgba(151, 184, 212, 0.15);
+  background: rgba(3, 10, 17, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
 .export-choice strong {
+  align-self: center;
+  justify-self: center;
   font-size: 1rem;
+  line-height: 1.18;
 }
 
 .export-choice span {
@@ -1019,7 +1080,7 @@ textarea:focus {
 
 .target-face-label-grid {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(132px, auto);
+  grid-template-columns: minmax(150px, 1fr) minmax(140px, 0.8fr) minmax(132px, auto);
   gap: 10px;
   align-items: end;
 }
@@ -1092,7 +1153,7 @@ textarea:focus {
 
 .target-face-zone-row {
   display: grid;
-  grid-template-columns: 32px minmax(68px, 1fr) minmax(74px, 0.72fr) 42px minmax(58px, 0.62fr) minmax(86px, 0.82fr) 42px 42px minmax(66px, 0.62fr) 32px;
+  grid-template-columns: 32px minmax(62px, 0.95fr) minmax(72px, 0.65fr) minmax(112px, 0.95fr) minmax(88px, 0.72fr) 42px minmax(54px, 0.52fr) minmax(80px, 0.72fr) 42px 42px minmax(60px, 0.52fr) 32px;
   gap: 7px;
   align-items: center;
   width: 100%;
@@ -1166,7 +1227,7 @@ textarea:focus {
   display: grid;
   gap: 5px;
   color: #ff9aa5;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .target-face-validation:empty {
@@ -1342,16 +1403,16 @@ textarea:focus {
 }
 
 .viewport-select-label #visibleEndSelect + .custom-select {
-  width: 124px;
+  width: 112px;
 }
 
 .viewport-select-label .custom-select-trigger {
-  height: 34px;
-  min-height: 34px;
+  height: 30px;
+  min-height: 30px;
   border-radius: 999px;
-  padding-left: 13px;
-  padding-right: 8px;
-  font-size: 0.84rem;
+  padding-left: 10px;
+  padding-right: 7px;
+  font-size: 0.78rem;
 }
 
 .viewport-select-label .custom-select-menu {
@@ -1370,7 +1431,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 0;
-  padding: 3px;
+  padding: 2px;
   border-radius: 999px;
   border: 1px solid rgba(151, 184, 212, 0.18);
   background: rgba(3, 10, 17, 0.36);
@@ -1464,11 +1525,88 @@ textarea:focus {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.10), inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
-@media (max-width: 1360px) {
+/* v0.7.18: compact one-row viewport toolbar. */
+.viewport-actions .btn {
+  min-height: 30px;
+  padding: 0.38rem 0.58rem;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.viewport-actions .btn-mode {
+  min-width: 45px;
+}
+
+.viewport-actions #lockedModeBtn {
+  min-width: 58px;
+}
+
+.viewport-actions .btn-toggle {
+  min-width: 56px;
+}
+
+.viewport-actions #toggleRadialGroupingBtn,
+.viewport-actions #toggleSimpleGroupingBtn {
+  min-width: 46px;
+}
+
+.viewport-actions #exportTargetImageBtn {
+  min-width: 72px;
+}
+
+.viewport-control-group {
+  padding: 2px;
+}
+
+.viewport-control-group .btn {
+  padding-left: 0.56rem;
+  padding-right: 0.56rem;
+}
+
+.group-control-group .btn-toggle {
+  min-width: 46px;
+}
+
+.trends-control-cluster {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.trends-control-cluster .viewport-select-label .custom-select {
+  width: min(138px, 13vw);
+}
+
+.trends-control-cluster #trendMetricSelect + .custom-select {
+  width: 150px;
+}
+
+.trend-spacing-control .btn {
+  min-width: 72px;
+}
+
+
+/* v0.8.22: allow viewport toolbar controls to wrap cleanly when the viewport is compressed by the splitter. */
+.viewport-toolbar {
+  align-items: flex-start;
+}
+
+.viewport-actions .viewport-control-cluster,
+.viewport-actions .viewport-export-cluster {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1100px) {
   .viewport-actions {
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
 
+  .viewport-toolbar {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
   .viewport-toolbar {
     flex-direction: column;
   }
@@ -1476,4 +1614,1481 @@ textarea:focus {
   .viewport-toolbar-copy {
     min-width: 0;
   }
+}
+
+
+/* v0.7.19: keep custom-select labels visible and move the view toggle into the toolbar lead. */
+.viewport-toolbar-copy {
+  gap: 0;
+}
+
+.viewport-toolbar-copy .viewport-display-cluster {
+  margin: 0;
+  border-color: rgba(85, 214, 190, 0.18);
+  background: rgba(3, 10, 17, 0.24);
+}
+
+.viewport-toolbar-copy .viewport-display-cluster::before {
+  display: none;
+}
+
+.viewport-toolbar-copy .viewport-control-group {
+  padding: 2px;
+}
+
+.viewport-actions .viewport-view-cluster {
+  flex: 0 0 auto;
+}
+
+.viewport-select-label .custom-select-value {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+}
+
+.viewport-select-label .custom-select-chevron {
+  display: grid;
+}
+
+.trends-control-cluster .custom-select-value {
+  flex: 1 1 auto;
+}
+
+/* v0.8.0: compact extrapolated-distance viewport controls. */
+.extrapolate-control-cluster {
+  flex: 0 1 auto;
+}
+
+.extrapolate-distance-control {
+  grid-template-columns: auto 118px 44px;
+  min-width: 182px;
+}
+
+.extrapolate-distance-control input[type="range"] {
+  width: 118px;
+}
+
+.extrapolate-distance-control.is-disabled {
+  opacity: 0.46;
+}
+
+.extrapolate-distance-control.is-disabled input[type="range"] {
+  cursor: not-allowed;
+}
+
+@media (max-width: 1180px) {
+  .extrapolate-distance-control {
+    grid-template-columns: auto 96px 42px;
+    min-width: 158px;
+  }
+
+  .extrapolate-distance-control input[type="range"] {
+    width: 96px;
+  }
+}
+
+/* v0.8.1: dim unavailable controls while timeline replay owns the viewport. */
+.btn:disabled,
+select:disabled,
+.timeline-speed-label:has(select:disabled) {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.055);
+  transform: none;
+}
+
+/* Compact floating global header controls */
+.topbar .btn {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.38rem 0.62rem;
+  border-color: rgba(151, 184, 212, 0.18);
+  background: rgba(255, 255, 255, 0.038);
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.topbar .btn-primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, rgba(85, 214, 190, 0.95), rgba(94, 167, 255, 0.95));
+  color: #041018;
+  box-shadow: 0 10px 24px rgba(85, 214, 190, 0.14);
+}
+
+.topbar .btn-dev {
+  border-color: rgba(255, 209, 102, 0.24);
+  color: rgba(255, 226, 163, 0.86);
+  background: rgba(255, 209, 102, 0.055);
+}
+
+.topbar .file-btn {
+  min-height: 30px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.btn-symbol {
+  display: inline-grid;
+  place-items: center;
+  width: 1em;
+  color: currentColor;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.92;
+}
+
+/* v0.8.44 Performance Intelligence modal polish */
+.modal-card:has(.intelligence-modal) {
+  width: min(1120px, 100%);
+  max-height: min(900px, 92vh);
+}
+
+.intelligence-modal {
+  display: grid;
+  gap: 16px;
+}
+
+.intelligence-modal-v2 {
+  --intel-accent: #55d6be;
+  --intel-gold: #ffed9e;
+}
+
+.intelligence-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: stretch;
+  padding: 18px;
+  border: 1px solid rgba(85, 214, 190, 0.18);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(85, 214, 190, 0.16), transparent 32rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.028));
+}
+
+.intelligence-hero-v2 {
+  padding: 20px;
+}
+
+.intelligence-hero-copy {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  min-width: 0;
+}
+
+.intelligence-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  position: relative;
+}
+
+.intelligence-help-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.intelligence-help-button {
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(85, 214, 190, 0.34);
+  border-radius: 999px;
+  background: rgba(85, 214, 190, 0.11);
+  color: rgba(219, 255, 248, 0.96);
+  font-size: 0.76rem;
+  font-weight: 950;
+  line-height: 1;
+  cursor: help;
+  box-shadow: 0 0 14px rgba(85, 214, 190, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.intelligence-help-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  width: min(520px, calc(100vw - 48px));
+  max-width: 520px;
+  transform: translate(-50%, -4px);
+  display: grid;
+  gap: 9px;
+  padding: 14px 15px;
+  border: 1px solid rgba(85, 214, 190, 0.30);
+  border-radius: 16px;
+  background: rgba(5, 14, 23, 0.97);
+  color: rgba(223, 238, 247, 0.95);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.46), 0 0 22px rgba(85, 214, 190, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+.intelligence-help-popover::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateX(-50%) rotate(45deg);
+  border-left: 1px solid rgba(85, 214, 190, 0.30);
+  border-top: 1px solid rgba(85, 214, 190, 0.30);
+  background: rgba(5, 14, 23, 0.97);
+}
+
+.intelligence-help-popover strong {
+  color: var(--text);
+  font-size: 0.86rem;
+  letter-spacing: -0.01em;
+}
+
+.intelligence-help-popover span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.38;
+}
+
+.intelligence-help-wrap:hover .intelligence-help-popover,
+.intelligence-help-wrap:focus-within .intelligence-help-popover {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.intelligence-hero-copy h3,
+.intelligence-section-title h4,
+.intelligence-best-copy h5 {
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.035em;
+}
+
+.intelligence-hero-copy h3 {
+  font-size: 1.26rem;
+}
+
+.intelligence-hero-copy p,
+.intelligence-section-title p,
+.intelligence-panel-intro,
+.intelligence-summary-copy p,
+.intelligence-best-copy p,
+.intelligence-guide-item span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.42;
+}
+
+.intelligence-hero-copy p {
+  max-width: 76ch;
+}
+
+.intelligence-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.intelligence-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid rgba(85, 214, 190, 0.16);
+  border-radius: 999px;
+  background: rgba(3, 10, 17, 0.22);
+}
+
+.intelligence-pill strong,
+.intelligence-pill small {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.intelligence-pill strong {
+  color: var(--text);
+  font-weight: 900;
+}
+
+.intelligence-pill small {
+  color: var(--muted-2);
+  font-weight: 750;
+}
+
+.intelligence-hero-score {
+  min-width: 174px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 15px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 209, 102, 0.26);
+  background: rgba(255, 209, 102, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.intelligence-hero-score span,
+.intelligence-metric span,
+.intelligence-dna-item span,
+.intelligence-section-head small,
+.intelligence-scenario-row small,
+.intelligence-best-stats span,
+.intelligence-guide-item strong {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.intelligence-hero-score strong {
+  font-size: 2.5rem;
+  line-height: 0.98;
+  color: var(--intel-gold);
+  letter-spacing: -0.06em;
+}
+
+.intelligence-hero-score small {
+  color: #ffe8a6;
+  font-size: 0.78rem;
+}
+
+.intelligence-summary-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1px solid rgba(151, 184, 212, 0.14);
+  border-radius: 20px;
+  background: rgba(3, 10, 17, 0.23);
+}
+
+.intelligence-summary-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.intelligence-section,
+.intelligence-panel,
+.intelligence-metric,
+.intelligence-dna-item,
+.intelligence-best-card,
+.intelligence-guide-item {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.intelligence-section {
+  display: grid;
+  gap: 13px;
+  padding: 15px;
+  border-radius: 22px;
+}
+
+.intelligence-section-title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.intelligence-section-title h4 {
+  font-size: 1.05rem;
+}
+
+.intelligence-section-title p {
+  text-align: right;
+  font-size: 0.84rem;
+}
+
+.intelligence-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.intelligence-grid-primary {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.intelligence-metric {
+  min-height: 114px;
+  display: grid;
+  gap: 7px;
+  align-content: center;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.intelligence-metric strong {
+  color: var(--text);
+  font-size: 1.34rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.intelligence-metric small {
+  color: var(--muted-2);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.intelligence-metric.reliability-good,
+.intelligence-metric.reliability-strong {
+  border-color: rgba(87, 227, 137, 0.26);
+  background: rgba(87, 227, 137, 0.06);
+}
+
+.intelligence-metric.reliability-moderate {
+  border-color: rgba(255, 209, 102, 0.28);
+  background: rgba(255, 209, 102, 0.065);
+}
+
+.intelligence-metric.reliability-low,
+.intelligence-metric.reliability-very-low {
+  border-color: rgba(255, 209, 102, 0.34);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.intelligence-split {
+  display: grid;
+  grid-template-columns: minmax(285px, 0.74fr) minmax(0, 1.26fr);
+  gap: 12px;
+}
+
+.intelligence-panel {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border-radius: 20px;
+}
+
+.intelligence-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.intelligence-section-head span {
+  font-size: 0.98rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.intelligence-section-head small {
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.intelligence-panel-intro {
+  font-size: 0.82rem;
+}
+
+.intelligence-table,
+.intelligence-scenario-table,
+.intelligence-dna-grid,
+.intelligence-scenario-guide {
+  display: grid;
+  gap: 8px;
+}
+
+.intelligence-table-row {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(151, 184, 212, 0.12);
+  border-radius: 14px;
+  background: rgba(3, 10, 17, 0.26);
+}
+
+.intelligence-table-row span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.intelligence-table-row strong {
+  color: var(--text);
+}
+
+.intelligence-dna-summary-card {
+  display: grid;
+  gap: 5px;
+  padding: 12px 13px;
+  border: 1px solid rgba(85, 214, 190, 0.20);
+  border-radius: 16px;
+  background: rgba(85, 214, 190, 0.07);
+}
+
+.intelligence-dna-summary-card strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.intelligence-dna-summary-card span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.intelligence-dna-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.intelligence-dna-item {
+  min-height: 96px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.intelligence-dna-item strong {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.22;
+}
+
+.intelligence-dna-item small {
+  color: var(--muted-2);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.intelligence-best-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.88fr);
+  gap: 14px;
+  align-items: stretch;
+  padding: 15px;
+  border-color: rgba(255, 209, 102, 0.26);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 209, 102, 0.13), transparent 25rem),
+    rgba(255, 209, 102, 0.055);
+}
+
+.intelligence-best-copy {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.intelligence-best-copy h5 {
+  font-size: 1.1rem;
+}
+
+.intelligence-best-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.intelligence-best-stats div {
+  display: grid;
+  gap: 5px;
+  align-content: center;
+  min-height: 84px;
+  padding: 10px;
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  border-radius: 15px;
+  background: rgba(3, 10, 17, 0.24);
+}
+
+.intelligence-best-stats strong {
+  color: var(--text);
+  font-size: 1.24rem;
+  letter-spacing: -0.04em;
+}
+
+.intelligence-scenario-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.35fr) 0.42fr 0.34fr 0.58fr;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid rgba(151, 184, 212, 0.12);
+  border-radius: 15px;
+  background: rgba(3, 10, 17, 0.25);
+}
+
+.intelligence-scenario-head {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.intelligence-scenario-row > span {
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.intelligence-scenario-row > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.intelligence-scenario-row strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--text);
+}
+
+.intelligence-scenario-row strong em {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(87, 227, 137, 0.11);
+  color: var(--success);
+  font-style: normal;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.intelligence-scenario-row small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 650;
+  line-height: 1.28;
+}
+
+.intelligence-scenario-row.is-featured {
+  border-color: rgba(255, 209, 102, 0.28);
+  background: rgba(255, 209, 102, 0.07);
+}
+
+.intelligence-scenario-row.is-largest-uplift:not(.is-featured) {
+  border-color: rgba(87, 227, 137, 0.22);
+  background: rgba(87, 227, 137, 0.055);
+}
+
+.intelligence-scenario-row .positive,
+.intelligence-best-stats .positive {
+  color: var(--success);
+  font-weight: 900;
+}
+
+.intelligence-scenario-row .negative,
+.intelligence-best-stats .negative {
+  color: var(--danger);
+  font-weight: 900;
+}
+
+.intelligence-scenario-guide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.intelligence-guide-item {
+  display: grid;
+  gap: 6px;
+  padding: 11px;
+  border-radius: 15px;
+}
+
+.intelligence-guide-item span {
+  font-size: 0.76rem;
+}
+
+.intelligence-notes ul {
+  margin: 0;
+  padding-left: 19px;
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.intelligence-empty {
+  color: var(--muted);
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(151, 184, 212, 0.18);
+  background: rgba(3, 10, 17, 0.20);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 1280px) {
+  .intelligence-grid-primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .intelligence-split,
+  .intelligence-section-title,
+  .intelligence-best-card {
+    grid-template-columns: 1fr;
+  }
+
+  .intelligence-section-title p {
+    text-align: left;
+  }
+
+  .intelligence-best-stats,
+  .intelligence-scenario-guide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .intelligence-hero,
+  .intelligence-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .intelligence-grid-primary,
+  .intelligence-dna-grid,
+  .intelligence-best-stats,
+  .intelligence-scenario-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .intelligence-scenario-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .intelligence-scenario-head {
+    display: none;
+  }
+}
+
+/* v0.8.45: Intelligence loading state and explanation trim. */
+.modal-card:has(.intelligence-loading-panel) {
+  width: min(560px, 100%);
+}
+
+.intelligence-loading-panel {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 18px 12px 4px;
+  text-align: center;
+}
+
+.intelligence-loading-panel h3,
+.intelligence-loading-panel p {
+  margin: 0;
+}
+
+.intelligence-loading-panel h3 {
+  color: var(--text);
+  font-size: 1.15rem;
+  letter-spacing: -0.035em;
+}
+
+.intelligence-loading-panel p {
+  max-width: 44ch;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.intelligence-loading-orb {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid rgba(85, 214, 190, 0.20);
+  background:
+    radial-gradient(circle, rgba(85, 214, 190, 0.95) 0 18%, transparent 20%),
+    conic-gradient(from 0deg, rgba(85, 214, 190, 0.08), rgba(85, 214, 190, 0.92), rgba(255, 209, 102, 0.74), rgba(85, 214, 190, 0.08));
+  box-shadow: 0 0 28px rgba(85, 214, 190, 0.24), inset 0 0 22px rgba(3, 10, 17, 0.52);
+  animation: intelligence-loading-spin 900ms linear infinite;
+}
+
+@keyframes intelligence-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* v0.8.48: Performance Intelligence title help placement. */
+.modal-title-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modal-title-with-help .intelligence-help-wrap {
+  flex: 0 0 auto;
+}
+
+.modal-title-with-help .intelligence-help-popover {
+  left: 0;
+  transform: translate(0, -4px);
+}
+
+.modal-title-with-help .intelligence-help-popover::before {
+  left: 11px;
+}
+
+.modal-title-with-help .intelligence-help-wrap:hover .intelligence-help-popover,
+.modal-title-with-help .intelligence-help-wrap:focus-within .intelligence-help-popover {
+  transform: translate(0, 0);
+}
+
+/* v0.8.49: Score-conversion Luck Rating hero cards. */
+.intelligence-hero-stat-row {
+  min-width: min(390px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.intelligence-hero-stat-row .intelligence-hero-score {
+  min-width: 0;
+}
+
+.intelligence-hero-luck {
+  border-color: rgba(85, 214, 190, 0.28);
+  background: rgba(85, 214, 190, 0.10);
+  box-shadow: 0 0 22px rgba(85, 214, 190, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.intelligence-hero-luck strong {
+  color: #bffff5;
+}
+
+.intelligence-hero-luck small {
+  color: rgba(191, 255, 245, 0.92);
+  text-transform: capitalize;
+}
+
+.luck-rating-heading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.luck-rating-help-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11;
+}
+
+.luck-rating-help-button {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(85, 214, 190, 0.36);
+  border-radius: 999px;
+  background: rgba(85, 214, 190, 0.13);
+  color: rgba(219, 255, 248, 0.96);
+  font-size: 0.66rem;
+  font-weight: 950;
+  line-height: 1;
+  cursor: help;
+}
+
+.luck-rating-help-popover {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  width: min(360px, calc(100vw - 52px));
+  display: grid;
+  gap: 8px;
+  padding: 12px 13px;
+  border: 1px solid rgba(85, 214, 190, 0.30);
+  border-radius: 15px;
+  background: rgba(5, 14, 23, 0.98);
+  color: rgba(223, 238, 247, 0.95);
+  text-align: left;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.48), 0 0 20px rgba(85, 214, 190, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+.luck-rating-help-popover::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(85, 214, 190, 0.30);
+  border-top: 1px solid rgba(85, 214, 190, 0.30);
+  background: rgba(5, 14, 23, 0.98);
+}
+
+.luck-rating-help-popover strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.luck-rating-help-popover span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.38;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 650;
+}
+
+.luck-rating-help-wrap:hover .luck-rating-help-popover,
+.luck-rating-help-wrap:focus-within .luck-rating-help-popover {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (max-width: 760px) {
+  .intelligence-hero-stat-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* v0.8.56: staged Luck Rating rarity-card progression with aura, glints, wider gleam, and extreme sparkles. */
+@property --luck-spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.intelligence-hero-luck {
+  --luck-hue: 171;
+  --luck-saturation: 70%;
+  --luck-intensity: 0;
+  --luck-glow: 0.10;
+  --luck-edge: 0;
+  --luck-gleam: 0;
+  --luck-sparkle: 0;
+  position: relative;
+  isolation: isolate;
+  border-color: hsla(var(--luck-hue), var(--luck-saturation), 64%, calc(0.24 + var(--luck-intensity) * 0.42));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,calc(0.035 + var(--luck-intensity) * 0.05)), rgba(255,255,255,0) 26%),
+    radial-gradient(circle at 22% -8%, hsla(var(--luck-hue), var(--luck-saturation), 70%, calc(0.10 + var(--luck-intensity) * 0.32)), transparent 56%),
+    radial-gradient(circle at 86% 102%, hsla(var(--luck-hue), var(--luck-saturation), 52%, calc(0.07 + var(--luck-intensity) * 0.22)), transparent 56%),
+    linear-gradient(145deg, hsla(var(--luck-hue), var(--luck-saturation), 48%, calc(0.10 + var(--luck-intensity) * 0.22)), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    0 0 calc(16px + var(--luck-intensity) * 34px) hsla(var(--luck-hue), var(--luck-saturation), 58%, var(--luck-glow)),
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.07 + var(--luck-intensity) * 0.06)),
+    inset 0 0 calc(12px + var(--luck-intensity) * 24px) hsla(var(--luck-hue), var(--luck-saturation), 54%, calc(0.035 + var(--luck-intensity) * 0.13));
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.intelligence-hero-luck > span,
+.intelligence-hero-luck > strong,
+.intelligence-hero-luck > small {
+  position: relative;
+  z-index: 2;
+}
+
+/* v0.8.58: every Luck card has a contained gleam. It is almost invisible near 50,
+   then strengthens smoothly toward very lucky/unlucky extremes. */
+.intelligence-hero-luck::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 1;
+  border-radius: calc(20px - 2px);
+  pointer-events: none;
+  opacity: calc(0.026 + var(--luck-gleam) * 0.18 + var(--luck-sparkle) * 0.08);
+  background:
+    linear-gradient(
+      118deg,
+      transparent 0%,
+      transparent 13%,
+      rgba(255, 255, 255, 0.00) 23%,
+      rgba(255, 255, 255, 0.035) 31%,
+      rgba(255, 255, 255, 0.105) 43%,
+      rgba(255, 255, 255, 0.19) 52%,
+      hsla(var(--luck-hue), var(--luck-saturation), 78%, 0.12) 61%,
+      rgba(219, 151, 255, 0.075) 70%,
+      rgba(255, 255, 255, 0.025) 80%,
+      transparent 91%,
+      transparent 100%
+    ),
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, calc(var(--luck-sparkle) * 0.54)), transparent 2.8px),
+    radial-gradient(circle at 78% 22%, rgba(255, 238, 160, calc(var(--luck-sparkle) * 0.48)), transparent 2.5px),
+    radial-gradient(circle at 32% 72%, rgba(152, 247, 255, calc(var(--luck-sparkle) * 0.44)), transparent 2.3px),
+    radial-gradient(circle at 88% 76%, hsla(var(--luck-hue), var(--luck-saturation), 78%, calc(0.045 + var(--luck-intensity) * 0.11)), transparent 34%);
+  background-size: 300% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 166% 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: screen;
+  animation: luckGleamSweep 5.4s linear infinite;
+}
+
+.intelligence-hero-luck strong {
+  color: hsl(var(--luck-hue), var(--luck-saturation), calc(77% + var(--luck-intensity) * 8%));
+  transition: color 180ms ease, text-shadow 180ms ease, transform 180ms ease;
+  text-shadow:
+    0 0 calc(6px + var(--luck-intensity) * 15px) hsla(var(--luck-hue), var(--luck-saturation), 64%, calc(0.18 + var(--luck-intensity) * 0.34));
+}
+
+.intelligence-hero-luck small {
+  color: hsl(var(--luck-hue), var(--luck-saturation), calc(82% + var(--luck-intensity) * 6%));
+}
+
+.intelligence-hero-luck .luck-rating-help-button {
+  border-color: hsla(var(--luck-hue), var(--luck-saturation), 68%, calc(0.30 + var(--luck-intensity) * 0.34));
+  background: hsla(var(--luck-hue), var(--luck-saturation), 48%, calc(0.11 + var(--luck-intensity) * 0.14));
+  color: hsl(var(--luck-hue), var(--luck-saturation), 88%);
+}
+
+.intelligence-hero-luck.luck-fortunate {
+  --luck-hue: 142;
+  --luck-saturation: 78%;
+}
+
+.intelligence-hero-luck.luck-unfortunate {
+  --luck-hue: 354;
+  --luck-saturation: 82%;
+}
+
+.intelligence-hero-luck.luck-tier-60 {
+  border-color: hsla(var(--luck-hue), var(--luck-saturation), 66%, calc(0.38 + var(--luck-intensity) * 0.38));
+}
+
+/* v0.8.58: remove the old inset edge-accent pseudo-element here.
+   The full-card gleam now handles neutral-to-extreme sheen without an inner border. */
+
+.intelligence-hero-luck.luck-tier-70 {
+  box-shadow:
+    0 0 calc(20px + var(--luck-intensity) * 46px) hsla(var(--luck-hue), var(--luck-saturation), 58%, calc(var(--luck-glow) + 0.08)),
+    inset 0 1px 0 rgba(255, 255, 255, calc(0.08 + var(--luck-intensity) * 0.08)),
+    inset 0 0 calc(14px + var(--luck-intensity) * 26px) hsla(var(--luck-hue), var(--luck-saturation), 54%, calc(0.055 + var(--luck-intensity) * 0.15));
+}
+
+.intelligence-hero-luck.luck-strong,
+.intelligence-hero-luck.luck-tier-80 {
+  transform: translateY(-1px);
+}
+
+.intelligence-hero-luck.luck-tier-80 strong {
+  text-shadow:
+    0 0 8px hsla(var(--luck-hue), var(--luck-saturation), 68%, calc(0.34 + var(--luck-intensity) * 0.26)),
+    0 0 18px hsla(var(--luck-hue), var(--luck-saturation), 62%, calc(0.14 + var(--luck-intensity) * 0.20));
+}
+
+
+.intelligence-hero-luck.luck-magical,
+.intelligence-hero-luck.luck-cursed {
+  border-color: hsla(var(--luck-hue), var(--luck-saturation), 68%, calc(0.62 + var(--luck-intensity) * 0.18));
+}
+
+.intelligence-hero-luck.luck-magical::before,
+.intelligence-hero-luck.luck-cursed::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  opacity: calc(0.50 + var(--luck-edge) * 0.42);
+  background: conic-gradient(
+    from var(--luck-spin, 0deg),
+    hsla(var(--luck-hue), var(--luck-saturation), 66%, 0.95) 0deg,
+    rgba(255, 255, 255, 0.86) 26deg,
+    rgba(255, 224, 122, 0.80) 45deg,
+    rgba(115, 238, 255, 0.76) 72deg,
+    hsla(var(--luck-hue), var(--luck-saturation), 72%, 0.88) 112deg,
+    rgba(255, 255, 255, calc(0.22 + var(--luck-edge) * 0.34)) 145deg,
+    rgba(207, 133, 255, 0.70) 210deg,
+    rgba(255, 255, 255, calc(0.24 + var(--luck-edge) * 0.34)) 310deg,
+    hsla(var(--luck-hue), var(--luck-saturation), 66%, 0.95) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: luckPrismSpin 6.2s linear infinite;
+}
+
+.intelligence-hero-luck.luck-magical::after,
+.intelligence-hero-luck.luck-cursed::after {
+  opacity: calc(0.10 + var(--luck-gleam) * 0.22 + var(--luck-sparkle) * 0.10);
+  filter: saturate(calc(1 + var(--luck-intensity) * 0.20)) brightness(calc(1 + var(--luck-intensity) * 0.05));
+}
+
+.intelligence-hero-luck.luck-prismatic::before {
+  opacity: calc(0.68 + var(--luck-edge) * 0.28);
+  animation-duration: 4.4s;
+}
+
+.intelligence-hero-luck.luck-prismatic::after {
+  opacity: calc(0.20 + var(--luck-gleam) * 0.24 + var(--luck-sparkle) * 0.12);
+  animation-duration: 4.4s;
+}
+
+.intelligence-hero-luck.luck-aura {
+  animation: luckAuraPulse 3.8s ease-in-out infinite;
+}
+
+.intelligence-hero-luck.luck-mythic {
+  box-shadow:
+    0 0 42px hsla(var(--luck-hue), var(--luck-saturation), 58%, 0.52),
+    0 0 92px rgba(255, 255, 255, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 0 40px hsla(var(--luck-hue), var(--luck-saturation), 54%, 0.28);
+}
+
+.intelligence-hero-luck.luck-mythic strong {
+  text-shadow:
+    0 0 9px hsla(var(--luck-hue), var(--luck-saturation), 70%, 0.64),
+    0 0 22px hsla(var(--luck-hue), var(--luck-saturation), 66%, 0.35),
+    0 0 32px rgba(255, 255, 255, 0.22);
+}
+
+.intelligence-hero-luck.luck-tier-99::after {
+  opacity: calc(0.30 + var(--luck-gleam) * 0.24 + var(--luck-sparkle) * 0.18);
+  filter: saturate(1.28) brightness(1.10);
+}
+
+.intelligence-hero-luck.luck-tier-99 strong {
+  transform: scale(1.035);
+}
+
+@keyframes luckPrismSpin {
+  to { --luck-spin: 360deg; }
+}
+
+@keyframes luckGleamSweep {
+  from {
+    background-position: 166% 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: -66% 0, 0 0, 0 0, 0 0, 0 0;
+  }
+}
+
+@keyframes luckAuraPulse {
+  0%, 100% {
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    filter: saturate(1.08) brightness(1.035);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intelligence-hero-luck::after,
+  .intelligence-hero-luck.luck-magical::before,
+  .intelligence-hero-luck.luck-cursed::before,
+  .intelligence-hero-luck.luck-aura {
+    animation: none;
+  }
+}
+
+
+/* v0.8.70: compact Overlays dropdown for analysis layers. */
+.overlay-control-cluster {
+  overflow: visible;
+}
+
+.viewport-overlay-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.overlay-menu-trigger {
+  min-width: 82px;
+}
+
+.dropdown-trigger,
+.overlay-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.dropdown-trigger-chevron {
+  display: inline-block;
+  color: var(--muted-2);
+  font-size: 0.78em;
+  line-height: 1;
+  transform: translateY(-1px);
+  transition: transform 120ms ease, color 120ms ease;
+}
+
+.viewport-overlay-dropdown.is-open .dropdown-trigger-chevron {
+  color: var(--text);
+  transform: translateY(-1px) rotate(180deg);
+}
+
+.viewport-navigation-cluster,
+.viewport-analysis-cluster,
+.viewport-tools-cluster {
+  gap: 5px;
+}
+
+.viewport-output-cluster {
+  gap: 5px;
+}
+
+.viewport-tools-cluster .timeline-control-cluster {
+  display: none;
+}
+
+.viewport-overlay-menu {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 950;
+  display: grid;
+  gap: 4px;
+  width: 238px;
+  padding: 7px;
+  border: 1px solid rgba(151, 184, 212, 0.22);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(16, 31, 45, 0.98), rgba(7, 17, 27, 0.98)),
+    rgba(7, 17, 27, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(16px);
+  animation: custom-select-in 120ms ease both;
+}
+
+.viewport-overlay-menu[hidden] {
+  display: none;
+}
+
+.viewport-overlay-menu-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.viewport-overlay-menu-item:hover,
+.viewport-overlay-menu-item:focus-visible {
+  border-color: rgba(85, 214, 190, 0.22);
+  background: rgba(85, 214, 190, 0.075);
+  outline: none;
+}
+
+.viewport-overlay-menu-item.is-active {
+  border-color: rgba(85, 214, 190, 0.38);
+  background: rgba(85, 214, 190, 0.12);
+  color: var(--text);
+}
+
+.viewport-overlay-menu-item:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
+.overlay-menu-check {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(151, 184, 212, 0.32);
+  border-radius: 6px;
+  background: rgba(3, 10, 17, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.viewport-overlay-menu-item.is-active .overlay-menu-check {
+  border-color: rgba(85, 214, 190, 0.7);
+  background:
+    radial-gradient(circle at center, rgba(85, 214, 190, 0.96) 0 35%, transparent 38%),
+    rgba(85, 214, 190, 0.20);
+}
+
+.overlay-menu-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.overlay-menu-copy strong,
+.overlay-menu-copy small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay-menu-copy strong {
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.overlay-menu-copy small {
+  color: var(--muted-2);
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+/* v0.8.74: Expected Score hero tooltip uses the same compact help pattern as Luck Rating. */
+.expected-score-heading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.expected-score-help-popover {
+  right: auto;
+  left: 0;
+}
+
+.expected-score-help-popover::before {
+  right: auto;
+  left: 8px;
+}
+
+
+/* v0.8.75: targeted tooltip positioning fixes for Performance Intelligence hero cards. */
+.luck-rating-help-popover {
+  z-index: 80;
+}
+
+.intelligence-hero-luck .luck-rating-help-wrap {
+  z-index: 90;
+}
+
+.intelligence-hero-luck .luck-rating-help-popover {
+  z-index: 100;
+}
+
+.expected-score-help-popover {
+  width: min(310px, calc(100vw - 88px));
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -4px);
+}
+
+.expected-score-help-popover::before {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.expected-score-help-wrap:hover .expected-score-help-popover,
+.expected-score-help-wrap:focus-within .expected-score-help-popover {
+  transform: translate(-50%, 0);
+}
+
+/* v0.8.75: keep the extrapolated-distance readout tucked closer to the range bar. */
+.extrapolate-distance-control {
+  grid-template-columns: auto 118px 34px;
+  gap: 2px;
+  min-width: 166px;
+}
+
+.extrapolate-distance-control output {
+  text-align: left;
+}
+
+@media (max-width: 1180px) {
+  .extrapolate-distance-control {
+    grid-template-columns: auto 96px 34px;
+    min-width: 142px;
+  }
+}
+
+/* v0.8.76: make the Luck Rating help popover escape above the hero badge text. */
+.intelligence-hero-luck > .luck-rating-heading {
+  position: relative;
+  z-index: 120;
+}
+
+.intelligence-hero-luck .luck-rating-help-wrap {
+  z-index: 130;
+}
+
+.intelligence-hero-luck .luck-rating-help-popover {
+  top: auto;
+  right: auto;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  width: min(350px, calc(100vw - 92px));
+  z-index: 140;
+  transform: translate(-50%, 4px);
+}
+
+.intelligence-hero-luck .luck-rating-help-popover::before {
+  top: auto;
+  right: auto;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  border-left: 0;
+  border-top: 0;
+  border-right: 1px solid rgba(85, 214, 190, 0.30);
+  border-bottom: 1px solid rgba(85, 214, 190, 0.30);
+}
+
+.intelligence-hero-luck .luck-rating-help-wrap:hover .luck-rating-help-popover,
+.intelligence-hero-luck .luck-rating-help-wrap:focus-within .luck-rating-help-popover {
+  transform: translate(-50%, 0);
+}
+
+/* v0.8.76 refinement: keep the Luck Rating popover in its original badge area,
+   but lift its stacking context above the large rating value. */
+.intelligence-hero-luck .luck-rating-help-popover {
+  top: calc(100% + 9px);
+  right: 0;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-4px);
+}
+
+.intelligence-hero-luck .luck-rating-help-popover::before {
+  top: -6px;
+  right: 8px;
+  bottom: auto;
+  left: auto;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(85, 214, 190, 0.30);
+  border-top: 1px solid rgba(85, 214, 190, 0.30);
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.intelligence-hero-luck .luck-rating-help-wrap:hover .luck-rating-help-popover,
+.intelligence-hero-luck .luck-rating-help-wrap:focus-within .luck-rating-help-popover {
+  transform: translateY(0);
 }
