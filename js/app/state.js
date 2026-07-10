@@ -457,7 +457,7 @@
     if (Array.isArray(value)) return value.map(sortForSignature);
     if (!value || typeof value !== "object") return value;
     return Object.keys(value)
-      .filter(key => key !== "updatedAt")
+      .filter(key => key !== "updatedAt" && key !== "activeViewTargetFaceId")
       .sort()
       .reduce((result, key) => {
         result[key] = sortForSignature(value[key]);

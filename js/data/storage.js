@@ -75,20 +75,19 @@
   }
 
   function makeSummary(scorecard) {
-    const activeFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId);
     const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
-    const totals = App.ScoringEngine.calculateScorecardTotals(scorecard, activeFace);
+    const totals = App.ScoringEngine.calculateScorecardTotals(scorecard, originalFace);
     return {
       id: scorecard.id,
       name: scorecard.name,
       createdAt: scorecard.createdAt,
       updatedAt: scorecard.updatedAt,
       shotAt: scorecard.shotAt || scorecard.createdAt,
-      targetFaceId: activeFace.id,
-      targetFaceName: activeFace.name,
+      targetFaceId: originalFace.id,
+      targetFaceName: originalFace.name,
       originalTargetFaceId: originalFace.id,
       originalTargetFaceName: originalFace.name,
-      isComparisonView: originalFace.id !== activeFace.id,
+      isComparisonView: false,
       distanceM: scorecard.distanceM,
       roundType: scorecard.roundType || "Custom",
       arrows: totals.recordedArrows,
@@ -103,6 +102,9 @@
 
   function saveScorecard(scorecard) {
     const clone = structuredCloneSafe(scorecard);
+    const originalFace = App.TargetFaces.getTargetFace(clone.originalTargetFaceId || clone.activeViewTargetFaceId);
+    clone.originalTargetFaceId = originalFace.id;
+    clone.activeViewTargetFaceId = originalFace.id;
     clone.updatedAt = App.Dates.nowIso();
     localStorage.setItem(STORAGE_KEYS.SCORECARD_PREFIX + clone.id, JSON.stringify(clone));
 
@@ -124,7 +126,13 @@
     const index = readIndex();
     let changed = false;
     const hydrated = index.map(item => {
-      const needsRefresh = !("possibleTotal" in item) || !("targetFaceName" in item) || !("shotAt" in item) || !("originalTargetFaceName" in item) || !("isComparisonView" in item);
+      const needsRefresh = !("possibleTotal" in item)
+        || !("targetFaceName" in item)
+        || !("shotAt" in item)
+        || !("originalTargetFaceName" in item)
+        || !("isComparisonView" in item)
+        || item.isComparisonView === true
+        || (item.originalTargetFaceId && item.targetFaceId && item.originalTargetFaceId !== item.targetFaceId);
       if (!needsRefresh) return item;
       const scorecard = loadScorecard(item.id);
       if (!scorecard) return item;
@@ -183,7 +191,9 @@
     scorecard.roundType = scorecard.roundType || "Custom";
     scorecard.equipment = scorecard.equipment || { bow: "", arrows: "", sightMark: "", notes: "" };
     scorecard.originalTargetFaceId = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId).id;
-    scorecard.activeViewTargetFaceId = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId || scorecard.originalTargetFaceId).id;
+    // Target swap is a temporary view-only state. Loaded/saved scorecards always
+    // open on their actual target face.
+    scorecard.activeViewTargetFaceId = scorecard.originalTargetFaceId;
     return scorecard;
   }
 

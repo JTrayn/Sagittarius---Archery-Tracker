@@ -474,7 +474,6 @@
       escapeHtml(face.family || (face.isBuiltIn ? "Built-in" : "Custom target faces")),
       formatMm(face.diameterMm)
     ];
-    if (face.isBuiltIn && face.defaultDistanceM) parts.push(`${face.defaultDistanceM}m`);
     return parts.join(" &middot; ");
   }
 
@@ -521,7 +520,7 @@
 
   function isTargetFaceReferenced(faceId) {
     const current = App.State.getState().scorecard;
-    if (current && (current.activeViewTargetFaceId === faceId || current.originalTargetFaceId === faceId)) return true;
+    if (current && (current.originalTargetFaceId || current.activeViewTargetFaceId) === faceId) return true;
     return App.Storage.listScorecards().some(item =>
       item.targetFaceId === faceId || item.originalTargetFaceId === faceId
     );

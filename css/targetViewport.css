@@ -1078,3 +1078,85 @@
   border-color: rgba(167, 184, 205, 0.18);
   color: rgba(214, 225, 238, 0.82);
 }
+
+/* v0.9.2: view-only Target Swap warning. Stacks below Extrapolate when both are active. */
+.viewport-target-swap-warning {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  z-index: 3;
+  display: grid;
+  gap: 2px;
+  min-width: min(360px, calc(100% - 28px));
+  max-width: calc(100% - 28px);
+  transform: translateX(-50%);
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 209, 102, 0.36);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(54, 36, 7, 0.90), rgba(31, 20, 5, 0.88)),
+    rgba(17, 10, 3, 0.82);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(14px);
+}
+
+.canvas-wrap.has-extrapolation-warning .viewport-target-swap-warning {
+  top: 76px;
+}
+
+.viewport-target-swap-warning strong,
+.viewport-target-swap-warning span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewport-target-swap-warning strong {
+  color: #ffe9af;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.viewport-target-swap-warning span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+/* v0.9.14: trends record cards must grow with their content. The previous
+   square-card treatment could make the background end before the arrows-shot
+   and Top 5 style content was fully visible while scrolling. */
+.trends-record-section,
+.trends-arrow-volume,
+.trends-leaderboard,
+.trends-record-metric {
+  box-sizing: border-box;
+}
+
+.trends-record-section-agnostic .trends-record-metric {
+  aspect-ratio: auto;
+  min-height: 92px;
+  height: auto;
+  overflow: visible;
+}
+
+.trends-arrow-volume,
+.trends-leaderboard {
+  height: auto;
+  min-height: max-content;
+  overflow: visible;
+}
+
+.trends-record-section-selected,
+.trends-record-section-agnostic,
+.trends-selected-records-main,
+.trends-record-side {
+  height: auto;
+  min-height: 0;
+}

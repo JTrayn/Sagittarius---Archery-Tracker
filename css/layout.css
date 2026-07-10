@@ -97,7 +97,7 @@
   --workspace-splitter-width: 8px;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(390px, var(--score-panel-width)) var(--workspace-splitter-width) minmax(0, 1fr);
+  grid-template-columns: minmax(0, var(--score-panel-width)) var(--workspace-splitter-width) minmax(0, 1fr);
   gap: 0;
 }
 
@@ -176,8 +176,12 @@
 }
 
 .score-panel {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   border-right-color: rgba(151, 184, 212, 0.10);
   border-top-right-radius: 18px;
   border-bottom-right-radius: 18px;
@@ -236,4 +240,118 @@
   border-color: rgba(255, 183, 77, 0.38);
   color: #ffd38a;
   background: rgba(255, 183, 77, 0.105);
+}
+
+/* v0.9.11: scorecard-first unified scroll layout.
+   On short landscape screens, the score panel owns the single vertical scroll
+   so long scorecards appear before Scorecard analysis/Notes instead of nesting
+   a second vertical scrollbar inside the arrow table. */
+@media (max-height: 850px) and (orientation: landscape) {
+  .app-shell {
+    padding: 6px 10px 10px;
+    gap: 6px;
+  }
+
+  .app-commandbar {
+    min-height: 34px;
+  }
+
+  .topbar {
+    gap: 8px;
+  }
+
+  .brand-block {
+    gap: 6px;
+  }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    font-size: 1rem;
+  }
+
+  .brand-title-row h1 {
+    font-size: 1.02rem;
+  }
+
+  .brand-version {
+    min-height: 16px;
+    padding-inline: 6px;
+    font-size: 0.62rem;
+  }
+
+  .brand-copy p {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 4px;
+    row-gap: 3px;
+  }
+
+  .topbar-actions .btn,
+  .topbar-actions .file-btn {
+    min-height: 30px;
+    padding: 0.42rem 0.62rem;
+    font-size: 0.76rem;
+    line-height: 1;
+  }
+
+  .topbar-save-status {
+    min-height: 28px;
+    padding-inline: 9px;
+    font-size: 0.64rem;
+  }
+
+  .score-panel > .scorecard-overview,
+  .score-panel > .manual-score-panel,
+  .score-panel > .scorecard-scroll,
+  .score-panel > .scorecard-footer {
+    flex: 0 0 auto;
+  }
+
+  .score-panel > .scorecard-scroll {
+    min-height: auto;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .viewport-toolbar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .viewport-actions {
+    gap: 5px;
+    row-gap: 5px;
+  }
+
+  .viewport-control-cluster {
+    min-height: 31px;
+    padding: 2px;
+  }
+
+  .viewport-cluster-label {
+    padding-inline: 5px;
+    font-size: 0.54rem;
+  }
+}
+
+@media (max-height: 760px) and (orientation: landscape) {
+  .score-panel > .scorecard-scroll {
+    min-height: auto;
+  }
+}
+
+/* v0.9.12: expose the two main desktop panes as CSS containers so laptop
+   refinements can react to the actual score/viewport panel width instead of
+   only the whole browser width. */
+.score-panel {
+  container: score-panel / inline-size;
+}
+
+.viewport-panel {
+  container: viewport-panel / inline-size;
 }

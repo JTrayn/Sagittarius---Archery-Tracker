@@ -14,7 +14,7 @@
     indoorWhiteBorder: "#f7fbff"
   };
 
-  function worldArcheryFullFace({ id, name, shortName, diameterMm, defaultDistanceM, description, innerTenRadiusMm }) {
+  function worldArcheryFullFace({ id, name, shortName, diameterMm, description, innerTenRadiusMm }) {
     const ringWidth = diameterMm / 20;
     return {
       id,
@@ -22,7 +22,6 @@
       shortName,
       family: "World Archery",
       diameterMm,
-      defaultDistanceM,
       description,
       labels: {
         position: "horizontal",
@@ -50,7 +49,6 @@
     name: "World Archery 122cm Full Face",
     shortName: "WA 122cm",
     diameterMm: 1220,
-    defaultDistanceM: 70,
     innerTenRadiusMm: 30.5,
     description: "Standard 122cm 10-zone target face used for Olympic recurve at 70m. The inner 10 ring scores 10 and is marked with a small centre +."
   });
@@ -60,7 +58,6 @@
     name: "World Archery 40cm Full Face",
     shortName: "WA 40cm",
     diameterMm: 400,
-    defaultDistanceM: 18,
     innerTenRadiusMm: 10,
     description: "Standard 40cm indoor target face with 10 scoring rings. The inner 10 ring scores 10 and is marked with a small centre +."
   });
@@ -77,8 +74,7 @@
       family: "Indoor Archery WA",
       series,
       diameterMm: fiveIn * 25.4,
-      defaultDistanceM: 18,
-      description: `Indoor Archery WA Series ${series}. Zone diameters: X ${xIn}\", 8 ${eightIn}\", 7 ${sevenIn}\", 5 ${fiveIn}\". X scores 8.`,
+        description: `Indoor Archery WA Series ${series}. Zone diameters: X ${xIn}\", 8 ${eightIn}\", 7 ${sevenIn}\", 5 ${fiveIn}\". X scores 8.`,
       labels: {
         position: "horizontal",
         depth: "middle",

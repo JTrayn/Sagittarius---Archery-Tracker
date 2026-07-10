@@ -20,6 +20,7 @@
       modeHud: document.getElementById("viewportModeHint"),
       modeBadge: document.getElementById("viewportModeBadge"),
       extrapolationWarning: document.getElementById("extrapolationWarning"),
+      targetSwapWarning: document.getElementById("targetSwapWarning"),
       onPlot: worldPoint => {
         const state = App.State.getState();
         if (!state.scorecard) {
@@ -67,16 +68,20 @@
     const extrapolateDistanceRange = document.getElementById("extrapolateDistanceRange");
     const extrapolateDistanceValue = document.getElementById("extrapolateDistanceValue");
     const toggleTimelineBtn = document.getElementById("toggleTimelineBtn");
+    const targetSwapDropdown = document.getElementById("targetSwapDropdown");
+    const targetSwapMenuBtn = document.getElementById("targetSwapMenuBtn");
+    const targetSwapMenu = document.getElementById("targetSwapMenu");
     const timelinePanel = document.getElementById("timelinePanel");
     const timelinePlayPauseBtn = document.getElementById("timelinePlayPauseBtn");
     const timelineResetBtn = document.getElementById("timelineResetBtn");
     const timelineViewModeSelect = document.getElementById("timelineViewModeSelect");
     const timelineEndZoomFitBtn = document.getElementById("timelineEndZoomFitBtn");
     const timelineSpeedSelect = document.getElementById("timelineSpeedSelect");
+    const scorePanelEl = document.querySelector(".score-panel");
     scorecardPanelSizer = createWorkspaceSizer({
       workspace: document.querySelector(".workspace"),
       splitter: document.getElementById("workspaceSplitter"),
-      scorePanel: document.querySelector(".score-panel"),
+      scorePanel: scorePanelEl,
       scorecardContainer: document.getElementById("scorecardContainer"),
       viewport
     });
@@ -104,12 +109,17 @@
       });
     });
     document.addEventListener("click", event => {
-      if (!overlayDropdown || overlayDropdown.contains(event.target)) return;
-      setOverlayMenuOpen(overlayDropdown, overlayMenuBtn, overlayMenu, false);
+      if (overlayDropdown && !overlayDropdown.contains(event.target)) {
+        setOverlayMenuOpen(overlayDropdown, overlayMenuBtn, overlayMenu, false);
+      }
+      if (targetSwapDropdown && !targetSwapDropdown.contains(event.target)) {
+        setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, false);
+      }
     });
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
       setOverlayMenuOpen(overlayDropdown, overlayMenuBtn, overlayMenu, false);
+      setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, false);
     });
     openIntelligenceBtn.addEventListener("click", openIntelligenceModal);
     exportTargetImageBtn.addEventListener("click", openExportImageModal);
@@ -120,6 +130,23 @@
     extrapolateDistanceRange.addEventListener("input", event => {
       updateExtrapolateDistanceControl(extrapolateDistanceRange, extrapolateDistanceValue, Number(event.target.value));
       App.Actions.setExtrapolationDistance(Number(event.target.value));
+    });
+    targetSwapMenuBtn.addEventListener("click", event => {
+      event.stopPropagation();
+      setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, targetSwapMenu.hidden);
+    });
+    targetSwapMenu.addEventListener("click", event => {
+      event.stopPropagation();
+      const item = event.target.closest("[data-target-swap-id]");
+      if (!item || item.disabled) return;
+      const targetId = item.dataset.targetSwapId === "original" ? "original" : item.dataset.targetSwapId;
+      if (App.Actions.setTargetSwapFace(targetId)) {
+        const state = App.State.getState();
+        const originalFace = App.TargetFaces.getTargetFace(state.scorecard?.originalTargetFaceId || state.scorecard?.activeViewTargetFaceId);
+        const activeFace = App.TargetFaces.getTargetFace(state.scorecard?.activeViewTargetFaceId || originalFace.id);
+        App.Toast.show(activeFace.id === originalFace.id ? "Returned to original target" : `Target swap: ${activeFace.shortName || activeFace.name}`, "success");
+      }
+      setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, false);
     });
     toggleTimelineBtn.addEventListener("click", () => {
       const state = App.State.getState();
@@ -169,6 +196,11 @@
         toggleExtrapolateBtn,
         extrapolateDistanceRange,
         extrapolateDistanceValue
+      });
+      renderTargetSwapMenu(state, {
+        targetSwapDropdown,
+        targetSwapMenuBtn,
+        targetSwapMenu
       });
       renderTimelineControls(state, {
         toggleTimelineBtn,
@@ -259,6 +291,69 @@
     trigger.setAttribute("aria-expanded", next ? "true" : "false");
   }
 
+  function setTargetSwapMenuOpen(dropdown, trigger, menu, open) {
+    if (!dropdown || !trigger || !menu) return;
+    const next = Boolean(open);
+    menu.hidden = !next;
+    dropdown.classList.toggle("is-open", next);
+    trigger.setAttribute("aria-expanded", next ? "true" : "false");
+  }
+
+  function renderTargetSwapMenu(state, elements) {
+    const { targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu } = elements;
+    if (!targetSwapMenuBtn || !targetSwapMenu) return;
+
+    const scorecard = state.scorecard;
+    const disabled = !scorecard || Boolean(state.viewport.displayMode === "trends");
+    targetSwapMenuBtn.disabled = disabled;
+
+    if (!scorecard) {
+      targetSwapMenu.innerHTML = "";
+      targetSwapMenuBtn.classList.remove("is-active");
+      setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, false);
+      return;
+    }
+
+    const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
+    const activeFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId || originalFace.id);
+    const swapped = activeFace.id !== originalFace.id;
+    targetSwapMenuBtn.innerHTML = `<span class="dropdown-trigger-label">Target swap</span><span class="dropdown-trigger-chevron" aria-hidden="true">⌄</span>`;
+    targetSwapMenuBtn.classList.toggle("is-active", swapped);
+    targetSwapMenuBtn.setAttribute("aria-label", swapped
+      ? `Target swap active: viewing ${activeFace.name}. Original target is ${originalFace.name}.`
+      : `Target swap inactive. Viewing original target: ${originalFace.name}.`);
+
+    const groups = App.TargetFaces.getTargetFaceGroups();
+    const rows = [];
+    rows.push(renderTargetSwapItem({
+      id: "original",
+      label: "Original target",
+      detail: originalFace.name,
+      active: !swapped
+    }));
+    Object.entries(groups).forEach(([family, faces]) => {
+      rows.push(`<div class="target-swap-menu-heading">${escapeHtml(family)}</div>`);
+      faces.forEach(face => {
+        rows.push(renderTargetSwapItem({
+          id: face.id,
+          label: face.name,
+          detail: face.id === originalFace.id ? "Scorecard target" : (face.shortName || face.family || "Target face"),
+          active: activeFace.id === face.id
+        }));
+      });
+    });
+    const html = rows.join("");
+    if (targetSwapMenu.innerHTML !== html) targetSwapMenu.innerHTML = html;
+    if (disabled) setTargetSwapMenuOpen(targetSwapDropdown, targetSwapMenuBtn, targetSwapMenu, false);
+  }
+
+  function renderTargetSwapItem({ id, label, detail, active }) {
+    return `<button class="viewport-overlay-menu-item target-swap-menu-item ${active ? "is-active" : ""}" type="button" role="menuitemradio" data-target-swap-id="${escapeHtml(id)}" aria-checked="${active ? "true" : "false"}">
+      <span class="overlay-menu-check" aria-hidden="true"></span>
+      <span class="overlay-menu-copy"><strong>${escapeHtml(label)}</strong><small>${escapeHtml(detail || "")}</small></span>
+    </button>`;
+  }
+
   function renderOverlayMenu(state, elements) {
     const { overlayDropdown, overlayMenuBtn, overlayMenu, overlayMenuItems } = elements;
     if (!overlayMenuBtn || !overlayMenuItems?.length) return;
@@ -297,12 +392,17 @@
 
     let dragging = false;
     let pointerOffsetX = 0;
+    let resizeFrame = 0;
+
+    const DEFAULT_SPLIT_RATIO = 0.35;
+    const MIN_SPLIT_RATIO = 0.35;
+    const MAX_SPLIT_RATIO = 0.6;
+    let splitRatio = DEFAULT_SPLIT_RATIO;
 
     const splitterWidth = () => splitter.getBoundingClientRect().width || 8;
     const availableWidth = () => Math.max(1, workspace.getBoundingClientRect().width - splitterWidth());
-    const defaultWidth = () => Math.max(390, Math.round(availableWidth() * 0.35));
-    const maxWidth = () => Math.max(defaultWidth(), Math.round(availableWidth() * 0.6));
-    const clampWidth = value => App.Geometry.clamp(Number(value) || defaultWidth(), defaultWidth(), maxWidth());
+    const clampRatio = value => App.Geometry.clamp(Number(value) || DEFAULT_SPLIT_RATIO, MIN_SPLIT_RATIO, MAX_SPLIT_RATIO);
+    const widthFromRatio = ratio => Math.round(availableWidth() * clampRatio(ratio));
 
     function syncViewportAfterSnap() {
       if (!viewport || typeof viewport.flushResizeDraw !== "function") return;
@@ -311,19 +411,29 @@
       viewport.flushResizeDraw();
     }
 
-    function setWidth(value, options = {}) {
-      const width = clampWidth(value);
+    function applySplitRatio(value, options = {}) {
+      splitRatio = clampRatio(value);
+      const width = widthFromRatio(splitRatio);
       workspace.style.setProperty("--score-panel-width", `${width}px`);
+      workspace.style.setProperty("--score-panel-ratio", String(splitRatio));
       if (options.syncViewport) syncViewportAfterSnap();
       return width;
     }
 
+    function setWidth(value, options = {}) {
+      const numericWidth = Number(value);
+      const nextRatio = Number.isFinite(numericWidth)
+        ? numericWidth / availableWidth()
+        : splitRatio;
+      return applySplitRatio(nextRatio, options);
+    }
+
     function getCurrentWidth() {
-      return scorePanel.getBoundingClientRect().width || defaultWidth();
+      return widthFromRatio(splitRatio);
     }
 
     function resetToDefault() {
-      setWidth(defaultWidth(), { syncViewport: true });
+      applySplitRatio(DEFAULT_SPLIT_RATIO, { syncViewport: true });
     }
 
     function fitScorecardTable() {
@@ -372,22 +482,28 @@
     window.addEventListener("pointermove", updateDrag);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", endDrag);
-    window.addEventListener("resize", () => setWidth(getCurrentWidth()));
+    window.addEventListener("resize", () => {
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = 0;
+        applySplitRatio(splitRatio, { syncViewport: true });
+      });
+    });
 
     splitter.addEventListener("keydown", event => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") return;
       event.preventDefault();
       if (event.key === "Home") {
-        setWidth(defaultWidth(), { syncViewport: true });
+        applySplitRatio(MIN_SPLIT_RATIO, { syncViewport: true });
       } else if (event.key === "End") {
-        setWidth(maxWidth(), { syncViewport: true });
+        applySplitRatio(MAX_SPLIT_RATIO, { syncViewport: true });
       } else {
         const direction = event.key === "ArrowRight" ? 1 : -1;
         setWidth(getCurrentWidth() + direction * 24, { syncViewport: true });
       }
     });
 
-    setWidth(defaultWidth());
+    applySplitRatio(DEFAULT_SPLIT_RATIO);
 
     return { fitScorecardTable, handleScorecardLayoutChange, resetToDefault, setWidth };
   }
@@ -497,7 +613,7 @@
     elements.trendsControlCluster.classList.toggle("hidden", !showTrends);
     elements.targetCanvas.classList.toggle("hidden", showTrends);
     elements.trendsViewEl.classList.toggle("hidden", !showTrends);
-    elements.viewportHud.classList.toggle("hidden", showTrends);
+    elements.viewportHud?.classList.toggle("hidden", showTrends);
     elements.zoomHud.classList.toggle("hidden", showTrends);
   }
 

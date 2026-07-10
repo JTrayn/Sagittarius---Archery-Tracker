@@ -99,7 +99,7 @@
       return { isEligible: false, reason: "missing-target-face" };
     }
 
-    const distanceM = normalizeDistance(summary.distanceM || targetFace.defaultDistanceM || 0);
+    const distanceM = normalizeDistance(summary.distanceM || 0);
     const highestScore = Math.max(...targetFace.zones.map(zone => Number(zone.score) || 0));
     const possibleTotal = Number(summary.possibleTotal) || highestScore * totalArrows;
     const categoryParts = [
@@ -147,7 +147,7 @@
       return { isEligible: false, reason: "incomplete-scorecard", totals };
     }
 
-    const distanceM = normalizeDistance(scorecard.distanceM || targetFace.defaultDistanceM || 0);
+    const distanceM = normalizeDistance(scorecard.distanceM || 0);
     const highestScore = Math.max(...targetFace.zones.map(zone => Number(zone.score) || 0));
     const possibleTotal = highestScore * totals.totalArrows;
     const categoryParts = [

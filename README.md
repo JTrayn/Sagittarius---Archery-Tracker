@@ -15,9 +15,14 @@ It is designed for target archery practice: create a scorecard, plot arrows dire
 - Run Performance Intelligence to compare your actual score against a 5,000-run Monte Carlo simulation of your plotted shot pattern.
 - Replay sessions with Timeline mode.
 - Extrapolate a plotted group to different distances.
+- Temporarily compare a session against another target face with Target swap, without changing saved records or PB categories.
+- Manage saved scorecards through a calendar-assisted **Scorecard manager** that highlights days with saved sessions and shows compact visual session cards.
 - Track trends, records, and arrows shot across saved scorecards.
 - Export scorecards as JSON and export clean target images for sharing or coaching.
 - Create and edit custom target faces, which is a major focus of the app and something many archery scorecard apps do not allow.
+- On laptop-width viewports, the viewport toolbar can collapse into a slim handle and reveal wrapped controls on hover to protect target space.
+- On narrow score panels, the scorecard keeps stable columns, uses horizontal scrolling, pins Total/Run over a clean panel-coloured edge mask, preserves Avg Arrow, Avg Centre, and MPI, and keeps Invert fixed to the visible scorecard pane.
+- The scorecard/target workspace preserves its current proportional split when the browser window is resized; the default scorecard share is 35%, and dragging the divider reveals more columns without changing table density.
 
 ## Quick start
 
@@ -32,7 +37,10 @@ In the future, the intended delivery may change. The likely direction is a stand
 
 ## Scorecards
 
-The scorecard panel is the main session view. It shows the scorecard title and session details, a minimal score line, individual end rows, and a **Scorecard analysis** section underneath.
+Target faces define the geometry and scoring zones of the target. They do **not** lock the scorecard to a specific distance: you can use any target face at any distance, and changing the target face will not overwrite the distance you selected.
+
+
+The scorecard panel is the main session view. It shows the scorecard title and session details, a minimal score line, individual end rows, and a **Scorecard analysis** section underneath. The scorecard uses a scorecard-first scroll flow: long scorecards show their rows before the analysis and notes sections so smaller laptop screens prioritise the actual scoring table. On narrower laptop layouts, non-essential manual-score copy is hidden, manual score buttons wrap into a clean 6 x 2 grid, analysis metric cards wrap into clean equal-width grids, and the scorecard table keeps Avg Arrow / Avg Centre / MPI available through horizontal scroll while sticky Total and Run remain visible. The middle divider stores the scorecard/target allocation as a percentage, so resizing the browser preserves the chosen split instead of keeping a stale pixel width. Table density follows the browser width, while divider movement only reveals more or fewer columns.
 
 ![Scorecard](docs/assets/readme/scorecard.JPG)
 
@@ -55,11 +63,18 @@ When a completed scorecard is your best result for a matching target face, dista
 
 ![PB indicator](docs/assets/readme/PB-indicator.JPG)
 
+
+## Saved scorecard calendar
+
+The **Scorecard manager** includes a custom calendar alongside the saved-scorecard list. Days with saved scorecards are subtly highlighted, days with multiple scorecards show a compact count marker, and the calendar only shows dates from the active month. Each saved entry uses a compact visual summary card for the scorecard/target face, distance, and arrows, with date, time, and score shown separately, plus a top-right action strip with compact icon buttons for duplicate, export, and delete.
+
+Selecting a date does not immediately open a scorecard. Instead, the saved-scorecard list jumps to that date group so you can review and choose the exact session, which is especially useful when you have multiple scorecards on the same day.
+
 ## Plotting arrows
 
 Use the target viewport to plot arrows directly onto the target face. The app stores plotted arrow positions in real target-face measurements, which means the scorecard can be re-rendered, analysed, exported, and compared reliably.
 
-The viewport toolbar includes controls for plotting, editing, locking, fitting the target to view, centring the target, filtering by end, opening analysis tools, exporting images, entering Timeline mode, and using distance extrapolation.
+The viewport toolbar includes controls for plotting, editing, locking, fitting the target to view, centring the target, filtering by end, opening analysis tools, exporting images, entering Timeline mode, using distance extrapolation, and temporarily changing the viewed target with **Target swap**.
 
 ## Viewport overlays
 
@@ -182,6 +197,13 @@ End-based timeline views make it easier to compare ends and see how each end con
 
 ![Timeline ends](docs/assets/readme/timeline-ends.JPG)
 
+
+## Target swap
+
+Changing the target face inside **Edit scorecard** is a permanent scorecard edit: the session is recategorised as that target face for scoring, PBs, records, and trends.
+
+For temporary comparison, the viewport includes **Target swap**. This lets you view and rescore the same plotted arrows on another target face without changing the saved scorecard category. A warning appears over the viewport while Target swap is active, and the **Original target** option returns the view to the scorecard's actual target face.
+
 ## Extrapolated distance
 
 The extrapolation tool projects the plotted arrow group to a different distance and recalculates the displayed score.
@@ -279,6 +301,6 @@ Sagittarius is aimed at archers who want more than a paper scorecard. It is usef
 
 ## Current status
 
-This README reflects **Sagittarius v0.9.0**, the accepted minimal scorecard header milestone.
+This README reflects **Sagittarius v0.9.19**, including the accepted minimal scorecard header, independent target/distance metadata, Target swap comparison tool, automatic saving after Edit scorecard changes, the calendar-assisted Scorecard manager with compact saved-session cards and actual target-face previews, the polished top-toolbar order, the scorecard-first laptop layout, unified scorecard/analysis/notes scrolling, removal of the redundant top-left target viewport HUD, laptop layout refinements for manual scoring, analysis metric wrapping and thinner scrollbars, the handle-only compact viewport toolbar, compact-toolbar dropdown fixes, Trends panel height fixes, and narrow scorecard-table horizontal scrolling with stable columns, delayed fixed-size 6 x 2 manual-score wrapping, right-gapped sticky Total/Run columns with a clean edge mask, visible-pane-aligned Invert control, compact viewport-toolbar controls that wrap around the Display toggle without reserving empty second-row space, a manual-score strip that always grows to fit its controls, and smoothly responsive scorecard-table density that remains readable while retaining horizontal scrolling.
 
 Sagittarius is currently a prototype browser-based app. Future versions may expand the analysis system, session summaries, custom target-face workflows, score history, arrows-shot tracking, desktop packaging, and mobile-friendly workflows.

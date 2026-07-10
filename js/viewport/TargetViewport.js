@@ -12,6 +12,7 @@
       this.modeHud = options.modeHud;
       this.modeBadge = options.modeBadge;
       this.extrapolationWarning = options.extrapolationWarning;
+      this.targetSwapWarning = options.targetSwapWarning;
       this.state = null;
       this.targetFace = null;
       this.raf = null;
@@ -34,6 +35,7 @@
       this.zoomHudText = "";
       this.modeBadgeMode = "__unset__";
       this.extrapolationWarningKey = "__unset__";
+      this.targetSwapWarningKey = "__unset__";
       this.transform = {
         currentPxPerMm: 0.62,
         targetPxPerMm: 0.62,
@@ -595,6 +597,7 @@
           setElementText(this.modeHud, "");
           this.updateModeBadge(null);
           this.updateExtrapolationWarning(null);
+          this.updateTargetSwapWarning(null, null);
         });
         return;
       }
@@ -605,6 +608,7 @@
           setElementText(this.modeHud, "Trends view · saved scorecard history");
           this.updateModeBadge(null);
           this.updateExtrapolationWarning(null);
+          this.updateTargetSwapWarning(null, null);
         });
         return;
       }
@@ -616,6 +620,7 @@
           const timelineStatus = App.TimelineRenderer.formatTimelineStatus(scorecard, this.state.viewport);
           setElementHtml(this.hud, "");
           this.updateExtrapolationWarning(extrapolation);
+          this.updateTargetSwapWarning(scorecard, this.targetFace);
           setElementText(this.modeHud, timelineStatus.viewMode === "ends"
             ? "Timeline replay · separated ends view · drag empty space to pan · wheel to zoom"
             : "Timeline replay · arrows reveal in scorecard order · drag empty space to pan");
@@ -648,6 +653,7 @@
           : "";
         setElementHtml(this.hud, `<strong>${this.targetFace.shortName || this.targetFace.name}</strong><br>${scorecard.distanceM}m · ${summary.arrowsText}<br><span>Showing ${visibleText}</span>${analysisLine}${dnaLine}${comparisonText}${extrapolationLine}`);
         this.updateExtrapolationWarning(extrapolation);
+        this.updateTargetSwapWarning(scorecard, this.targetFace);
         if (this.modeHud && this.state.viewport.displayMode !== "trends") {
           const mode = this.state.viewport.interactionMode;
           const modeText = {
@@ -704,11 +710,35 @@
       if (this.extrapolationWarningKey === key) return;
       this.extrapolationWarningKey = key;
       this.extrapolationWarning.classList.toggle("hidden", !active);
+      this.canvas?.parentElement?.classList.toggle("has-extrapolation-warning", active);
       if (!active) {
         setElementHtml(this.extrapolationWarning, "");
         return;
       }
       setElementHtml(this.extrapolationWarning, `<strong>Extrapolated view</strong><span>${App.Extrapolation.formatDistance(extrapolation.sourceDistanceM)} → ${App.Extrapolation.formatDistance(extrapolation.targetDistanceM)} · ${App.Extrapolation.formatScale(extrapolation.scale)} · projected scores only</span>`);
+    }
+
+    updateTargetSwapWarning(scorecard, targetFace) {
+      if (!this.targetSwapWarning) return;
+      if (!scorecard || !targetFace) {
+        this.targetSwapWarning.classList.add("hidden");
+        this.canvas?.parentElement?.classList.remove("has-target-swap-warning");
+        this.targetSwapWarningKey = "inactive";
+        setElementHtml(this.targetSwapWarning, "");
+        return;
+      }
+      const originalFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
+      const active = originalFace.id !== targetFace.id;
+      const key = active ? `${originalFace.id}:${targetFace.id}` : "inactive";
+      if (this.targetSwapWarningKey === key) return;
+      this.targetSwapWarningKey = key;
+      this.targetSwapWarning.classList.toggle("hidden", !active);
+      this.canvas?.parentElement?.classList.toggle("has-target-swap-warning", active);
+      if (!active) {
+        setElementHtml(this.targetSwapWarning, "");
+        return;
+      }
+      setElementHtml(this.targetSwapWarning, `<strong>Target swap active</strong><span>Viewing ${escapeHtml(targetFace.shortName || targetFace.name)} · Original ${escapeHtml(originalFace.shortName || originalFace.name)} · view-only comparison</span>`);
     }
   }
 
@@ -721,6 +751,16 @@
   function setElementText(element, text) {
     if (!element || element.textContent === text) return;
     element.textContent = text;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#039;"
+    }[char]));
   }
 
   function getAnalysisHudText(scorecard, visibleEndIndex, extrapolation = null) {

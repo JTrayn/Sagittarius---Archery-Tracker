@@ -2,7 +2,7 @@
   window.ArcheryApp = window.ArcheryApp || {};
 
   window.ArcheryApp.Constants = {
-    APP_VERSION: "0.9.0",
+    APP_VERSION: "0.9.21",
     SCHEMA_VERSION: 1,
     DEFAULT_TARGET_FACE_ID: "wa_122cm_full",
     DEFAULT_SCORECARD: {

@@ -18,7 +18,7 @@
         <div class="brand-copy">
           <div class="brand-title-row">
             <h1>Sagittarius</h1>
-            <span class="brand-version" id="appVersionLabel">v0.9.0</span>
+            <span class="brand-version" id="appVersionLabel">v0.9.21</span>
           </div>
           <p>Archery Tracker</p>
         </div>
@@ -26,10 +26,10 @@
 
       <div class="toolbar topbar-actions" id="topControls" aria-label="Application actions">
         <button class="btn btn-primary" id="newScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">＋</span><span>New scorecard</span></button>
-        <button class="btn" id="loadScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">⌁</span><span>Load scorecard</span></button>
         <button class="btn" id="saveScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">✓</span><span>Save scorecard</span></button>
-        <button class="btn" id="editScorecardBtn" type="button" aria-label="Edit scorecard details"><span class="btn-symbol" aria-hidden="true">✎</span><span>Edit scorecard</span></button>
         <span class="topbar-save-status is-unsaved" id="topbarSaveStatus" aria-live="polite">Unsaved</span>
+        <button class="btn" id="editScorecardBtn" type="button" aria-label="Edit scorecard details"><span class="btn-symbol" aria-hidden="true">✎</span><span>Edit scorecard</span></button>
+        <button class="btn" id="loadScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">⌁</span><span>Scorecard manager</span></button>
         <button class="btn" id="manageTargetFacesBtn" type="button"><span class="btn-symbol" aria-hidden="true">◎</span><span>Target face manager</span></button>
         <button class="btn" id="exportScorecardBtn" type="button"><span class="btn-symbol" aria-hidden="true">⇩</span><span>Export</span></button>
         <label class="btn file-btn" for="importScorecardInput"><span class="btn-symbol" aria-hidden="true">⇧</span><span>Import</span></label>
@@ -142,6 +142,13 @@
             <div class="viewport-control-cluster target-control-cluster extrapolate-control-cluster viewport-tools-cluster" aria-label="Projection and replay controls">
               <span class="viewport-cluster-label">Tools</span>
               <button class="btn btn-small btn-toggle" id="toggleTimelineBtn" type="button" aria-pressed="false">Timeline</button>
+              <div class="viewport-overlay-dropdown target-swap-dropdown" id="targetSwapDropdown">
+                <button class="btn btn-small btn-toggle dropdown-trigger target-swap-trigger" id="targetSwapMenuBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                  <span class="dropdown-trigger-label">Target swap</span>
+                  <span class="dropdown-trigger-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="viewport-overlay-menu target-swap-menu" id="targetSwapMenu" role="menu" aria-label="Target swap" hidden></div>
+              </div>
               <button class="btn btn-small btn-toggle" id="toggleExtrapolateBtn" type="button" aria-pressed="false">Extrapolate</button>
               <label class="viewport-fade-control extrapolate-distance-control is-disabled" for="extrapolateDistanceRange" title="Project plotted arrows from the real scorecard distance to another distance">
                 <span>To</span>
@@ -194,10 +201,10 @@
 
         <div class="canvas-wrap" id="canvasWrap">
           <canvas id="targetCanvas"></canvas>
-          <div class="viewport-hud top-left" id="viewportHud"></div>
           <div class="viewport-hud bottom-right" id="zoomHud"></div>
           <div class="viewport-mode-badge is-plot" id="viewportModeBadge" aria-live="polite">Plot</div>
           <div class="viewport-extrapolation-warning hidden" id="extrapolationWarning" aria-live="polite"></div>
+          <div class="viewport-target-swap-warning hidden" id="targetSwapWarning" aria-live="polite"></div>
           <div class="timeline-panel hidden" id="timelinePanel" aria-label="Timeline replay controls">
             <div class="timeline-actions">
               <button class="btn btn-small" id="timelinePlayPauseBtn" type="button">Play</button>

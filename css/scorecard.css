@@ -1,13 +1,17 @@
 .scorecard-scroll {
-  min-height: 0;
-  overflow: auto;
+  flex: 0 0 auto;
+  min-height: auto;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
   padding: 12px 14px 16px;
 }
 
 .scorecard-table {
   --score-arrow-cell-width: 50px;
   --score-arrow-column-width: 54px;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0 7px;
   font-size: 0.94rem;
@@ -1857,4 +1861,683 @@
   .scorecard-scoreline {
     margin-top: 18px;
   }
+}
+
+/* v0.9.10: compact the scorecard chrome in short landscape viewports so the
+   arrow table remains visible before Scorecard analysis and Notes. */
+@media (max-height: 850px) and (orientation: landscape) {
+  .scorecard-overview {
+    gap: 9px;
+    padding: 12px 13px;
+  }
+
+  .scorecard-title-block h2 {
+    font-size: clamp(1rem, 1vw, 1.16rem);
+  }
+
+  .scorecard-summary-line {
+    font-size: 0.76rem;
+  }
+
+  .scorecard-title-cluster > .score-pb-badge-slot .score-pb-badge,
+  .scorecard-title-cluster .score-pb-badge {
+    width: 46px;
+    height: 46px;
+  }
+
+  .scorecard-scoreline {
+    margin-top: 14px;
+    min-height: 20px;
+  }
+
+  .scorecard-scoreline .score-total-value {
+    font-size: 1.06rem;
+  }
+
+  .scorecard-scoreline .score-total-max {
+    font-size: 0.76rem;
+  }
+
+  .scorecard-info-grid {
+    gap: 7px;
+  }
+
+  .scorecard-info-card {
+    padding: 8px 9px;
+    border-radius: 14px;
+  }
+
+  .scorecard-info-card span,
+  .scorecard-note-preview span {
+    font-size: 0.57rem;
+  }
+
+  .scorecard-info-card strong {
+    margin-top: 4px;
+    font-size: 0.84rem;
+  }
+
+  .scorecard-info-card small {
+    margin-top: 3px;
+    font-size: 0.68rem;
+  }
+
+  .manual-score-panel {
+    padding: 8px 11px;
+    gap: 6px;
+  }
+
+  .manual-score-btn {
+    min-width: 34px;
+    height: 30px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+  }
+
+  .scorecard-scroll {
+    padding: 9px 11px 12px;
+  }
+
+  .scorecard-table {
+    border-spacing: 0 5px;
+    font-size: 0.86rem;
+  }
+
+  .scorecard-table th {
+    top: -9px;
+    padding: 7px 6px;
+    font-size: 0.66rem;
+  }
+
+  .end-label,
+  .total-cell,
+  .running-cell,
+  .average-arrow-cell,
+  .average-centre-cell,
+  .mpi-cell,
+  .arrow-cell {
+    height: 40px;
+  }
+
+  .arrow-cell {
+    font-size: 1.42rem;
+  }
+
+  .scorecard-footer {
+    margin-top: 6px;
+    padding: 13px 14px 15px;
+    border-top-color: rgba(85, 214, 190, 0.18);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(85, 214, 190, 0.07), transparent 16rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(3, 10, 17, 0.22)),
+      rgba(3, 10, 17, 0.13);
+  }
+
+  .footer-stat {
+    min-height: 82px;
+  }
+
+  .scorecard-note-preview p {
+    -webkit-line-clamp: 4;
+  }
+}
+
+@media (max-height: 760px) and (orientation: landscape) {
+  .scorecard-overview {
+    padding: 10px 12px;
+  }
+
+  .scorecard-scoreline {
+    margin-top: 10px;
+  }
+
+  .manual-score-panel {
+    padding-block: 7px;
+  }
+
+  .scorecard-table {
+    --score-arrow-cell-width: 46px;
+    --score-arrow-column-width: 50px;
+  }
+}
+
+/* v0.9.12: laptop score-panel refinements. Hide the manual-score copy when
+   the score panel is too narrow, and wrap footer analysis cards into balanced
+   equal-width grids instead of forcing seven cramped columns. */
+.scorecard-footer-stats {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 96px), 1fr));
+}
+
+@container score-panel (min-width: 780px) {
+  .scorecard-footer-stats {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+@container score-panel (max-width: 740px) {
+  .scorecard-footer-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container score-panel (max-width: 560px) {
+  .manual-score-label {
+    display: none;
+  }
+
+  .manual-score-panel {
+    justify-content: flex-start;
+  }
+
+  .manual-score-buttons {
+    margin-left: 0;
+  }
+
+  .scorecard-footer-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container score-panel (max-width: 390px) {
+  .scorecard-footer-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1320px) {
+  .manual-score-label {
+    display: none;
+  }
+}
+
+/* v0.9.14: stronger scorecard-first compacting. Hide the Manual score copy
+   earlier when the score panel is under pressure. */
+@container score-panel (max-width: 700px) {
+  .manual-score-label {
+    display: none;
+  }
+
+  .manual-score-panel {
+    justify-content: flex-start;
+  }
+}
+
+/* v0.9.14/v0.9.15: horizontal scorecard compaction. Total/Run stay
+   pinned to the right edge when the scorecard needs horizontal scrolling, but
+   the secondary metric columns remain in the scrollable table instead of being
+   hidden. This keeps End + arrow columns + sticky Total/Run visible first while
+   Avg Arrow / Avg Centre / MPI can still be reached by horizontal scroll. */
+.scorecard-table {
+  --score-end-column-width: 52px;
+  --score-total-column-width: 52px;
+  --score-running-column-width: 52px;
+}
+
+.scorecard-table th:first-child,
+.scorecard-table .end-label {
+  width: var(--score-end-column-width);
+  min-width: var(--score-end-column-width);
+  max-width: var(--score-end-column-width);
+}
+
+.scorecard-table th.metric-tooltip-header {
+  min-width: 78px;
+}
+
+.scorecard-table th.metric-tooltip-header:nth-last-child(3) {
+  min-width: 86px;
+}
+
+.scorecard-table .score-total-header,
+.scorecard-table .score-running-header,
+.scorecard-table .total-cell,
+.scorecard-table .running-cell {
+  width: var(--score-total-column-width);
+  min-width: var(--score-total-column-width);
+  max-width: var(--score-total-column-width);
+}
+
+.scorecard-table .score-running-header,
+.scorecard-table .running-cell {
+  position: sticky;
+  right: 0;
+  z-index: 4;
+  background: linear-gradient(180deg, rgba(18, 33, 47, 0.98), rgba(11, 24, 36, 0.98));
+  box-shadow: -10px 0 18px rgba(0, 0, 0, 0.18);
+}
+
+.scorecard-table .score-total-header,
+.scorecard-table .total-cell {
+  position: sticky;
+  right: var(--score-running-column-width);
+  z-index: 4;
+  background: linear-gradient(180deg, rgba(18, 33, 47, 0.98), rgba(11, 24, 36, 0.98));
+}
+
+.scorecard-table th.score-total-header,
+.scorecard-table th.score-running-header {
+  z-index: 6;
+}
+
+@container score-panel (max-width: 680px) {
+  .scorecard-table {
+    --score-arrow-cell-width: 44px;
+    --score-arrow-column-width: 48px;
+    --score-end-column-width: 44px;
+    --score-total-column-width: 47px;
+    --score-running-column-width: 47px;
+    border-spacing: 0 5px;
+    font-size: 0.84rem;
+  }
+
+  .scorecard-table th {
+    padding-inline: 4px;
+    font-size: 0.62rem;
+    letter-spacing: 0.055em;
+  }
+
+  .scorecard-table th.metric-tooltip-header {
+    min-width: 74px;
+  }
+
+  .scorecard-table th.metric-tooltip-header:nth-last-child(3) {
+    min-width: 82px;
+  }
+
+  .average-arrow-cell,
+  .average-centre-cell {
+    min-width: 74px;
+  }
+
+  .mpi-cell {
+    min-width: 82px;
+  }
+
+  .arrow-cell,
+  .end-label,
+  .total-cell,
+  .running-cell,
+  .average-arrow-cell,
+  .average-centre-cell,
+  .mpi-cell {
+    height: 38px;
+  }
+
+  .arrow-cell {
+    font-size: 1.34rem;
+  }
+}
+
+@container score-panel (max-width: 460px) {
+  .scorecard-table {
+    --score-arrow-cell-width: 40px;
+    --score-arrow-column-width: 44px;
+    --score-end-column-width: 38px;
+    --score-total-column-width: 44px;
+    --score-running-column-width: 44px;
+  }
+
+  .scorecard-scroll {
+    padding-inline: 8px;
+  }
+
+  .scorecard-table th {
+    font-size: 0.58rem;
+  }
+
+  .scorecard-table th.metric-tooltip-header {
+    min-width: 70px;
+  }
+
+  .scorecard-table th.metric-tooltip-header:nth-last-child(3) {
+    min-width: 78px;
+  }
+
+  .average-arrow-cell,
+  .average-centre-cell {
+    min-width: 70px;
+  }
+
+  .mpi-cell {
+    min-width: 78px;
+  }
+
+  .arrow-cell {
+    font-size: 1.22rem;
+  }
+}
+
+/* v0.9.15: when the score panel is too narrow for the manual score strip, do
+   not introduce a horizontal scrollbar. Hide the copy and wrap the twelve score
+   buttons into a clean 6 x 2 grid. */
+@container score-panel (max-width: 620px) {
+  .manual-score-panel {
+    overflow-x: visible;
+  }
+
+  .manual-score-buttons {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .manual-score-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@container score-panel (max-width: 390px) {
+  .manual-score-buttons {
+    gap: 5px;
+  }
+
+  .manual-score-btn {
+    height: 28px;
+    font-size: 0.78rem;
+  }
+}
+
+/* v0.9.16: scorecard width polish. Keep manual scoring controls fixed-size
+   in the compact 6 x 2 layout, keep scorecard table columns stable while the
+   panel narrows, and cover the right sticky Total/Run overlay edge so scrolled
+   metric columns fold under it instead of peeking out beside the scrollbar. */
+.scorecard-scroll {
+  padding-right: 0;
+}
+
+.scorecard-table {
+  --score-arrow-cell-width: 50px;
+  --score-arrow-column-width: 54px;
+  --score-end-column-width: 52px;
+  --score-total-column-width: 52px;
+  --score-running-column-width: 52px;
+  border-spacing: 0 7px;
+  font-size: 0.94rem;
+}
+
+.scorecard-table th {
+  padding: 9px 7px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.arrow-cell,
+.end-label,
+.total-cell,
+.running-cell,
+.average-arrow-cell,
+.average-centre-cell,
+.mpi-cell {
+  height: 46px;
+}
+
+.arrow-cell {
+  font-size: 1.62rem;
+}
+
+.scorecard-table th.metric-tooltip-header,
+.average-arrow-cell,
+.average-centre-cell {
+  min-width: 78px;
+}
+
+.scorecard-table th.metric-tooltip-header:nth-last-child(3),
+.mpi-cell {
+  min-width: 86px;
+}
+
+.scorecard-table .score-running-header,
+.scorecard-table .running-cell {
+  box-shadow:
+    -10px 0 18px rgba(0, 0, 0, 0.18),
+    18px 0 0 rgba(11, 24, 36, 0.99);
+}
+
+@container score-panel (max-width: 620px) {
+  .manual-score-buttons {
+    width: auto;
+    grid-template-columns: repeat(6, 34px);
+    justify-content: start;
+    align-content: start;
+  }
+
+  .manual-score-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-self: center;
+  }
+}
+
+@container score-panel (max-width: 390px) {
+  .manual-score-buttons {
+    grid-template-columns: repeat(6, 34px);
+    gap: 5px;
+  }
+
+  .manual-score-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    font-size: 0.84rem;
+  }
+}
+
+
+/* v0.9.17: scorecard layout polish.
+   - Keep a small breathing gap to the right of the sticky Run column.
+   - Keep the Invert control aligned to the actual scorecard/table width, not
+     merely the visible scrollport width.
+   - Delay manual-score wrapping until the fixed-size buttons genuinely no
+     longer fit in one line. */
+.scorecard-scroll {
+  --scorecard-sticky-edge-gap: 8px;
+  padding-right: var(--scorecard-sticky-edge-gap);
+}
+
+.scorecard-table-shell {
+  display: inline-block;
+  min-width: 100%;
+  vertical-align: top;
+}
+
+.scorecard-table-shell .scorecard-table-stage,
+.scorecard-table-shell .scorecard-table {
+  min-width: 100%;
+}
+
+.scorecard-layout-controls {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.scorecard-table .score-running-header,
+.scorecard-table .running-cell {
+  right: var(--scorecard-sticky-edge-gap);
+  box-shadow:
+    -10px 0 18px rgba(0, 0, 0, 0.18),
+    12px 0 0 rgba(11, 24, 36, 0.99);
+}
+
+.scorecard-table .score-total-header,
+.scorecard-table .total-cell {
+  right: calc(var(--score-running-column-width) + var(--scorecard-sticky-edge-gap));
+}
+
+@container score-panel (min-width: 561px) and (max-width: 620px) {
+  .manual-score-buttons {
+    width: auto;
+    display: flex;
+    grid-template-columns: none;
+    flex-wrap: nowrap;
+    gap: 7px;
+  }
+
+  .manual-score-btn {
+    width: auto;
+    min-width: 38px;
+    height: 34px;
+    padding: 0;
+  }
+}
+
+@container score-panel (max-width: 560px) {
+  .manual-score-buttons {
+    width: auto;
+    display: grid;
+    grid-template-columns: repeat(6, 34px);
+    justify-content: start;
+    align-content: start;
+    gap: 6px;
+  }
+
+  .manual-score-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-self: center;
+  }
+}
+
+
+/* v0.9.18: scorecard sticky-edge and visible-pane control polish.
+   The table gets its own horizontal scrollport inside a fixed frame. A narrow
+   panel-coloured edge mask preserves breathing room after Run while preventing
+   off-screen metric columns from bleeding through. Invert now sits outside the
+   horizontal scrollport, so it remains pinned to the visible scorecard pane. */
+.scorecard-scroll {
+  --scorecard-sticky-edge-gap: 8px;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding-right: 0;
+}
+
+.scorecard-table-shell {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.scorecard-table-frame {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.scorecard-table-scrollport {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.scorecard-table-scrollport .scorecard-table-stage,
+.scorecard-table-scrollport .scorecard-table {
+  min-width: 100%;
+}
+
+.scorecard-sticky-edge-mask {
+  position: absolute;
+  z-index: 9;
+  top: 0;
+  right: 0;
+  bottom: 5px;
+  width: var(--scorecard-sticky-edge-gap);
+  pointer-events: none;
+  background: rgba(15, 29, 43, 0.98);
+}
+
+.scorecard-table .score-running-header,
+.scorecard-table .running-cell {
+  right: var(--scorecard-sticky-edge-gap);
+  box-shadow: -10px 0 18px rgba(0, 0, 0, 0.18);
+}
+
+.scorecard-table .score-total-header,
+.scorecard-table .total-cell {
+  right: calc(var(--score-running-column-width) + var(--scorecard-sticky-edge-gap));
+}
+
+.scorecard-layout-controls {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
+  padding-right: var(--scorecard-sticky-edge-gap);
+}
+
+/* v0.9.20: manual-score height safety and window-driven scorecard density.
+   Keep the manual scoring strip content-sized so browser overflow handling can
+   never clip the fixed-size buttons vertically. Scorecard table density now
+   follows the browser viewport width rather than the splitter-created score-panel
+   width. Dragging the middle divider therefore reveals more or less of a stable-
+   density table instead of resizing the table at the same time. Horizontal
+   scrolling remains the final overflow mechanism and no columns are hidden. */
+.manual-score-panel {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 50px;
+  max-height: none;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.manual-score-buttons {
+  min-height: 34px;
+  flex: 0 0 auto;
+}
+
+@container score-panel (max-width: 560px) {
+  .manual-score-panel {
+    min-height: 88px;
+    align-items: flex-start;
+  }
+}
+
+.scorecard-table {
+  --score-arrow-cell-width: clamp(42px, calc(32px + 0.9375vw), 50px);
+  --score-arrow-column-width: clamp(46px, calc(36px + 0.9375vw), 54px);
+  --score-end-column-width: clamp(44px, calc(34px + 0.9375vw), 52px);
+  --score-total-column-width: clamp(46px, calc(40px + 0.625vw), 52px);
+  --score-running-column-width: clamp(46px, calc(40px + 0.625vw), 52px);
+  --score-row-height: clamp(40px, calc(34px + 0.625vw), 46px);
+  --score-metric-column-width: clamp(70px, calc(60px + 0.9375vw), 78px);
+  --score-mpi-column-width: clamp(78px, calc(68px + 0.9375vw), 86px);
+  border-spacing: 0 clamp(5px, calc(2.5px + 0.2344vw), 7px);
+  font-size: clamp(13.5px, calc(11.4px + 0.1875vw), 15px);
+}
+
+.scorecard-table th {
+  padding:
+    clamp(7px, calc(4.5px + 0.2344vw), 9px)
+    clamp(5px, calc(2.5px + 0.2344vw), 7px);
+  font-size: clamp(10px, calc(8.05px + 0.18vw), 11.52px);
+}
+
+.arrow-cell,
+.end-label,
+.total-cell,
+.running-cell,
+.average-arrow-cell,
+.average-centre-cell,
+.mpi-cell {
+  height: var(--score-row-height);
+}
+
+.arrow-cell {
+  font-size: clamp(22px, calc(17px + 0.4688vw), 26px);
+}
+
+.scorecard-table th.metric-tooltip-header,
+.average-arrow-cell,
+.average-centre-cell {
+  min-width: var(--score-metric-column-width);
+}
+
+.scorecard-table th.metric-tooltip-header:nth-last-child(3),
+.mpi-cell {
+  min-width: var(--score-mpi-column-width);
 }

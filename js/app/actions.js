@@ -273,11 +273,15 @@
     const state = App.State.getState();
     if (!state.scorecard) return false;
     const face = App.TargetFaces.getTargetFace(targetFaceId);
-    if (state.scorecard.activeViewTargetFaceId === face.id) return false;
+    const currentActualFaceId = state.scorecard.originalTargetFaceId || state.scorecard.activeViewTargetFaceId;
+    if (currentActualFaceId === face.id && state.scorecard.activeViewTargetFaceId === face.id) return false;
     if (App.ScoringEngine.hasManualScores(state.scorecard)) {
       App.Toast.show("Clear manual scores before changing target face", "danger");
       return false;
     }
+    // Permanent scorecard edit: the selected target face becomes the scorecard's
+    // actual target/category. The temporary active view is reset to the same face.
+    state.scorecard.originalTargetFaceId = face.id;
     state.scorecard.activeViewTargetFaceId = face.id;
     state.scorecard.updatedAt = App.Dates.nowIso();
     App.State.refreshDirtyFromBaseline();
@@ -285,14 +289,36 @@
     return true;
   }
 
+  function setTargetSwapFace(targetFaceId) {
+    const state = App.State.getState();
+    if (!state.scorecard) return false;
+    const originalFace = App.TargetFaces.getTargetFace(state.scorecard.originalTargetFaceId || state.scorecard.activeViewTargetFaceId);
+    const requestedId = !targetFaceId || targetFaceId === "original" ? originalFace.id : targetFaceId;
+    const face = App.TargetFaces.getTargetFace(requestedId);
+    if (state.scorecard.activeViewTargetFaceId === face.id) return false;
+    // Temporary viewport comparison: only the active view changes. This is not
+    // persisted and does not affect PBs, records, trends, or saved categories.
+    state.scorecard.activeViewTargetFaceId = face.id;
+    state.viewport.hoveredArrow = null;
+    state.viewport.scorecardFocus = null;
+    App.State.refreshDirtyFromBaseline();
+    App.State.notify("targetSwap");
+    return true;
+  }
+
   function saveCurrentScorecard() {
     const state = App.State.getState();
     if (!state.scorecard) return null;
+    const activeViewTargetFaceId = state.scorecard.activeViewTargetFaceId;
     const saved = App.Storage.saveScorecard(state.scorecard);
     state.scorecard = saved;
+    if (activeViewTargetFaceId && activeViewTargetFaceId !== saved.activeViewTargetFaceId) {
+      const activeFace = App.TargetFaces.getTargetFace(activeViewTargetFaceId);
+      state.scorecard.activeViewTargetFaceId = activeFace.id;
+    }
     App.Storage.setLastOpenScorecardId(saved.id);
     state.dirty = false;
-    App.State.setCleanBaseline(saved);
+    App.State.setCleanBaseline(state.scorecard);
     App.State.notify("save");
     return saved;
   }
@@ -389,6 +415,7 @@
     advanceSelection,
     updateScorecardMeta,
     changeTargetFace,
+    setTargetSwapFace,
     saveCurrentScorecard,
     loadScorecard,
     renameSavedScorecard,

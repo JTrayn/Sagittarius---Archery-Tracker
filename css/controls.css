@@ -3092,3 +3092,978 @@ select:disabled,
 .intelligence-hero-luck .luck-rating-help-wrap:focus-within .luck-rating-help-popover {
   transform: translateY(0);
 }
+
+/* v0.9.2: Target swap uses the same compact dropdown language as Overlays. */
+.target-swap-dropdown {
+  overflow: visible;
+}
+
+.target-swap-trigger {
+  min-width: 108px;
+}
+
+.target-swap-menu {
+  width: 286px;
+  max-height: min(440px, calc(100vh - 170px));
+  overflow: auto;
+}
+
+.target-swap-menu-heading {
+  padding: 8px 9px 3px;
+  color: var(--muted-2);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.target-swap-menu-item .overlay-menu-copy strong,
+.target-swap-menu-item .overlay-menu-copy small {
+  white-space: normal;
+}
+
+/* v0.9.4: Load Scorecard calendar-assisted browser. */
+.modal-card:has(.scorecard-browser) {
+  width: min(1120px, 100%);
+}
+
+.modal-card:has(.scorecard-browser) .modal-body {
+  overflow: hidden;
+}
+
+.scorecard-browser {
+  height: min(650px, calc(88vh - 102px));
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+.scorecard-browser-toolbar {
+  position: static;
+  top: auto;
+  z-index: auto;
+  padding-bottom: 0;
+  background: transparent;
+}
+
+.scorecard-browser-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(282px, 0.88fr) minmax(420px, 1.35fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.scorecard-calendar-panel,
+.scorecard-list-panel {
+  min-height: 0;
+  border: 1px solid rgba(151, 184, 212, 0.14);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(3, 10, 17, 0.20);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.scorecard-calendar-panel {
+  align-self: start;
+  padding: 14px;
+  display: grid;
+  gap: 0;
+}
+
+.scorecard-list-panel {
+  display: grid;
+  overflow: hidden;
+}
+
+.scorecard-list-scroll {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  scroll-behavior: smooth;
+}
+
+.scorecard-calendar-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.scorecard-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scorecard-calendar-title {
+  min-width: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.scorecard-calendar-nav {
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+}
+
+.scorecard-calendar-weekdays,
+.scorecard-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.scorecard-calendar-weekdays {
+  gap: 5px;
+}
+
+.scorecard-calendar-weekdays span {
+  color: var(--muted-2);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.scorecard-calendar-grid {
+  gap: 5px;
+}
+
+.scorecard-calendar-day {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid rgba(151, 184, 212, 0.10);
+  border-radius: 13px;
+  color: rgba(217, 235, 246, 0.74);
+  background: rgba(255, 255, 255, 0.026);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.scorecard-calendar-day:hover {
+  transform: translateY(-1px);
+  border-color: rgba(85, 214, 190, 0.36);
+  color: var(--text);
+  background: rgba(85, 214, 190, 0.08);
+}
+
+.scorecard-calendar-day.has-scorecards {
+  border-color: rgba(85, 214, 190, 0.30);
+  color: rgba(226, 247, 255, 0.95);
+  background:
+    radial-gradient(circle at 50% 82%, rgba(85, 214, 190, 0.24), rgba(85, 214, 190, 0.055) 42%, rgba(255, 255, 255, 0.026) 75%),
+    rgba(85, 214, 190, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.scorecard-calendar-day.is-selected {
+  border-color: rgba(246, 250, 255, 0.88);
+  color: var(--text);
+}
+
+.scorecard-calendar-number {
+  position: relative;
+  z-index: 1;
+}
+
+.scorecard-calendar-marker {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 5px;
+  height: 5px;
+  display: grid;
+  place-items: center;
+  translate: -50% 0;
+  border-radius: 999px;
+  color: #061018;
+  background: var(--accent);
+  font-size: 0.58rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 0 12px rgba(85, 214, 190, 0.36);
+}
+
+.scorecard-calendar-marker:not(:empty) {
+  width: auto;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+}
+
+.scorecard-calendar-empty {
+  aspect-ratio: 1;
+  min-height: 34px;
+  pointer-events: none;
+}
+
+.scorecard-date-group {
+  scroll-margin-top: 8px;
+  border-radius: 17px;
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+
+.scorecard-date-group.is-calendar-jump {
+  background: rgba(85, 214, 190, 0.075);
+  box-shadow: 0 0 0 1px rgba(85, 214, 190, 0.20), 0 16px 34px rgba(85, 214, 190, 0.055);
+}
+
+.scorecard-date-group.is-calendar-jump .scorecard-date-heading {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+@media (max-width: 980px) {
+  .modal-card:has(.scorecard-browser) .modal-body {
+    overflow: auto;
+  }
+
+  .scorecard-browser {
+    height: auto;
+  }
+
+  .scorecard-browser-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scorecard-list-scroll {
+    max-height: 430px;
+  }
+}
+
+@media (max-width: 560px) {
+  .scorecard-browser-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scorecard-browser-count {
+    padding-bottom: 0;
+  }
+
+  .scorecard-calendar-panel,
+  .scorecard-list-scroll {
+    padding: 12px;
+  }
+
+  .scorecard-calendar-grid,
+  .scorecard-calendar-weekdays {
+    gap: 4px;
+  }
+
+  .scorecard-calendar-day,
+  .scorecard-calendar-empty {
+    min-height: 30px;
+  }
+
+  .scorecard-calendar-day {
+    border-radius: 11px;
+    font-size: 0.76rem;
+  }
+}
+
+/* v0.9.7: Scorecard manager target-preview and action-button refinements. */
+.scorecard-browser .scorecard-list-item {
+  grid-template-columns: minmax(0, 1fr) 170px;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.scorecard-browser .scorecard-card-main {
+  display: grid;
+  gap: 8px;
+}
+
+.scorecard-entry-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(126px, 0.58fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.scorecard-visual-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(151, 184, 212, 0.16);
+  border-radius: 15px;
+  background:
+    linear-gradient(135deg, rgba(85, 214, 190, 0.09), rgba(94, 167, 255, 0.045) 48%, rgba(255, 255, 255, 0.026)),
+    rgba(2, 9, 15, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.scorecard-visual-target {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), rgba(85, 214, 190, 0.035) 58%, rgba(2, 9, 15, 0.58));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.scorecard-target-preview-svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.25));
+}
+
+.scorecard-target-preview-fallback {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.scorecard-visual-details {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.scorecard-visual-kicker {
+  color: var(--muted-2);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.scorecard-visual-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 950;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scorecard-visual-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.scorecard-visual-metrics span,
+.scorecard-entry-fact {
+  min-width: 0;
+  border: 1px solid rgba(151, 184, 212, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.scorecard-visual-metrics span {
+  display: grid;
+  gap: 1px;
+  padding: 5px 7px;
+}
+
+.scorecard-visual-metrics strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scorecard-visual-metrics small {
+  overflow: hidden;
+  color: var(--muted-2);
+  font-size: 0.55rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scorecard-entry-facts {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.scorecard-entry-fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+.scorecard-entry-fact span {
+  color: var(--muted-2);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scorecard-entry-fact strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(226, 247, 255, 0.94);
+  font-size: 0.73rem;
+  font-weight: 900;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scorecard-entry-fact.score {
+  border-color: rgba(85, 214, 190, 0.23);
+  background: rgba(85, 214, 190, 0.075);
+}
+
+.scorecard-entry-fact.score strong {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.scorecard-browser .scorecard-row-actions {
+  width: 170px;
+  max-width: 170px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.scorecard-browser .scorecard-row-actions .btn {
+  width: 100%;
+  min-height: 32px;
+  padding: 0.42rem 0.58rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.scorecard-browser .scorecard-row-actions .delete-scorecard {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1160px) {
+  .scorecard-browser .scorecard-list-item {
+    grid-template-columns: 1fr;
+  }
+
+  .scorecard-browser .scorecard-row-actions {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .scorecard-entry-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .scorecard-browser .scorecard-row-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* v0.9.8: Scorecard manager top-right horizontal action strip and icon actions. */
+.scorecard-browser .scorecard-list-item {
+  grid-template-columns: 1fr;
+}
+
+.scorecard-entry-topline {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scorecard-entry-topline .scorecard-card-title-row {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.scorecard-browser .scorecard-row-actions {
+  width: auto;
+  max-width: none;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 7px;
+  padding-top: 0;
+}
+
+.scorecard-browser .scorecard-row-actions .btn {
+  width: auto;
+  min-height: 32px;
+  padding: 0.42rem 0.64rem;
+  white-space: nowrap;
+}
+
+.scorecard-browser .scorecard-row-actions .scorecard-action-text {
+  min-width: 66px;
+}
+
+.scorecard-browser .scorecard-row-actions .scorecard-action-icon {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.scorecard-action-svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scorecard-browser .scorecard-row-actions .scorecard-action-danger {
+  color: #ffb1b1;
+  border-color: rgba(255, 119, 119, 0.42);
+  background: rgba(255, 119, 119, 0.08);
+}
+
+.scorecard-browser .scorecard-row-actions .scorecard-action-danger:hover,
+.scorecard-browser .scorecard-row-actions .scorecard-action-danger:focus-visible {
+  color: #ffe0e0;
+  border-color: rgba(255, 119, 119, 0.74);
+  background: rgba(255, 119, 119, 0.16);
+}
+
+.scorecard-browser .scorecard-row-actions .delete-scorecard {
+  grid-column: auto;
+}
+
+@media (max-width: 860px) {
+  .scorecard-entry-topline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scorecard-browser .scorecard-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .scorecard-browser .scorecard-row-actions {
+    justify-content: stretch;
+  }
+
+  .scorecard-browser .scorecard-row-actions .scorecard-action-text {
+    flex: 1 1 74px;
+  }
+
+  .scorecard-browser .scorecard-row-actions .scorecard-action-icon {
+    flex: 0 0 34px;
+  }
+}
+
+/* v0.9.13: compact collapsed viewport toolbar.
+   On narrow viewport panels the resting toolbar is only a clean handle. The
+   actual controls are hidden until hover/focus, then they wrap inside the
+   toolbar background so buttons never spill off the right edge or into the
+   target viewport. */
+@container viewport-panel (max-width: 980px) {
+  .viewport-toolbar {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+    background: rgba(5, 14, 23, 0.72);
+    transition: max-height 150ms ease, padding 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  }
+
+  .viewport-toolbar::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 34px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(190, 218, 235, 0.46);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.035), 0 6px 18px rgba(0, 0, 0, 0.24);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: opacity 110ms ease, transform 110ms ease;
+  }
+
+  .viewport-toolbar::after {
+    content: none;
+  }
+
+  .viewport-toolbar-copy,
+  .viewport-toolbar .viewport-actions {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-5px);
+    transition: opacity 130ms ease, transform 130ms ease, visibility 130ms ease;
+  }
+
+  .viewport-toolbar:hover,
+  .viewport-toolbar:focus-within {
+    max-height: min(60vh, 380px);
+    padding: 8px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background:
+      linear-gradient(180deg, rgba(20, 38, 55, 0.96), rgba(9, 21, 33, 0.96)),
+      rgba(9, 21, 33, 0.96);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+  }
+
+  .viewport-toolbar:hover::before,
+  .viewport-toolbar:focus-within::before {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0.72);
+  }
+
+  .viewport-toolbar:hover .viewport-toolbar-copy,
+  .viewport-toolbar:focus-within .viewport-toolbar-copy,
+  .viewport-toolbar:hover .viewport-actions,
+  .viewport-toolbar:focus-within .viewport-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  .viewport-toolbar-copy {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+
+  .viewport-toolbar-copy .viewport-display-cluster,
+  .viewport-toolbar .viewport-control-cluster {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .viewport-toolbar .viewport-actions {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    gap: 5px;
+    row-gap: 5px;
+  }
+
+  .viewport-toolbar .viewport-control-cluster {
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 30px;
+    gap: 3px;
+  }
+
+  .viewport-toolbar .viewport-cluster-label {
+    display: none;
+  }
+
+  .viewport-toolbar .viewport-control-group {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .viewport-toolbar .btn,
+  .viewport-toolbar .btn-mode,
+  .viewport-toolbar .btn-toggle,
+  .viewport-toolbar #lockedModeBtn,
+  .viewport-toolbar #toggleRadialGroupingBtn,
+  .viewport-toolbar #toggleSimpleGroupingBtn,
+  .viewport-toolbar #exportTargetImageBtn {
+    min-width: 0;
+    padding-left: 0.48rem;
+    padding-right: 0.48rem;
+  }
+
+  .viewport-toolbar #exportTargetImageBtn,
+  .target-swap-trigger {
+    min-width: 86px;
+  }
+
+  .viewport-select-label #visibleEndSelect + .custom-select,
+  .viewport-toolbar .viewport-select-label .custom-select {
+    width: min(104px, 100%);
+    max-width: 104px;
+  }
+
+  .viewport-toolbar .viewport-select-label .custom-select-menu {
+    max-width: calc(100vw - 48px);
+  }
+
+  .viewport-toolbar .extrapolate-distance-control {
+    width: min(150px, 100%);
+    min-width: 0;
+    grid-template-columns: auto minmax(58px, 1fr) 32px;
+  }
+
+  .viewport-toolbar .extrapolate-distance-control input[type="range"] {
+    width: 100%;
+  }
+
+  .viewport-toolbar .extrapolate-distance-control output {
+    min-width: 0;
+  }
+}
+
+/* v0.9.14: collapsed viewport toolbar should be hover-driven, not focus-sticky.
+   Clicking a toolbar button can leave focus inside the toolbar; on compact
+   screens the resting handle must still collapse as soon as the mouse leaves. */
+@container viewport-panel (max-width: 980px) {
+  .viewport-toolbar:focus-within:not(:hover) {
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+    background: rgba(5, 14, 23, 0.72);
+    box-shadow: none;
+  }
+
+  .viewport-toolbar:focus-within:not(:hover)::before {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+
+  .viewport-toolbar:focus-within:not(:hover) .viewport-toolbar-copy,
+  .viewport-toolbar:focus-within:not(:hover) .viewport-actions {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-5px);
+  }
+
+  .viewport-toolbar:hover {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .viewport-toolbar:hover .viewport-toolbar-copy,
+  .viewport-toolbar:hover .viewport-actions {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .viewport-toolbar:hover .viewport-actions {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-content: flex-start;
+    gap: 4px;
+    row-gap: 4px;
+  }
+
+  .viewport-toolbar:hover .viewport-control-cluster {
+    flex: 0 1 auto;
+    max-width: 100%;
+    min-height: 29px;
+    padding: 2px;
+    gap: 3px;
+  }
+
+  .viewport-toolbar:hover .viewport-control-group {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .viewport-toolbar:hover .btn,
+  .viewport-toolbar:hover .btn-mode,
+  .viewport-toolbar:hover .btn-toggle,
+  .viewport-toolbar:hover #lockedModeBtn,
+  .viewport-toolbar:hover #toggleRadialGroupingBtn,
+  .viewport-toolbar:hover #toggleSimpleGroupingBtn,
+  .viewport-toolbar:hover #exportTargetImageBtn,
+  .viewport-toolbar:hover .target-swap-trigger,
+  .viewport-toolbar:hover .overlay-menu-trigger {
+    min-width: 0;
+    min-height: 28px;
+    padding: 0.34rem 0.46rem;
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  .viewport-toolbar:hover #exportTargetImageBtn,
+  .viewport-toolbar:hover .target-swap-trigger,
+  .viewport-toolbar:hover .overlay-menu-trigger {
+    min-width: 72px;
+  }
+
+  .viewport-toolbar:hover .viewport-select-label #visibleEndSelect + .custom-select,
+  .viewport-toolbar:hover .viewport-select-label .custom-select {
+    width: 94px;
+    max-width: min(94px, 100%);
+  }
+
+  .viewport-toolbar:hover .extrapolate-distance-control {
+    width: min(132px, 100%);
+    min-width: 0;
+    grid-template-columns: auto minmax(48px, 1fr) 28px;
+    gap: 2px;
+  }
+
+  .viewport-toolbar .viewport-overlay-menu,
+  .viewport-toolbar .custom-select-menu {
+    z-index: 3000;
+  }
+}
+
+/* Allow compact toolbar dropdowns to layer over the canvas instead of being
+   clipped by the viewport panel/card. The canvas itself still clips target
+   content inside .canvas-wrap. */
+.viewport-panel {
+  overflow: visible;
+}
+
+.viewport-toolbar {
+  z-index: 120;
+}
+
+.viewport-overlay-dropdown.is-open,
+.custom-select.is-open {
+  z-index: 3000;
+}
+
+.viewport-overlay-menu,
+.custom-select-menu {
+  z-index: 3001;
+}
+
+/* v0.9.17: expanded compact viewport toolbar keeps the display toggle and
+   controls on the same row where possible. The resting state remains the clean
+   handle-only strip; hover reveals the display toggle, a subtle divider, then
+   the wrapped controls. */
+@container viewport-panel (max-width: 980px) {
+  .viewport-toolbar:hover {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .viewport-toolbar:hover .viewport-toolbar-copy {
+    width: auto;
+    max-width: none;
+    flex: 0 0 auto;
+    align-items: center;
+    align-self: flex-start;
+    padding-right: 8px;
+    margin-right: 1px;
+    border-right: 1px solid rgba(151, 184, 212, 0.18);
+  }
+
+  .viewport-toolbar:hover .viewport-toolbar-copy .viewport-display-cluster {
+    flex-wrap: nowrap;
+    max-width: none;
+  }
+
+  .viewport-toolbar:hover .viewport-actions {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+
+/* v0.9.18: let compact viewport controls wrap around the Display toggle.
+   Flattening the actions wrapper while expanded means the first row can keep
+   the subtle divider, while later rows start at the toolbar's true left edge
+   and use the full available width. */
+@container viewport-panel (max-width: 980px) {
+  .viewport-toolbar:hover {
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+
+  .viewport-toolbar:hover .viewport-toolbar-copy {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    margin-right: 0;
+    padding-right: 8px;
+    border-right: 1px solid rgba(151, 184, 212, 0.18);
+  }
+
+  .viewport-toolbar:hover .viewport-actions {
+    display: contents;
+  }
+
+  .viewport-toolbar:hover .viewport-control-cluster {
+    max-width: 100%;
+  }
+}

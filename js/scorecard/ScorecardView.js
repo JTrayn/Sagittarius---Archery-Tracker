@@ -103,13 +103,20 @@
         ? this.renderArrowPositionLayout(state)
         : this.renderEndLayout(state);
 
-      this.container.innerHTML = `${html}
+      this.container.innerHTML = `<div class="scorecard-table-shell">
+        <div class="scorecard-table-frame">
+          <div class="scorecard-table-scrollport">
+            ${html}
+          </div>
+          <div class="scorecard-sticky-edge-mask" aria-hidden="true"></div>
+        </div>
         <div class="scorecard-layout-controls">
           <button class="btn btn-small scorecard-layout-toggle" type="button" aria-pressed="${this.layoutMode === "arrows" ? "true" : "false"}" title="Invert scorecard rows and columns">
             <span class="scorecard-layout-toggle-icon" aria-hidden="true">⇄</span>
             <span>Invert</span>
           </button>
-        </div>`;
+        </div>
+      </div>`;
     }
 
     renderEndLayout(state) {
@@ -187,8 +194,8 @@
               ${renderMetricHeader("Avg Arrow", METRIC_TOOLTIPS.avgArrow)}
               ${renderMetricHeader("Avg Centre", METRIC_TOOLTIPS.avgCentre)}
               ${renderMetricHeader("MPI", METRIC_TOOLTIPS.mpi)}
-              <th class="score-highlight-header">Total</th>
-              <th class="score-highlight-header">Run</th>
+              <th class="score-highlight-header score-total-header">Total</th>
+              <th class="score-highlight-header score-running-header">Run</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -264,8 +271,8 @@
               ${renderMetricHeader("Avg Arrow", METRIC_TOOLTIPS.avgArrow)}
               ${renderMetricHeader("Avg Centre", METRIC_TOOLTIPS.avgCentre)}
               ${renderMetricHeader("MPI", METRIC_TOOLTIPS.mpi)}
-              <th class="score-highlight-header">Total</th>
-              <th class="score-highlight-header">Run</th>
+              <th class="score-highlight-header score-total-header">Total</th>
+              <th class="score-highlight-header score-running-header">Run</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>

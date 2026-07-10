@@ -38,7 +38,7 @@
       roundType: options.roundType || "Custom",
       originalTargetFaceId: targetFaceId,
       activeViewTargetFaceId: targetFaceId,
-      distanceM: Number(options.distanceM || face.defaultDistanceM || DEFAULT_SCORECARD.distanceM),
+      distanceM: Number(options.distanceM || DEFAULT_SCORECARD.distanceM),
       ends: Array.from({ length: endCount }, (_, endIndex) => createEnd(endIndex + 1, arrowsPerEnd)),
       equipment: {
         bow: "",

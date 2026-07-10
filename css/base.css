@@ -25,6 +25,8 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(145, 169, 189, 0.32) rgba(255, 255, 255, 0.04);
 }
 
 html,
@@ -90,8 +92,8 @@ p {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -105,4 +107,18 @@ p {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(145, 169, 189, 0.42);
+}
+
+/* v0.9.12: slimmer scrollbars for the laptop-first scorecard flow. */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(145, 169, 189, 0.24);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(145, 169, 189, 0.38);
 }

@@ -36,7 +36,8 @@
     els.generateDummyDataBtn.addEventListener("click", generateDummyData);
     els.importScorecardInput.addEventListener("change", importScorecardFile);
     els.manageTargetFacesBtn.addEventListener("click", () => {
-      const currentFaceId = App.State.getState().scorecard?.activeViewTargetFaceId || App.Constants.DEFAULT_TARGET_FACE_ID;
+      const scorecard = App.State.getState().scorecard;
+      const currentFaceId = scorecard?.originalTargetFaceId || scorecard?.activeViewTargetFaceId || App.Constants.DEFAULT_TARGET_FACE_ID;
       App.TargetFaceManager.open({
         sourceFaceId: currentFaceId,
         onChange: () => {
@@ -100,7 +101,7 @@
 
   function buildScorecardSummaryLine(scorecard, targetFace) {
     const faceName = targetFace.name || targetFace.shortName || "Target face";
-    const distance = Number(scorecard.distanceM || targetFace.defaultDistanceM || 0);
+    const distance = Number(scorecard.distanceM || 0);
     const distanceText = distance > 0 ? `${distance}m` : "Unknown distance";
     const dateText = App.Dates.formatDateOnly(scorecard.shotAt || scorecard.createdAt);
     return `${faceName} · ${distanceText} · ${dateText}`;
@@ -396,15 +397,8 @@
 
     App.Modal.open("New Scorecard", body, modalBody => {
       if (App.CustomSelect) App.CustomSelect.enhanceAll(modalBody);
-      const targetSelect = modalBody.querySelector("select[name='targetFaceId']");
-      const distanceInput = modalBody.querySelector("input[name='distanceM']");
-      let distanceManuallyEdited = false;
-      distanceInput.addEventListener("input", () => { distanceManuallyEdited = true; });
-      targetSelect.addEventListener("change", event => {
-        if (distanceManuallyEdited) return;
-        const face = App.TargetFaces.getTargetFace(event.target.value);
-        if (face.defaultDistanceM) distanceInput.value = face.defaultDistanceM;
-      });
+      // Distance is independent from target face. Changing the target face must not
+      // overwrite the distance field; the user changes distance explicitly.
 
       modalBody.querySelector("[data-close-modal]").addEventListener("click", App.Modal.close);
       modalBody.querySelector("#newScorecardForm").addEventListener("submit", event => {
@@ -432,7 +426,7 @@
       App.Toast.show("No scorecard to edit", "danger");
       return;
     }
-    const targetFace = App.TargetFaces.getTargetFace(scorecard.activeViewTargetFaceId);
+    const targetFace = App.TargetFaces.getTargetFace(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId);
     const hasManualScores = App.ScoringEngine.hasManualScores(scorecard);
     const body = `<form class="modal-form edit-scorecard-form" id="editScorecardForm">
       <div class="edit-scorecard-intro">
@@ -446,7 +440,7 @@
       <div class="form-grid">
         <label>
           <span>Distance</span>
-          <input name="distanceM" type="number" min="1" step="1" value="${Number(scorecard.distanceM || targetFace.defaultDistanceM || 1)}" />
+          <input name="distanceM" type="number" min="1" step="1" value="${Number(scorecard.distanceM || 1)}" />
         </label>
         <label>
           <span>Scorecard date/time</span>
@@ -456,7 +450,7 @@
       <label class="edit-target-face-field ${hasManualScores ? "is-locked" : ""}">
         <span>Target face</span>
         <select name="targetFaceId" ${hasManualScores ? "disabled" : ""}>
-          ${renderTargetFaceOptions(scorecard.activeViewTargetFaceId)}
+          ${renderTargetFaceOptions(scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId)}
         </select>
         ${hasManualScores ? `<small>Target face is locked while manual scores are recorded.</small>` : ""}
       </label>
@@ -474,16 +468,8 @@
       if (App.CustomSelect) App.CustomSelect.enhanceAll(modalBody);
       const formEl = modalBody.querySelector("#editScorecardForm");
       const targetSelect = formEl.querySelector("select[name='targetFaceId']");
-      const distanceInput = formEl.querySelector("input[name='distanceM']");
-      let distanceManuallyEdited = false;
-      distanceInput.addEventListener("input", () => { distanceManuallyEdited = true; });
-      if (targetSelect && !targetSelect.disabled) {
-        targetSelect.addEventListener("change", event => {
-          if (distanceManuallyEdited) return;
-          const face = App.TargetFaces.getTargetFace(event.target.value);
-          if (face.defaultDistanceM) distanceInput.value = face.defaultDistanceM;
-        });
-      }
+      // Distance is independent from target face. Changing target face in the edit
+      // modal preserves the current distance unless the distance field itself is edited.
       modalBody.querySelector("[data-close-modal]").addEventListener("click", App.Modal.close);
       formEl.addEventListener("submit", event => {
         event.preventDefault();
@@ -492,9 +478,10 @@
         const nextDistance = Math.max(1, Number(form.get("distanceM")) || 1);
         const nextShotAt = App.Dates.fromDateTimeLocalValue(String(form.get("shotAt") || ""));
         const nextNotes = String(form.get("notes") || "").trim();
+        const actualTargetFaceId = scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId;
         const nextTargetFaceId = hasManualScores
-          ? scorecard.activeViewTargetFaceId
-          : String(form.get("targetFaceId") || scorecard.activeViewTargetFaceId);
+          ? actualTargetFaceId
+          : String(form.get("targetFaceId") || actualTargetFaceId);
 
         const updates = {
           name: nextName,
@@ -503,11 +490,12 @@
           notes: nextNotes
         };
         App.Actions.updateScorecardMeta(updates);
-        if (nextTargetFaceId !== scorecard.activeViewTargetFaceId) {
+        if (nextTargetFaceId !== (scorecard.originalTargetFaceId || scorecard.activeViewTargetFaceId)) {
           App.Actions.changeTargetFace(nextTargetFaceId);
         }
+        App.Actions.saveCurrentScorecard();
         App.Modal.close();
-        App.Toast.show("Scorecard details updated", "success");
+        App.Toast.show("Scorecard details updated and saved", "success");
       });
     });
   }
@@ -584,7 +572,10 @@
 
   function downloadScorecardJson(scorecard) {
     const exportData = App.Storage.structuredCloneSafe(scorecard);
-    const customTargetFaces = getReferencedCustomTargetFaces(scorecard);
+    const actualFace = App.TargetFaces.getTargetFace(exportData.originalTargetFaceId || exportData.activeViewTargetFaceId);
+    exportData.originalTargetFaceId = actualFace.id;
+    exportData.activeViewTargetFaceId = actualFace.id;
+    const customTargetFaces = getReferencedCustomTargetFaces(exportData);
     if (customTargetFaces.length) exportData.customTargetFaces = customTargetFaces;
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
