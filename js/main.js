@@ -214,6 +214,7 @@
         plotModeBtn,
         editModeBtn
       });
+      renderIntelligenceAvailability(state, openIntelligenceBtn);
       App.TopControls.render(state);
       scorecard.render(state);
       viewport.setState(state);
@@ -630,12 +631,21 @@
     return scorecard.ends.reduce((total, end) => total + (end.arrows || []).filter(arrow => arrow?.position).length, 0);
   }
 
+  function renderIntelligenceAvailability(state, button) {
+    if (!button || !App.SessionIntelligence?.getEligibility) return;
+    const eligibility = App.SessionIntelligence.getEligibility(state?.scorecard);
+    button.disabled = !eligibility.eligible;
+    button.title = eligibility.eligible ? "Open Performance Intelligence" : eligibility.reason;
+    button.setAttribute("aria-label", button.title);
+  }
+
 
   function openIntelligenceModal() {
     const state = App.State.getState();
     const scorecard = state.scorecard;
-    if (!scorecard) {
-      App.Toast.show("Create or load a scorecard before opening Intelligence", "danger");
+    const eligibility = App.SessionIntelligence.getEligibility(scorecard);
+    if (!eligibility.eligible) {
+      App.Toast.show(eligibility.reason, "danger");
       return;
     }
 
@@ -650,9 +660,10 @@
 
         const latestState = App.State.getState();
         const latestScorecard = latestState.scorecard;
-        if (!latestScorecard) {
+        const latestEligibility = App.SessionIntelligence.getEligibility(latestScorecard);
+        if (!latestEligibility.eligible) {
           App.Modal.close();
-          App.Toast.show("Create or load a scorecard before opening Intelligence", "danger");
+          App.Toast.show(latestEligibility.reason, "danger");
           return;
         }
 
@@ -662,9 +673,9 @@
           simulationCount: 5000
         });
 
-        if (analysis.status === "no-plotted-arrows") {
+        if (analysis.status !== "ok") {
           App.Modal.close();
-          App.Toast.show("Plot at least one arrow before opening Intelligence", "danger");
+          App.Toast.show(analysis.eligibility?.reason || "Performance Intelligence is unavailable for this scorecard.", "danger");
           return;
         }
 
@@ -676,15 +687,6 @@
   function bindIntelligenceModalActions(modalBody) {
     attachIntelligenceHeaderHelp();
     modalBody.querySelector("[data-close-modal]")?.addEventListener("click", App.Modal.close);
-    modalBody.querySelectorAll("[data-toggle-intelligence-overlay]").forEach(button => {
-      button.addEventListener("click", () => {
-        const next = !App.State.getState().viewport.showIntelligenceOverlay;
-        App.Actions.setViewportDisplayMode("target");
-        App.Actions.setIntelligenceOverlay(next);
-        App.Modal.close();
-        App.Toast.show(next ? "Shot DNA overlay enabled" : "Shot DNA overlay hidden", next ? "success" : "default");
-      });
-    });
   }
 
   function attachIntelligenceHeaderHelp() {
@@ -715,142 +717,127 @@
     const pattern = analysis.pattern;
     const actual = analysis.totals.scorecardTotal;
     const possible = analysis.totals.possibleTotal;
-    const expected = Math.round(forecast.expectedScore);
     const scoreConversion = getScoreConversionLuck(actual, forecast, possible);
     const actualScoreText = `${formatScoreNumber(actual)}${possible ? ` / ${formatScoreNumber(possible)}` : ""}`;
     const luckRating = getLuckRating(forecast);
-    const expectedOutcomeText = scoreConversion.message;
     const actualScenario = analysis.scenarios.find(scenario => scenario.id === "actual");
-    const bestRealisticScenario = analysis.scenarios.find(scenario => scenario.id === "combined-realistic") || analysis.bestScenario;
+    const combinedScenario = analysis.scenarios.find(scenario => scenario.id === "combined-realistic");
     const tableScenarios = analysis.scenarios.filter(scenario => scenario.id !== "combined-realistic");
     const largestUpliftScenario = getLargestUpliftScenario(tableScenarios, actualScenario);
     const scenarioRows = tableScenarios.map(scenario => renderScenarioRow(scenario, actualScenario, largestUpliftScenario));
-    const probabilityRows = renderProbabilityRows(forecast.chances);
+    const probabilityRows = renderProbabilityRows(forecast.chances, analysis.simulationCount);
     const ellipse95 = pattern.confidenceEllipses.find(ellipse => ellipse.level === 95) || pattern.confidenceEllipses[pattern.confidenceEllipses.length - 1];
-    const overlayActive = Boolean(App.State.getState().viewport.showIntelligenceOverlay);
-    const modelScopeText = analysis.forecastArrowCount === analysis.recordedBreakdown.plotted
-      ? `${analysis.forecastArrowCount} plotted arrows`
-      : `${analysis.recordedBreakdown.plotted} plotted arrows · ${analysis.forecastArrowCount} simulated-arrow round`;
-    const coreCentre = pattern.coreFit ? { xMm: pattern.coreFit.meanX, yMm: pattern.coreFit.meanY } : pattern.groupCentre;
-    const coreCentreText = App.SessionIntelligence.formatDirection(coreCentre);
-    const outlierText = `${pattern.outliers.majorCount} major outlier${pattern.outliers.majorCount === 1 ? "" : "s"}`;
-    const bestGain = bestRealisticScenario && actualScenario
-      ? bestRealisticScenario.result.expectedScore - actualScenario.result.expectedScore
+    const coreCentre = pattern.coreCentre || (pattern.coreFit ? { xMm: pattern.coreFit.meanX, yMm: pattern.coreFit.meanY } : pattern.groupCentre);
+    const coreCentreText = capitaliseFirst(App.SessionIntelligence.formatDirection(coreCentre));
+    const coreOffset = Number(pattern.coreOffsetDistanceMm);
+    const combinedChange = combinedScenario && actualScenario
+      ? combinedScenario.result.expectedScore - actualScenario.result.expectedScore
       : null;
+    const opportunity = makeIntelligenceOpportunity(largestUpliftScenario, actualScenario);
+    const contextPills = renderIntelligenceContextPills(analysis);
 
     return `
-      <div class="intelligence-modal intelligence-modal-v2">
-        <section class="intelligence-hero intelligence-hero-v2">
+      <div class="intelligence-modal intelligence-modal-v2 intelligence-modal-v3">
+        <section class="intelligence-hero intelligence-hero-v2 intelligence-overview-hero">
           <div class="intelligence-hero-copy">
             <div class="intelligence-title-row">
-              <span class="panel-eyebrow">Performance Intelligence · current selected scorecard</span>
+              <span class="panel-eyebrow">Performance Intelligence · Complete plotted scorecard</span>
             </div>
             <h3>${escapeHtml(analysis.scorecard.name || "Untitled Scorecard")}</h3>
-            <p>${escapeHtml(analysis.targetFace.shortName || analysis.targetFace.name)} · ${modelScopeText} · ${analysis.simulationCount.toLocaleString()} Monte Carlo runs</p>
-            <div class="intelligence-hero-pills" aria-label="Model context">
-              ${renderIntelPill(pattern.reliability.label, `${analysis.recordedBreakdown.plotted} plotted arrows`)}
-              ${renderIntelPill("Shot Pattern DNA", "Feeds the simulation")}
-            </div>
+            <p>${escapeHtml(analysis.targetFace.shortName || analysis.targetFace.name)} · ${analysis.forecastArrowCount} plotted arrows · ${analysis.simulationCount.toLocaleString()} Monte Carlo runs</p>
+            <div class="intelligence-hero-pills" aria-label="Analysis context">${contextPills}</div>
           </div>
-          <div class="intelligence-hero-stat-row">
-            <div class="intelligence-hero-score">
+          <div class="intelligence-overview-grid">
+            <div class="intelligence-overview-metric">
+              <span>Actual score</span>
+              <strong>${actualScoreText}</strong>
+              <small>Recorded result</small>
+            </div>
+            <div class="intelligence-overview-metric">
               <span class="expected-score-heading">Expected score ${renderExpectedScoreHelp()}</span>
-              <strong>${formatScoreNumber(forecast.expectedScore)}</strong>
-              <small>Actual score ${actualScoreText}</small>
+              <strong>${formatScoreDetail(forecast.expectedScore)}</strong>
+              <small>Monte Carlo mean</small>
+            </div>
+            <div class="intelligence-overview-metric">
+              <span>Likely range</span>
+              <strong>${formatScoreNumber(forecast.p10)}–${formatScoreNumber(forecast.p90)}</strong>
+              <small>10th–90th percentile</small>
             </div>
             <div class="intelligence-hero-score intelligence-hero-luck ${escapeHtml(luckRating.visualClass)}" style="${escapeHtml(luckRating.visualStyle)}" data-luck-rating="${escapeHtml(luckRating.display)}" aria-label="${escapeHtml(luckRating.explanation)}">
-              <span class="luck-rating-heading">Luck rating ${renderLuckRatingHelp()}</span>
+              <span class="luck-rating-heading">Luck Rating ${renderLuckRatingHelp()}</span>
               <strong>${luckRating.display}</strong>
-              <small>${escapeHtml(luckRating.label)}</small>
+              <small>${escapeHtml(capitaliseFirst(luckRating.label))}</small>
             </div>
           </div>
         </section>
 
-        <section class="intelligence-summary-strip" aria-label="Quick interpretation">
-          <div class="intelligence-summary-copy">
-            <span class="panel-eyebrow">Quick read</span>
-            <p>${escapeHtml(makeIntelligenceSummary({ analysis, expected, actual, possible, expectedOutcomeText, scoreConversion, luckRating, coreCentreText, outlierText, bestRealisticScenario, bestGain }))}</p>
-          </div>
-          <button class="btn btn-small" type="button" data-toggle-intelligence-overlay>${overlayActive ? "Hide DNA Overlay" : "Show DNA Overlay"}</button>
+        <section class="intelligence-takeaway-strip is-two-up" aria-label="Key takeaways">
+          ${renderIntelligenceTakeaway("Score conversion", `${capitaliseFirst(luckRating.label)}; ${capitaliseFirst(scoreConversion.shortMessage)}`)}
+          ${renderIntelligenceTakeaway("Main opportunity", opportunity)}
         </section>
 
-        <section class="intelligence-section intelligence-forecast-section">
+        ${renderSessionProgression(analysis.progression, analysis.targetFace)}
+
+        <section class="intelligence-section intelligence-dna-section">
           <div class="intelligence-section-title">
             <div>
-              <span class="panel-eyebrow">1. Score forecast</span>
-              <h4>What this session pattern would usually score</h4>
+              <span class="panel-eyebrow">3. Shot Pattern DNA</span>
+              <h4>The geometry behind the forecast</h4>
             </div>
-            <p>The simulator generates x/y impacts from your plotted group model, then scores them through the normal target scoring engine.</p>
+            <p>The core group model describes where the normal pattern was centred, how it was shaped, and how widely it varied.</p>
           </div>
-          <div class="intelligence-grid intelligence-grid-primary">
-            ${renderIntelMetric("Actual score", `${formatScoreNumber(actual)}${possible ? ` / ${formatScoreNumber(possible)}` : ""}`, `${analysis.recordedBreakdown.recorded}/${analysis.totals.totalArrows} arrows recorded`, "", "The real score currently recorded on this scorecard.")}
-            ${renderIntelMetric("Expected score", formatScoreNumber(forecast.expectedScore), "Mean of simulated scorecards", "", "The average score from the 5,000 simulated repeats of this session pattern.")}
-            ${renderIntelMetric("Likely range", `${formatScoreNumber(forecast.p10)}–${formatScoreNumber(forecast.p90)}`, "10th to 90th percentile", "", "A central range that most simulated repeats landed inside.")}
-            ${renderIntelMetric("Best realistic", formatScoreNumber(forecast.p95), "95th percentile result", "", "A strong but still realistic repeat of this same actual pattern.")}
-            ${renderIntelMetric("Worst realistic", formatScoreNumber(forecast.p05), "5th percentile result", "", "A weak but still realistic repeat of this same actual pattern.")}
-            ${renderIntelMetric("Best simulated score", formatScoreNumber(forecast.maxScore), `Highest of ${analysis.simulationCount.toLocaleString()} simulated scorecards`, "", "The single highest score produced by this Monte Carlo run. This is not a prediction of your normal result; it is the best outcome that appeared in this simulation batch.")}
-          </div>
-        </section>
-
-        <section class="intelligence-split intelligence-split-v2">
-          <div class="intelligence-panel intelligence-probability-panel">
-            <div class="intelligence-section-head">
-              <span>Forecast probabilities</span>
-              <small>Targets adapt to scorecard max and score ceiling.</small>
-            </div>
-            <p class="intelligence-panel-intro">Each percentage counts how often the 5,000 simulated scorecards reached that target or higher. The target scores adapt to the scorecard maximum: normal rounds use broader 10-point milestones, while near-perfect rounds switch to tighter 5/2/1-point milestones where small gains matter more.</p>
-            <div class="intelligence-table">
-              ${probabilityRows || `<div class="intelligence-empty">No higher target scores fit inside this scorecard's possible total.</div>`}
-            </div>
-          </div>
-
-          <div class="intelligence-panel intelligence-dna-panel">
-            <div class="intelligence-section-head">
-              <span>Shot Pattern DNA</span>
-              <small>Actual plotted arrows, core group model.</small>
-            </div>
-            <p class="intelligence-panel-intro">Shot Pattern DNA is derived from your actual plotted group. This DNA is then utilized in a Monte Carlo simulation.</p>
-            <div class="intelligence-dna-grid intelligence-dna-grid-v2">
-              ${renderDnaItem("MPI / group centre", escapeHtml(coreCentreText), "The centre of your normal/core plotted group.")}
-              ${renderDnaItem("Offset", formatMm(pattern.offsetDistanceMm), "Distance from bullseye to the session's average plotted impact.")}
-              ${renderDnaItem("Shape", escapeHtml(pattern.shape.label), "Whether the group is round, vertical, horizontal, or diagonal.")}
-              ${renderDnaItem("Horizontal spread", formatMm(pattern.horizontalSpreadMm), "Approximate left/right width of the core group model.")}
-              ${renderDnaItem("Vertical spread", formatMm(pattern.verticalSpreadMm), "Approximate high/low height of the core group model.")}
-              ${renderDnaItem("Major outliers", String(pattern.outliers.majorCount), "Shots far outside the normal group shape, based on robust distance.")}
-              ${renderDnaItem("95% ellipse", ellipse95 ? `${formatMm(ellipse95.majorRadiusMm * 2)} × ${formatMm(ellipse95.minorRadiusMm * 2)}` : "—", "The oval where about 95% of normal/core arrows are predicted to land.")}
-              ${renderDnaItem("Group angle", Number.isFinite(pattern.shape.angleDeg) ? `${pattern.shape.angleDeg.toFixed(0)}°` : "—", "The direction of the ellipse's long axis.")}
-            </div>
+          ${analysis.modelStability?.material ? `<div class="intelligence-model-warning"><strong>Changing group pattern</strong><span>${escapeHtml(analysis.modelStability.message)}</span></div>` : ""}
+          <div class="intelligence-dna-grid intelligence-dna-grid-v2 intelligence-dna-grid-standalone">
+            ${renderDnaItem("Core MPI", escapeHtml(coreCentreText), "The centre of the normal/core plotted group.", "centre")}
+            ${renderDnaItem("Core offset", formatMm(coreOffset), "Distance from the bullseye to the same core group centre shown as MPI.", "offset")}
+            ${renderDnaItem("Shape", escapeHtml(capitaliseFirst(pattern.shape.label)), "Whether the fitted core group is round, vertical, horizontal, or diagonal.", "shape")}
+            ${renderDnaItem("Core width (2σ)", formatMm(pattern.horizontalSpreadMm), "Two standard deviations of the core model from left to right. This is a model width, not the observed max-to-min spread.", "width")}
+            ${renderDnaItem("Core height (2σ)", formatMm(pattern.verticalSpreadMm), "Two standard deviations of the core model from high to low. This is a model height, not the observed max-to-min spread.", "height")}
+            ${renderDnaItem("Major outliers", String(pattern.outliers.majorCount), "Geometric outliers far outside the normal group shape.", "outliers")}
+            ${renderDnaItem("95% prediction ellipse", ellipse95 ? `${formatMm(ellipse95.majorRadiusMm * 2)} × ${formatMm(ellipse95.minorRadiusMm * 2)}` : "—", "The fitted oval expected to contain about 95% of normal/core arrows.", "ellipse")}
+            ${renderDnaItem("Group angle", Number.isFinite(pattern.shape.angleDeg) ? `${pattern.shape.angleDeg.toFixed(0)}°` : "—", "The direction of the fitted ellipse's long axis.", "angle")}
           </div>
         </section>
 
         <section class="intelligence-section intelligence-whatif-section">
           <div class="intelligence-section-title">
             <div>
-              <span class="panel-eyebrow">2. What-if forecast</span>
-              <h4>Best realistic version of this round</h4>
+              <span class="panel-eyebrow">4. Improvement forecast</span>
+              <h4>How controlled pattern changes affect the score</h4>
             </div>
-            <p>The same Monte Carlo engine reruns your session pattern after controlled changes. The gain column compares each scenario to the Actual Pattern simulation.</p>
+            <p>Paired Monte Carlo comparisons isolate how controlled geometric pattern changes affect the expected score.</p>
           </div>
 
-          ${renderBestRealisticCard(bestRealisticScenario, actualScenario, actual, bestGain)}
-
+          ${renderImprovedPatternCard(combinedScenario, actualScenario, combinedChange)}
           <div class="intelligence-panel intelligence-scenarios">
             <div class="intelligence-section-head">
-              <span>Scenario table</span>
-              <small>Each row is a modified version of the same session pattern.</small>
+              <span>Scenario comparison</span>
+              <small>Paired Monte Carlo pattern comparisons.</small>
             </div>
             <div class="intelligence-scenario-table">
               <div class="intelligence-scenario-row intelligence-scenario-head">
                 <span>Scenario</span>
                 <span>Expected</span>
-                <span>Gain</span>
+                <span>Change</span>
                 <span>Likely range</span>
               </div>
               ${scenarioRows.join("")}
             </div>
           </div>
-
         </section>
+
+        <details class="intelligence-section intelligence-probability-details" open>
+          <summary>
+            <span><small class="panel-eyebrow">5. Score probabilities</small><strong>Chances of reaching selected scores</strong></span>
+            <small>Secondary forecast detail</small>
+          </summary>
+          <div class="intelligence-panel intelligence-probability-panel">
+            <p class="intelligence-panel-intro">Each percentage is the share of simulated scorecards that reached the target or higher.</p>
+            <div class="intelligence-table">
+              ${probabilityRows || `<div class="intelligence-empty">No higher target scores fit inside this scorecard's possible total.</div>`}
+            </div>
+          </div>
+        </details>
 
         <div class="form-actions">
           <button class="btn" type="button" data-close-modal>Close</button>
@@ -859,54 +846,558 @@
     `;
   }
 
-  function makeIntelligenceSummary({ analysis, expected, actual, possible, scoreConversion, luckRating, coreCentreText, outlierText, bestRealisticScenario, bestGain }) {
-    const pattern = analysis.pattern;
-    const scoreText = `${formatScoreNumber(actual)}${possible ? `/${formatScoreNumber(possible)}` : ""}`;
-    const expectedText = formatScoreNumber(expected);
-    const absGap = Math.abs(Math.round(Number(scoreConversion.gap) || 0));
-    const luckIntro = makeLuckSentence(luckRating.label, scoreConversion.gap, absGap, scoreText, expectedText);
-    const dnaPhrase = `Your core group centre was ${coreCentreText}, with a ${pattern.shape.label} pattern and ${outlierText}.`;
-    const bestPhrase = bestRealisticScenario && Number.isFinite(bestGain)
-      ? `The best realistic scenario was ${formatScoreNumber(bestRealisticScenario.result.expectedScore)}, a ${formatPositiveGap(bestGain)} lift over the actual-pattern forecast.`
-      : "The best realistic scenario needs more plotted arrows.";
-    return `${luckIntro} ${dnaPhrase} ${bestPhrase}`;
+  function renderIntelligenceContextPills(analysis) {
+    const pills = [
+      renderIntelPill(analysis.pattern.reliability.label, `${analysis.recordedBreakdown.plotted} plotted arrows`)
+    ];
+    const originalId = analysis.scorecard?.originalTargetFaceId || analysis.scorecard?.targetFaceId;
+    const activeId = analysis.scorecard?.activeViewTargetFaceId || originalId;
+    if (originalId && activeId && originalId !== activeId) pills.push(renderIntelPill("Target Swap active", analysis.targetFace.shortName || analysis.targetFace.name));
+    if (analysis.scoringOptions?.extrapolation) pills.push(renderIntelPill("Extrapolated", App.Extrapolation.formatDistance(analysis.scoringOptions.extrapolation.targetDistanceM)));
+    if (analysis.modelStability?.material) pills.push(renderIntelPill("Changing group", `${formatMm(analysis.modelStability.shiftMm)} shift`));
+    return pills.join("");
   }
 
-  function makeLuckSentence(label, gap, absGap, actualScoreText, expectedScoreText) {
-    const safeLabel = String(label || "neutral");
-    if (gap > 0) {
-      return `You were ${safeLabel}, exceeding the expected score by ${absGap} point${absGap === 1 ? "" : "s"}. Your actual score was ${actualScoreText}, compared with an expected score of ${expectedScoreText}.`;
-    }
-    if (gap < 0) {
-      return `You were ${safeLabel}, falling below the expected score by ${absGap} point${absGap === 1 ? "" : "s"}. Your actual score was ${actualScoreText}, compared with an expected score of ${expectedScoreText}.`;
-    }
-    return `Your score-conversion luck was neutral. Your actual score was ${actualScoreText}, matching the expected score of ${expectedScoreText}.`;
+  function renderIntelligenceTakeaway(label, text) {
+    return `<div class="intelligence-takeaway"><span>${escapeHtml(label)}</span><strong>${escapeHtml(text || "—")}</strong></div>`;
   }
 
-  function renderBestRealisticCard(bestScenario, actualScenario, actualScore, bestGain) {
-    if (!bestScenario || !actualScenario) {
-      return "";
+  function makeIntelligenceOpportunity(scenario, actualScenario) {
+    if (!scenario || !actualScenario) return "No improvement comparison is available.";
+    const change = scenario.result.expectedScore - actualScenario.result.expectedScore;
+    if (roundToDecimals(change, 2) <= 0) return "No controlled adjustment produced a clear positive uplift for this pattern.";
+    return `${scenario.label} produced the largest isolated uplift: ${formatSignedScoreDetail(change)} expected points.`;
+  }
+
+  function renderSessionProgression(progression, targetFace) {
+    if (!progression || progression.status !== "ok") {
+      const requirement = progression?.requirement || "Progression analysis needs a complete plotted scorecard.";
+      const current = `${Number(progression?.recordedArrowCount) || 0} recorded arrows · ${Number(progression?.plottedArrowCount) || 0} plotted`;
+      return `
+        <section class="progression-scope-group progression-scope-session">
+          <div class="progression-scope-heading">
+            <div>
+              <span class="panel-eyebrow">1. Session performance</span>
+              <h5>How scoring changed from end to end</h5>
+            </div>
+          </div>
+          <div class="intelligence-progression-empty">
+            <strong>Insufficient data</strong>
+            <span>${escapeHtml(requirement)}</span>
+            <small>${escapeHtml(current)}</small>
+          </div>
+        </section>
+      `;
     }
+
+    const session = progression.session || {};
+    const inEnd = progression.inEnd || {};
+    const sessionSummary = session.summary || {};
+    const inEndFinding = inEnd.finding || {};
+    const phases = session.phases || [];
+
     return `
-      <div class="intelligence-best-card">
+      <section class="progression-scope-group progression-scope-session">
+        <div class="progression-scope-heading">
+          <div>
+            <span class="panel-eyebrow">1. Session performance</span>
+            <h5>How scoring changed from end to end</h5>
+          </div>
+          <small>${session.endSeries?.length || 0} completed ends</small>
+        </div>
+
+        <div class="intelligence-progression-charts">
+          ${renderProgressionArrowChart(session.arrowSeries || [], {
+            title: "Running projected score",
+            valueKey: "expectedFinalScore",
+            valueLabel: "projected score",
+            formatValue: value => formatScoreNumber(value),
+            formatTooltipValue: value => formatScoreDetail(value),
+            className: "is-score"
+          })}
+        </div>
+
+        <div class="intelligence-progression-subsection progression-bar-subsection">
+          <div class="intelligence-section-head">
+            <span>Average score by end</span>
+            <small>Actual average arrow for every completed end.</small>
+          </div>
+          <div class="progression-bar-panel is-session-analysis">
+            ${renderEndPerformanceBars(session.endSeries || [], targetFace)}
+          </div>
+          ${renderEmbeddedNormalisationScenario(session.normalisationScenario, "session")}
+        </div>
+
+        <div class="intelligence-progression-subsection">
+          <div class="intelligence-section-head">
+            <span>Session thirds</span>
+            <small>Early, middle, and late sections, split on whole-end boundaries.</small>
+          </div>
+          <div class="intelligence-progression-phases is-flip-grid">
+            ${phases.map(phase => renderProgressionFlipCard(phase, targetFace, "session")).join("")}
+          </div>
+        </div>
+
+        ${renderProgressionAnalysisBox(buildEndPatternAnalysis(session), "session", sessionSummary.label)}
+      </section>
+
+      <div class="progression-scope-divider" aria-hidden="true"><span></span></div>
+
+      <section class="progression-scope-group progression-scope-inend">
+        <div class="progression-scope-heading">
+          <div>
+            <span class="panel-eyebrow">2. Within-end performance</span>
+            <h5>How scoring changed from arrow to arrow</h5>
+          </div>
+          <small>${inEnd.eligibleEndCount || 0} comparable ends</small>
+        </div>
+
+        <div class="intelligence-progression-subsection progression-bar-subsection">
+          <div class="intelligence-section-head">
+            <span>Average score by arrow position</span>
+            <small>Repeated position averages across comparable ends.</small>
+          </div>
+          <div class="progression-bar-panel is-inend-analysis">
+            ${renderInEndPositionBars(inEnd.positions || [], targetFace)}
+          </div>
+          ${renderEmbeddedNormalisationScenario(inEnd.normalisationScenario, "in-end")}
+        </div>
+
+        <div class="intelligence-progression-subsection">
+          <div class="intelligence-section-head">
+            <span>Within-end thirds</span>
+            <small>Early, middle, and late arrow positions inside each end.</small>
+          </div>
+          <div class="intelligence-progression-phases is-flip-grid inend-phase-card-grid">
+            ${(inEnd.phases || []).map(phase => renderProgressionFlipCard(phase, targetFace, "in-end")).join("")}
+          </div>
+        </div>
+
+        ${renderProgressionAnalysisBox(buildInEndArrowAnalysis(inEnd), "in-end", inEndFinding.label)}
+      </section>
+    `;
+  }
+
+  function renderProgressionFlipCard(phase, targetFace, scope) {
+    const safeScope = String(scope || "progression").replace(/[^a-z0-9_-]/gi, "-");
+    const safeId = String(phase.id || phase.label || "phase").replace(/[^a-z0-9_-]/gi, "-");
+    const inputId = `progression-card-${safeScope}-${safeId}`;
+    const centreText = phase.centre ? capitaliseFirst(App.SessionIntelligence.formatDirection(phase.centre)) : "—";
+    const countText = phase.rangeText || `${phase.arrowCount} recorded arrows`;
+    const plottedNote = phase.plottedArrowCount === phase.arrowCount
+      ? `${phase.plottedArrowCount} plotted`
+      : `${phase.plottedArrowCount}/${phase.arrowCount} plotted`;
+    return `
+      <article class="intelligence-progression-phase is-${escapeHtml(phase.id || "phase")} has-flip">
+        <input class="progression-card-toggle" type="checkbox" id="${escapeHtml(inputId)}" aria-label="Toggle target view for ${escapeHtml(phase.label)}">
+        <div class="intelligence-progression-phase-head">
+          <div>
+            <span>${escapeHtml(phase.label)}</span>
+            <small>${escapeHtml(countText)}</small>
+          </div>
+          <label class="progression-card-toggle-label" for="${escapeHtml(inputId)}" title="Toggle target view" aria-label="Toggle target view">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="7.5"></circle>
+              <circle cx="12" cy="12" r="3.25"></circle>
+              <path d="M12 1.75v3M12 19.25v3M1.75 12h3M19.25 12h3"></path>
+            </svg>
+          </label>
+        </div>
+        <div class="progression-card-flip-shell">
+          <div class="progression-card-flip-inner">
+            <div class="progression-card-face progression-card-front">
+              <div class="intelligence-progression-phase-score">
+                <strong>${formatAverageArrow(phase.actualAverageArrow)}</strong>
+                <span>Average arrow</span>
+                <small>${formatScoreNumber(phase.actualScore)} points · ${phase.arrowCount} arrows · ${escapeHtml(plottedNote)}</small>
+              </div>
+              <div class="intelligence-progression-phase-metrics">
+                <div><span>Avg centre</span><strong>${formatMm(phase.averageDistanceMm)}</strong></div>
+                <div><span>Observed spread</span><strong>${formatSpreadPair(phase.horizontalSpreadMm, phase.verticalSpreadMm)}</strong></div>
+                <div><span>MPI</span><strong>${escapeHtml(centreText)}</strong></div>
+                <div><span>Major outliers</span><strong>${phase.majorOutlierCount}</strong></div>
+              </div>
+            </div>
+            <div class="progression-card-face progression-card-back">
+              ${renderProgressionTargetVisual(phase, targetFace)}
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderProgressionTargetVisual(phase, targetFace) {
+    const entries = Array.isArray(phase.entries) ? phase.entries.filter(entry => entry.position) : [];
+    const targetRadius = Math.max(1, Number(targetFace?.diameterMm) / 2 || Math.max(...((targetFace?.zones || []).map(zone => Number(zone.radiusMm) || 0)), 1));
+    const groupingEntries = entries.map(entry => ({ point: { xMm: Number(entry.position.xMm) || 0, yMm: Number(entry.position.yMm) || 0 } }));
+    const dispersion = groupingEntries.length && App.GroupingRenderer
+      ? App.GroupingRenderer.calculateRadialGroupStats(groupingEntries)
+      : null;
+    const ellipse = dispersion?.analysis?.confidenceEllipse || null;
+    const bounds = getProgressionTargetBounds(entries, targetRadius, dispersion, ellipse);
+    const zones = (targetFace?.zones || []).slice().sort((a, b) => Number(b.radiusMm) - Number(a.radiusMm));
+    const rings = zones.map(zone => `<circle class="mini-target-ring" cx="0" cy="0" r="${numAttr(zone.radiusMm)}" fill="${escapeHtml(zone.fill || "transparent")}" stroke="${escapeHtml(zone.stroke || "rgba(0,0,0,.45)")}" stroke-width="${numAttr(Math.max(0.7, Number(zone.strokeWidthMm) || 0.9))}"/>`).join("");
+    const overlayMarkup = dispersion && entries.length >= 2 ? `
+      <circle class="mini-target-dispersion-circle" cx="${numAttr(dispersion.circle.center.xMm)}" cy="${numAttr(dispersion.circle.center.yMm)}" r="${numAttr(dispersion.circle.radiusMm)}"/>
+      ${ellipse ? `<ellipse class="mini-target-dispersion-ellipse" cx="${numAttr(ellipse.center.xMm)}" cy="${numAttr(ellipse.center.yMm)}" rx="${numAttr(ellipse.radiusXMm)}" ry="${numAttr(ellipse.radiusYMm)}" transform="rotate(${numAttr(ellipse.rotationRad * 180 / Math.PI)} ${numAttr(ellipse.center.xMm)} ${numAttr(ellipse.center.yMm)})"/>` : ""}
+      <circle class="mini-target-dispersion-centre" cx="${numAttr(dispersion.circle.center.xMm)}" cy="${numAttr(dispersion.circle.center.yMm)}" r="${numAttr(Math.max(bounds.span * 0.008, targetRadius * 0.012))}"/>
+    ` : "";
+    const arrowRadius = Math.max(bounds.span * 0.009, targetRadius * 0.014);
+    const arrows = entries.map((entry, index) => {
+      const scoreLabel = entry.score?.label || String(entry.score?.value ?? "");
+      return `<circle class="mini-target-arrow" cx="${numAttr(entry.position.xMm)}" cy="${numAttr(entry.position.yMm)}" r="${numAttr(arrowRadius)}"><title>Arrow ${index + 1}: ${escapeHtml(scoreLabel)}</title></circle>`;
+    }).join("");
+    const gradientId = `mini-target-scrim-${String(phase.label || phase.id || "phase").replace(/[^a-z0-9_-]/gi, "-")}-${phase.arrowCount || entries.length}-${Math.abs(Math.round(bounds.centreX + bounds.centreY + bounds.span))}`;
+
+    return `
+      <figure class="progression-mini-target-wrap">
+        <svg class="progression-mini-target" viewBox="${numAttr(bounds.centreX - bounds.span / 2)} ${numAttr(bounds.centreY - bounds.span / 2)} ${numAttr(bounds.span)} ${numAttr(bounds.span)}" role="img" aria-label="${escapeHtml(phase.label)} plotted arrows with dispersion overlay">
+          <defs>
+            <radialGradient id="${escapeHtml(gradientId)}" cx="50%" cy="46%" r="72%">
+              <stop offset="0%" stop-color="#050e17" stop-opacity="0.18"></stop>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.52"></stop>
+            </radialGradient>
+          </defs>
+          <rect x="${numAttr(bounds.centreX - bounds.span / 2)}" y="${numAttr(bounds.centreY - bounds.span / 2)}" width="${numAttr(bounds.span)}" height="${numAttr(bounds.span)}" class="mini-target-bg"/>
+          <g class="mini-target-rings is-dimmed">${rings}</g>
+          <line class="mini-target-crosshair" x1="${numAttr(-targetRadius)}" y1="0" x2="${numAttr(targetRadius)}" y2="0"/>
+          <line class="mini-target-crosshair" x1="0" y1="${numAttr(-targetRadius)}" x2="0" y2="${numAttr(targetRadius)}"/>
+          <rect x="${numAttr(bounds.centreX - bounds.span / 2)}" y="${numAttr(bounds.centreY - bounds.span / 2)}" width="${numAttr(bounds.span)}" height="${numAttr(bounds.span)}" fill="url(#${escapeHtml(gradientId)})" class="mini-target-focus-scrim"/>
+          ${overlayMarkup}
+          ${arrows}
+          <circle class="mini-target-centre-dot" cx="0" cy="0" r="${numAttr(Math.max(bounds.span * 0.0055, targetRadius * 0.008))}"/>
+        </svg>
+        <figcaption>${entries.length ? `${entries.length} plotted · dispersion` : "No plotted arrows"}</figcaption>
+      </figure>
+    `;
+  }
+
+  function getProgressionTargetBounds(entries, targetRadius, dispersion, ellipse) {
+    let minX = -targetRadius;
+    let maxX = targetRadius;
+    let minY = -targetRadius;
+    let maxY = targetRadius;
+    (entries || []).forEach(entry => {
+      const x = Number(entry.position?.xMm) || 0;
+      const y = Number(entry.position?.yMm) || 0;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    });
+    if (dispersion?.circle) {
+      const cx = Number(dispersion.circle.center?.xMm) || 0;
+      const cy = Number(dispersion.circle.center?.yMm) || 0;
+      const r = Math.max(0, Number(dispersion.circle.radiusMm) || 0);
+      minX = Math.min(minX, cx - r);
+      maxX = Math.max(maxX, cx + r);
+      minY = Math.min(minY, cy - r);
+      maxY = Math.max(maxY, cy + r);
+    }
+    if (ellipse) {
+      const rx = Math.max(0, Number(ellipse.radiusXMm) || 0);
+      const ry = Math.max(0, Number(ellipse.radiusYMm) || 0);
+      const rotation = Number(ellipse.rotationRad) || 0;
+      const extentX = Math.sqrt(Math.pow(rx * Math.cos(rotation), 2) + Math.pow(ry * Math.sin(rotation), 2));
+      const extentY = Math.sqrt(Math.pow(rx * Math.sin(rotation), 2) + Math.pow(ry * Math.cos(rotation), 2));
+      const cx = Number(ellipse.center?.xMm) || 0;
+      const cy = Number(ellipse.center?.yMm) || 0;
+      minX = Math.min(minX, cx - extentX);
+      maxX = Math.max(maxX, cx + extentX);
+      minY = Math.min(minY, cy - extentY);
+      maxY = Math.max(maxY, cy + extentY);
+    }
+    const rawWidth = Math.max(1, maxX - minX);
+    const rawHeight = Math.max(1, maxY - minY);
+    const span = Math.max(rawWidth, rawHeight) * 1.12;
+    return {
+      centreX: (minX + maxX) / 2,
+      centreY: (minY + maxY) / 2,
+      span
+    };
+  }
+
+  function renderProgressionArrowChart(series, options) {
+    const items = (series || []).filter(item => Number.isFinite(Number(item?.[options.valueKey])));
+    if (!items.length) return `<div class="intelligence-progression-chart intelligence-empty">No recorded arrow data.</div>`;
+
+    const width = 760;
+    const height = 236;
+    const left = 64;
+    const right = 22;
+    const top = 30;
+    const bottom = 42;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const values = items.map(item => Number(item[options.valueKey]));
+    let min = Math.min(...values);
+    let max = Math.max(...values);
+    const rawRange = max - min;
+    const padding = rawRange > 0 ? rawRange * 0.12 : Math.max(5, Math.abs(max) * 0.02);
+    min -= padding;
+    max += padding;
+    if (max - min < 12) {
+      const midpoint = (max + min) / 2;
+      min = midpoint - 6;
+      max = midpoint + 6;
+    }
+
+    // Place arrows at the centre of equal-width slots. This keeps the one-third
+    // guides exactly on the boundaries between the early, middle, and late thirds.
+    const getX = index => left + ((index + 0.5) / items.length) * plotWidth;
+    const getY = value => top + ((max - value) / (max - min)) * plotHeight;
+    const gridValues = Array.from({ length: 4 }, (_, index) => max - ((max - min) * index / 3));
+    const grid = gridValues.map(value => {
+      const y = getY(value);
+      return `<line x1="${left}" y1="${y.toFixed(2)}" x2="${width - right}" y2="${y.toFixed(2)}" class="progression-chart-grid"/><text x="${left - 10}" y="${(y + 4).toFixed(2)}" text-anchor="end" class="progression-chart-tick">${escapeHtml(options.formatValue(value))}</text>`;
+    }).join("");
+    const phaseGuides = [1 / 3, 2 / 3].map(ratio => {
+      const x = left + plotWidth * ratio;
+      return `<line x1="${x.toFixed(2)}" y1="${top}" x2="${x.toFixed(2)}" y2="${top + plotHeight}" class="progression-chart-phase-guide"/>`;
+    }).join("");
+    const phaseLabels = [
+      { label: "Early", x: left + plotWidth / 6 },
+      { label: "Middle", x: left + plotWidth / 2 },
+      { label: "Late", x: left + plotWidth * 5 / 6 }
+    ].map(item => `<text x="${item.x.toFixed(2)}" y="18" text-anchor="middle" class="progression-chart-phase-label">${item.label}</text>`).join("");
+    const clipPrefix = "progression-running-score";
+    const phaseClipDefs = buildProgressionPhaseClipDefs({ clipPrefix, left, top, plotWidth, plotHeight });
+    const lineSegments = buildProgressionPhaseLineSegments(items, getX, getY, options.valueKey, clipPrefix);
+    const endTicks = items.map((item, index) => {
+      const next = items[index + 1];
+      if (next && Number(next.endIndex) === Number(item.endIndex)) return "";
+      const x = left + ((index + 1) / items.length) * plotWidth;
+      return `<line x1="${x.toFixed(2)}" y1="${top + plotHeight}" x2="${x.toFixed(2)}" y2="${top + plotHeight + 5}" class="progression-chart-end-tick"/><text x="${x.toFixed(2)}" y="${height - 13}" text-anchor="middle" class="progression-chart-tick progression-chart-end-label">${escapeHtml(String(item.arrowNumber))}</text>`;
+    }).join("");
+    const pointMarkup = items.map((item, index) => {
+      const x = getX(index);
+      const y = getY(Number(item[options.valueKey]));
+      const phaseClass = `is-${item.phaseId || "middle"}`;
+      const tooltipValue = options.formatTooltipValue
+        ? options.formatTooltipValue(Number(item[options.valueKey]))
+        : options.formatValue(Number(item[options.valueKey]));
+      const title = `Arrow ${item.arrowNumber}: ${tooltipValue} ${options.valueLabel}`;
+      return `<g class="progression-chart-point-group ${phaseClass}"><circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.85" class="progression-chart-point ${phaseClass}"/><circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="7" class="progression-chart-point-hit"><title>${escapeHtml(title)}</title></circle></g>`;
+    }).join("");
+
+    return `
+      <div class="intelligence-progression-chart ${escapeHtml(options.className || "")}">
+        <div class="intelligence-section-head progression-chart-head">
+          <span>${escapeHtml(options.title)}</span>
+        </div>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title)}">
+          ${phaseClipDefs}
+          ${phaseLabels}
+          ${grid}
+          ${phaseGuides}
+          ${lineSegments}
+          ${pointMarkup}
+          ${endTicks}
+        </svg>
+      </div>
+    `;
+  }
+
+  function buildProgressionPhaseClipDefs({ clipPrefix, left, top, plotWidth, plotHeight }) {
+    const thirdWidth = plotWidth / 3;
+    const clipTop = top - 8;
+    const clipHeight = plotHeight + 16;
+    return `
+      <defs>
+        <clipPath id="${clipPrefix}-early"><rect x="${left}" y="${clipTop}" width="${thirdWidth}" height="${clipHeight}"/></clipPath>
+        <clipPath id="${clipPrefix}-middle"><rect x="${left + thirdWidth}" y="${clipTop}" width="${thirdWidth}" height="${clipHeight}"/></clipPath>
+        <clipPath id="${clipPrefix}-late"><rect x="${left + thirdWidth * 2}" y="${clipTop}" width="${thirdWidth}" height="${clipHeight}"/></clipPath>
+      </defs>
+    `;
+  }
+
+  function buildProgressionPhaseLineSegments(items, getX, getY, valueKey, clipPrefix) {
+    const points = items.map((item, index) => `${getX(index).toFixed(2)},${getY(Number(item[valueKey])).toFixed(2)}`).join(" ");
+    if (!points) return "";
+    return ["early", "middle", "late"]
+      .map(phaseId => `<polyline points="${points}" class="progression-chart-line is-${phaseId}" clip-path="url(#${clipPrefix}-${phaseId})"/>`)
+      .join("");
+  }
+
+  function getTargetMaximumArrowScore(targetFace) {
+    const scores = (targetFace?.zones || []).map(zone => Number(zone?.score)).filter(Number.isFinite);
+    return scores.length ? Math.max(0, ...scores) : 10;
+  }
+
+  function buildEndPatternAnalysis(session) {
+    const ends = (session?.endSeries || []).filter(end => Number.isFinite(Number(end.averageArrow)));
+    if (!ends.length) return "There is no end-by-end scoring data to analyse.";
+
+    const finding = session?.summary || {};
+    if (!finding.reliable) {
+      return "Taken together, the running score path, end averages, and session thirds show normal fluctuation rather than a consistent improvement or decline across the round.";
+    }
+
+    if (Number(finding.averageArrowDelta) < 0) {
+      return "Taken together, the running score path, end averages, and session thirds show a progressive decline across the round. The repeated pattern supports a genuine late-session drop rather than one isolated weak end.";
+    }
+
+    return "Taken together, the running score path, end averages, and session thirds show progressive improvement across the round. The repeated pattern supports a genuine late-session lift rather than one isolated strong end.";
+  }
+
+  function buildInEndArrowAnalysis(inEnd) {
+    const positions = (inEnd?.positions || []).filter(item => Number.isFinite(Number(item.actualAverageArrow)));
+    if (!positions.length) return "There is no repeated arrow-position data to analyse.";
+
+    const finding = inEnd?.finding || {};
+    if (!finding.reliable) {
+      return "Taken together, the arrow-position averages and within-end thirds show normal variation rather than a dependable arrow-order effect.";
+    }
+
+    if (finding.id === "reliable-in-end-decline") {
+      return "Taken together, the arrow-position averages and within-end thirds show a repeated decline as each end progressed, indicating that later arrows were consistently weaker.";
+    }
+
+    if (finding.id === "reliable-in-end-improvement") {
+      return "Taken together, the arrow-position averages and within-end thirds show repeated improvement as each end progressed, indicating that later arrows were consistently stronger.";
+    }
+
+    return "Taken together, the arrow-position averages and within-end thirds show a repeatable position-specific effect after accounting for each end's overall strength, rather than a simple first-to-last trend.";
+  }
+
+  function renderProgressionAnalysisBox(text, scope = "session", findingLabel = "") {
+    const isInEnd = scope === "in-end";
+    const scopeClass = isInEnd ? "is-inend" : "is-session";
+    const heading = isInEnd ? "Within-end analysis" : "Session analysis";
+    const fallbackLabel = isInEnd ? "No reliable within-end pattern" : "No reliable session trend";
+    return `
+      <div class="progression-pattern-analysis progression-final-analysis ${scopeClass}">
+        <span>${heading}</span>
+        <strong>${escapeHtml(capitaliseFirst(findingLabel || fallbackLabel))}</strong>
+        <p>${escapeHtml(capitaliseFirst(text || "No interpretation is available."))}</p>
+      </div>
+    `;
+  }
+
+  function renderEndPerformanceBars(endSeries, targetFace) {
+    const items = (endSeries || []).map(end => ({
+      label: `End ${end.endNumber}`,
+      actualAverageArrow: end.averageArrow,
+      arrowCount: end.arrowCount,
+      detail: "",
+      phaseId: end.phaseId || "middle"
+    }));
+    return renderAveragePerformanceBars(items, targetFace, {
+      emptyMessage: "No end-by-end data.",
+      ariaLabel: "Average score by end",
+      scopeClass: "is-end-bars",
+      showDetail: false
+    });
+  }
+
+  function renderInEndPositionBars(positions, targetFace) {
+    const items = (positions || []).map(position => ({
+      label: position.label,
+      actualAverageArrow: position.actualAverageArrow,
+      arrowCount: position.arrowCount,
+      detail: `${position.arrowCount}x`
+    }));
+    return renderAveragePerformanceBars(items, targetFace, {
+      emptyMessage: "No repeated arrow-position data.",
+      ariaLabel: "Average score by arrow position",
+      scopeClass: "is-arrow-bars"
+    });
+  }
+
+  function renderAveragePerformanceBars(sourceItems, targetFace, options = {}) {
+    const items = (sourceItems || []).filter(item => Number.isFinite(Number(item.actualAverageArrow)));
+    if (!items.length) return `<div class="progression-average-bars intelligence-empty">${escapeHtml(options.emptyMessage || "No performance data.")}</div>`;
+    const maximumArrowScore = Math.max(1, getTargetMaximumArrowScore(targetFace));
+    const values = items.map(item => Number(item.actualAverageArrow));
+    const scale = App.SessionIntelligence.makeInEndBarScale(values, maximumArrowScore);
+    const scaleMinimum = scale.minimum;
+    const showDetail = options.showDetail !== false;
+    const detailClass = showDetail ? " has-detail" : " no-detail";
+    return `
+      <div class="progression-average-bars ${escapeHtml(options.scopeClass || "")}${detailClass}" aria-label="${escapeHtml(options.ariaLabel || "Average score bars")}, shown on a ${formatAverageArrow(scaleMinimum)} to ${formatAverageArrow(maximumArrowScore)} scale">
+        <div class="progression-average-scale" aria-hidden="true"><span>${formatCompactScaleValue(scaleMinimum)}</span><span>${formatCompactScaleValue(maximumArrowScore)}</span></div>
+        <div class="progression-average-rows">
+        ${items.map(item => {
+          const value = Number(item.actualAverageArrow);
+          const width = scale.toPercent(value);
+          const phaseClass = item.phaseId ? ` is-${item.phaseId}` : "";
+          return `
+            <div class="progression-average-row${escapeHtml(phaseClass)}">
+              <span>${escapeHtml(item.label)}</span>
+              <div class="progression-average-track" title="${escapeHtml(item.label)}: ${formatAverageArrow(value)} average; scale ${formatCompactScaleValue(scaleMinimum)}–${formatCompactScaleValue(maximumArrowScore)}"><i style="width:${numAttr(width)}%"></i></div>
+              <strong>${formatAverageArrow(value)}</strong>
+              ${showDetail ? `<small>${escapeHtml(item.detail || `${item.arrowCount || 0}x`)}</small>` : ""}
+            </div>
+          `;
+        }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEmbeddedNormalisationScenario(scenario, scope = "in-end") {
+    if (!scenario) return "";
+    const scopeClass = scope === "session" ? "is-session" : "is-inend";
+    return `
+      <article class="progression-normalisation-card ${scopeClass}">
+        <div class="progression-normalisation-copy">
+          <span class="panel-eyebrow">Consistency comparison</span>
+          <strong>${escapeHtml(scenario.label)}</strong>
+          <p>${escapeHtml(scenario.description)}</p>
+        </div>
+        <div class="progression-normalisation-stats">
+          <div><span>${escapeHtml(scenario.subjectLabel)}</span><strong>${formatAverageArrow(scenario.currentAverage)}</strong><small>Current average</small></div>
+          <div><span>Normal value</span><strong>${formatAverageArrow(scenario.benchmarkAverage)}</strong><small>${escapeHtml(scenario.benchmarkLabel)}</small></div>
+          <div><span>Adjusted score</span><strong>${formatScoreDetail(scenario.adjustedScore)}</strong><small class="${getScoreDeltaClass(scenario.change, 2)}">${formatSignedScoreDetail(scenario.change)}</small></div>
+        </div>
+      </article>
+    `;
+  }
+
+  function formatCompactScaleValue(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+  }
+
+  function formatAverageArrow(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric.toFixed(2) : "—";
+  }
+
+  function formatSignedAverage(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    if (Math.abs(numeric) < 0.005) return "±0.00";
+    return `${numeric > 0 ? "+" : ""}${numeric.toFixed(2)}`;
+  }
+
+  function formatSpreadPair(horizontal, vertical) {
+    const h = Number(horizontal);
+    const v = Number(vertical);
+    if (!Number.isFinite(h) || !Number.isFinite(v)) return "—";
+    return `${h.toFixed(1)} × ${v.toFixed(1)}mm`;
+  }
+
+  function numAttr(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? String(Math.round(numeric * 1000) / 1000) : "0";
+  }
+
+  function renderImprovedPatternCard(scenario, actualScenario, change) {
+    if (!scenario || !actualScenario) return "";
+    return `
+      <div class="intelligence-best-card intelligence-improved-card">
         <div class="intelligence-best-copy">
-          <span class="panel-eyebrow">Best possible round preview</span>
-          <h5>${escapeHtml(bestScenario.label)}</h5>
-          <p>${escapeHtml(bestScenario.description)} This is an improved scenario, not a guaranteed maximum.</p>
+          <span class="panel-eyebrow">Improved pattern preview</span>
+          <h5>${escapeHtml(scenario.label)}</h5>
+          <p>${escapeHtml(scenario.description)} This is a controlled model comparison, not a guaranteed result.</p>
         </div>
         <div class="intelligence-best-stats">
-          <div>
-            <span>Expected</span>
-            <strong>${formatScoreNumber(bestScenario.result.expectedScore)}</strong>
-          </div>
-          <div>
-            <span>Gain vs model</span>
-            <strong class="positive">${formatSignedScore(bestGain)}</strong>
-          </div>
-          <div>
-            <span>Likely range</span>
-            <strong>${formatScoreNumber(bestScenario.result.p10)}–${formatScoreNumber(bestScenario.result.p90)}</strong>
-          </div>
+          <div><span>Expected</span><strong>${formatScoreDetail(scenario.result.expectedScore)}</strong></div>
+          <div><span>Change vs baseline</span><strong class="${getScoreDeltaClass(change, 2)}">${formatSignedScoreDetail(change)}</strong></div>
+          <div><span>Likely range</span><strong>${formatScoreNumber(scenario.result.p10)}–${formatScoreNumber(scenario.result.p90)}</strong></div>
         </div>
       </div>
     `;
@@ -927,47 +1418,49 @@
         <button class="intelligence-help-button" type="button" aria-label="About Performance Intelligence">?</button>
         <span class="intelligence-help-popover" role="tooltip">
           <strong>How Performance Intelligence works</strong>
-          <span>First, the app reads your actual plotted arrow positions from the selected scorecard. Manual score-only arrows still count in your real score, but they cannot shape the geometry model because they have no x/y impact point.</span>
-          <span>It then builds your Shot Pattern DNA: group centre/MPI, bullseye offset, horizontal and vertical spread, group shape, group angle, 95% shot prediction ellipse, and major-outlier rate.</span>
+          <span>Performance Intelligence is available only for complete scorecards where every arrow has a plotted x/y position. This keeps the observed score, progression analysis, and geometry model on the same set of arrows.</span>
+          <span>It then builds Shot Pattern DNA: the core group centre and offset, fitted core width and height, group shape and angle, a 95% prediction ellipse, and major-outlier rate.</span>
           <span>That DNA feeds a Monte Carlo simulation. Monte Carlo means repeatedly testing thousands of random-but-realistic versions of the same pattern. In this app, each run generates 5,000 simulated scorecards as x/y impacts and scores every simulated arrow through the normal target scoring engine.</span>
           <span>The expected score is the average score produced by those simulated repeats. It is not a separate judgement of your skill; it is what this actual shot pattern usually converts into on the target face.</span>
           <span>Actual score versus expected score is therefore shown as score-conversion luck. The Luck Rating is the actual score's percentile rank inside the simulated score distribution: 50 is average conversion, above 50 means the full score converted better than the model average, and below 50 means it converted worse. It may loosely correlate with Ring Break Luck, but Ring Break Luck separately measures only close ring-boundary touches and near-misses.</span>
-          <span>Forecast probabilities count how often the 5,000 simulated scorecards reached each target score. The what-if rows rerun the same simulator after controlled changes, such as re-centring the group, removing major outliers, or tightening vertical/horizontal spread.</span>
+          <span>Progression Intelligence is separate from the Monte Carlo forecast. Its running projected score uses the actual score recorded after every arrow. Trend labels require repeated evidence across ends, and in-end labels use paired comparisons within the same ends so ordinary random differences are not over-reported.</span>
+          <span>The session and within-end bar sections include direct consistency comparisons for the weakest end and weakest repeated arrow position. These recalculate the observed score without simulation. The Improvement forecast separately reruns paired Monte Carlo trials after controlled geometric changes such as re-centring the group, removing major outliers, or tightening spread. Forecast probabilities show how often the simulated scorecards reached each selected target.</span>
         </span>
       </span>
     `;
   }
 
   function getScoreConversionLuck(actualScore, forecast, possibleScore) {
-    const actual = Math.round(Number(actualScore) || 0);
-    const expected = Math.round(Number(forecast?.expectedScore) || 0);
+    const actual = Number(actualScore) || 0;
+    const expected = Number(forecast?.expectedScore) || 0;
     const possibleSuffix = possibleScore ? `/${formatScoreNumber(possibleScore)}` : "";
     const gap = actual - expected;
+    const roundedGap = roundToDecimals(gap, 2) || 0;
     const luckRating = getLuckRating(forecast);
     const scoreText = `${formatScoreNumber(actual)}${possibleSuffix}`;
-    const gapText = formatPositiveGap(Math.abs(gap));
+    const gapText = formatScoreDetail(Math.abs(gap));
 
-    if (gap > 0) {
+    if (roundedGap > 0) {
       return {
         gap,
-        label: luckRating,
+        label: luckRating.label,
         message: `Score-conversion luck: ${luckRating.label} (${gapText} above model average). Actual score ${scoreText}.`,
-        shortMessage: `${gapText} above the model average.`
+        shortMessage: `${gapText} points above the model average.`
       };
     }
-    if (gap < 0) {
+    if (roundedGap < 0) {
       return {
         gap,
-        label: luckRating,
+        label: luckRating.label,
         message: `Score-conversion luck: ${luckRating.label} (${gapText} below model average). Actual score ${scoreText}.`,
-        shortMessage: `${gapText} below the model average.`
+        shortMessage: `${gapText} points below the model average.`
       };
     }
     return {
       gap,
-      label: luckRating,
-      message: `Score-conversion luck: neutral. Actual score matched the model average at ${scoreText}.`,
-      shortMessage: `matched the model average.`
+      label: luckRating.label,
+      message: `Score-conversion luck: Neutral. Actual score matched the model average at ${scoreText}.`,
+      shortMessage: "Matched the model average."
     };
   }
 
@@ -990,11 +1483,11 @@
   function getLuckRatingVisual(rating) {
     const numeric = Number(rating);
     const value = App.Geometry.clamp(Number.isFinite(numeric) ? numeric : 50, 0, 100);
-    const direction = value >= 50 ? 1 : -1;
-    const distanceFromNeutral = Math.abs(value - 50) / 50;
+    const neutral = value >= 40 && value < 60;
+    const direction = value >= 60 ? 1 : value < 40 ? -1 : 0;
+    const distanceFromNeutral = direction > 0 ? (value - 60) / 40 : direction < 0 ? (40 - value) / 40 : 0;
     const intensity = Math.max(0, Math.min(1, distanceFromNeutral));
-    const sideProgress = direction > 0 ? (value - 50) / 50 : (50 - value) / 50;
-    const progress = Math.max(0, Math.min(1, sideProgress));
+    const progress = intensity;
 
     let className = "luck-neutral";
     const luckyHue = 142;
@@ -1002,22 +1495,22 @@
     const neutralHue = 171;
     const hue = direction > 0
       ? neutralHue + (luckyHue - neutralHue) * progress
-      : neutralHue + (unluckyHue - neutralHue) * progress;
-    const sat = direction > 0 ? 70 + progress * 12 : 70 + progress * 16;
-    const glow = 0.10 + intensity * (direction > 0 ? 0.34 : 0.37);
+      : direction < 0
+        ? neutralHue + (unluckyHue - neutralHue) * progress
+        : neutralHue;
+    const sat = direction > 0 ? 70 + progress * 12 : direction < 0 ? 70 + progress * 16 : 58;
+    const glow = neutral ? 0.10 : 0.10 + intensity * (direction > 0 ? 0.34 : 0.37);
 
-    if (value > 50) {
-      className = "luck-fortunate";
-      if (value >= 60) className += " luck-tier-60";
+    if (value >= 60) {
+      className = "luck-fortunate luck-tier-60";
       if (value >= 70) className += " luck-tier-70";
       if (value >= 80) className += " luck-tier-80 luck-strong";
       if (value >= 90) className += " luck-tier-90 luck-magical";
       if (value >= 95) className += " luck-tier-95 luck-prismatic luck-aura";
       if (value >= 98) className += " luck-tier-98 luck-mythic luck-sparkle";
       if (value >= 99) className += " luck-tier-99";
-    } else if (value < 50) {
-      className = "luck-unfortunate";
-      if (value <= 40) className += " luck-tier-60";
+    } else if (value < 40) {
+      className = "luck-unfortunate luck-tier-60";
       if (value <= 30) className += " luck-tier-70";
       if (value <= 20) className += " luck-tier-80 luck-strong";
       if (value <= 10) className += " luck-tier-90 luck-cursed";
@@ -1044,21 +1537,21 @@
   function classifyLuckRating(rating) {
     const numeric = Number(rating);
     const value = App.Geometry.clamp(Number.isFinite(numeric) ? numeric : 50, 0, 100);
-    if (value >= 99) return "almost impossibly lucky";
-    if (value >= 98) return "extraordinarily lucky";
-    if (value >= 95) return "exceptionally lucky";
-    if (value >= 90) return "extremely lucky";
-    if (value >= 80) return "very lucky";
-    if (value >= 70) return "lucky";
-    if (value >= 60) return "slightly lucky";
-    if (value >= 40) return "neutral";
-    if (value >= 30) return "slightly unlucky";
-    if (value >= 20) return "unlucky";
-    if (value >= 10) return "very unlucky";
-    if (value >= 5) return "extremely unlucky";
-    if (value >= 2) return "exceptionally unlucky";
-    if (value >= 1) return "extraordinarily unlucky";
-    return "almost impossibly unlucky";
+    if (value >= 99) return "Almost impossibly lucky";
+    if (value >= 98) return "Extraordinarily lucky";
+    if (value >= 95) return "Exceptionally lucky";
+    if (value >= 90) return "Extremely lucky";
+    if (value >= 80) return "Very lucky";
+    if (value >= 70) return "Lucky";
+    if (value >= 60) return "Slightly lucky";
+    if (value >= 40) return "Neutral";
+    if (value >= 30) return "Slightly unlucky";
+    if (value >= 20) return "Unlucky";
+    if (value >= 10) return "Very unlucky";
+    if (value >= 5) return "Extremely unlucky";
+    if (value >= 2) return "Exceptionally unlucky";
+    if (value >= 1) return "Extraordinarily unlucky";
+    return "Almost impossibly unlucky";
   }
 
 
@@ -1090,11 +1583,6 @@
     `;
   }
 
-  function formatPositiveGap(value) {
-    const numeric = Math.abs(Math.round(Number(value) || 0));
-    return `+${numeric}`;
-  }
-
   function renderIntelPill(label, value) {
     return `
       <span class="intelligence-pill">
@@ -1104,49 +1592,58 @@
     `;
   }
 
-  function renderIntelMetric(label, value, subtext, extraClass = "", explanation = "") {
+  function renderDnaItem(label, value, explanation = "", icon = "shape") {
     return `
-      <div class="intelligence-metric ${extraClass}" title="${escapeHtml(explanation || subtext || label)}">
-        <span>${escapeHtml(label)}</span>
-        <strong>${value}</strong>
-        <small>${escapeHtml(subtext || "")}</small>
-      </div>
-    `;
-  }
-
-  function renderDnaItem(label, value, explanation = "") {
-    return `
-      <div class="intelligence-dna-item" title="${escapeHtml(explanation || label)}">
-        <span>${escapeHtml(label)}</span>
+      <article class="intelligence-dna-item dna-tone-blue" title="${escapeHtml(explanation || label)}">
+        <div class="intelligence-dna-card-top">
+          <div class="intelligence-dna-icon" aria-hidden="true">${renderDnaIcon(icon)}</div>
+          <span>${escapeHtml(label)}</span>
+        </div>
         <strong>${value}</strong>
         ${explanation ? `<small>${escapeHtml(explanation)}</small>` : ""}
-      </div>
+      </article>
     `;
   }
 
-  function renderProbabilityRows(chances) {
+  function renderDnaIcon(icon) {
+    const common = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
+    const icons = {
+      centre: `<svg ${common}><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>`,
+      offset: `<svg ${common}><circle cx="7" cy="17" r="2"/><circle cx="17" cy="7" r="2"/><path d="M8.5 15.5 15.5 8.5M12.5 8.5h3v3"/></svg>`,
+      shape: `<svg ${common}><ellipse cx="12" cy="12" rx="8" ry="5" transform="rotate(25 12 12)"/><path d="m6 17 12-10"/></svg>`,
+      width: `<svg ${common}><path d="M4 12h16M4 12l3-3M4 12l3 3M20 12l-3-3M20 12l-3 3"/><path d="M7 6v12M17 6v12" opacity=".45"/></svg>`,
+      height: `<svg ${common}><path d="M12 4v16M12 4 9 7M12 4l3 3M12 20l-3-3M12 20l3-3"/><path d="M6 7h12M6 17h12" opacity=".45"/></svg>`,
+      outliers: `<svg ${common}><circle cx="9" cy="11" r="4"/><circle cx="18" cy="5" r="1.6"/><circle cx="18" cy="18" r="1.6"/><path d="M12 8.5 16.5 6M12.5 13.5l4 3" opacity=".55"/></svg>`,
+      ellipse: `<svg ${common}><ellipse cx="12" cy="12" rx="8" ry="5" transform="rotate(-20 12 12)"/><circle cx="12" cy="12" r="1.5"/><path d="M4 12h16M12 5v14" opacity=".35"/></svg>`,
+      angle: `<svg ${common}><path d="M5 18 18 5M5 18h13"/><path d="M10 18a5 5 0 0 1 1.5-3.5"/></svg>`
+    };
+    return icons[icon] || icons.shape;
+  }
+
+  function renderProbabilityRows(chances, simulationCount) {
     return (chances || []).map(chance => `
       <div class="intelligence-table-row" title="Chance that this session-level model reaches ${formatScoreNumber(chance.target)} or higher.">
         <span>Chance of ${formatScoreNumber(chance.target)}+</span>
-        <strong>${formatPercent(chance.probability)}</strong>
+        <strong>${formatSimulationProbability(chance.probability, simulationCount)}</strong>
       </div>
     `).join("");
   }
 
-  function renderScenarioGuideItem(label, text) {
-    return `
-      <div class="intelligence-guide-item">
-        <strong>${escapeHtml(label)}</strong>
-        <span>${escapeHtml(text)}</span>
-      </div>
-    `;
+  function formatSimulationProbability(value, simulationCount) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    const count = Math.max(1, Math.floor(Number(simulationCount) || 1));
+    if (numeric <= 0) return `&lt;${(100 / count).toFixed(2)}%`;
+    return `${(numeric * 100).toFixed(2)}%`;
   }
 
   function renderScenarioRow(scenario, actualScenario, largestUpliftScenario) {
     const baseExpected = actualScenario?.result?.expectedScore ?? scenario.result.expectedScore;
     const gain = scenario.result.expectedScore - baseExpected;
     const isFeatured = scenario.id === "combined-realistic";
-    const isLargest = largestUpliftScenario && scenario.id === largestUpliftScenario.id && gain > 0.05;
+    const displayedGain = roundToDecimals(gain, 2);
+    const gainClass = getScoreDeltaClass(gain, 2);
+    const isLargest = largestUpliftScenario && scenario.id === largestUpliftScenario.id && displayedGain > 0;
     const rowClass = [isFeatured ? "is-featured" : "", isLargest ? "is-largest-uplift" : ""].filter(Boolean).join(" ");
     return `
       <div class="intelligence-scenario-row ${rowClass}" title="${escapeHtml(scenario.description)}">
@@ -1154,30 +1651,43 @@
           <strong>${escapeHtml(scenario.label)}${isLargest ? `<em>Largest uplift</em>` : ""}</strong>
           <small>${escapeHtml(scenario.description)}</small>
         </span>
-        <span>${formatScoreNumber(scenario.result.expectedScore)}</span>
-        <span class="${gain >= 0.05 ? "positive" : gain <= -0.05 ? "negative" : ""}">${formatSignedScore(gain)}</span>
+        <span>${formatScoreDetail(scenario.result.expectedScore)}</span>
+        <span class="${gainClass}">${formatSignedScoreDetail(gain)}</span>
         <span>${formatScoreNumber(scenario.result.p10)}–${formatScoreNumber(scenario.result.p90)}</span>
       </div>
     `;
   }
 
+
+  function formatScoreDetail(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "—";
+    const rounded = Math.round(numeric * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  }
   function formatScoreNumber(value) {
     if (!Number.isFinite(Number(value))) return "—";
     return String(Math.round(Number(value)));
   }
 
-  function formatSignedScore(value) {
+  function roundToDecimals(value, decimals = 2) {
     const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return "—";
-    const rounded = Math.round(numeric);
-    if (rounded === 0) return "±0";
-    return `${rounded > 0 ? "+" : ""}${rounded}`;
+    if (!Number.isFinite(numeric)) return null;
+    const factor = Math.pow(10, Math.max(0, Math.floor(Number(decimals) || 0)));
+    return Math.round((numeric + Number.EPSILON) * factor) / factor;
   }
 
-  function formatPercent(value) {
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return "—";
-    return `${(numeric * 100).toFixed(2)}%`;
+  function formatSignedScoreDetail(value, decimals = 2) {
+    const rounded = roundToDecimals(value, decimals);
+    if (rounded === null) return "—";
+    if (rounded === 0) return `±${(0).toFixed(decimals)}`;
+    return `${rounded > 0 ? "+" : ""}${rounded.toFixed(decimals)}`;
+  }
+
+  function getScoreDeltaClass(value, decimals = 2) {
+    const rounded = roundToDecimals(value, decimals);
+    if (rounded === null || rounded === 0) return "";
+    return rounded > 0 ? "positive" : "negative";
   }
 
   function openExportImageModal() {
@@ -1512,6 +2022,11 @@
     range.disabled = !checkbox.checked;
     const control = range.closest(".export-target-visibility-control");
     if (control) control.classList.toggle("is-disabled", !checkbox.checked);
+  }
+
+  function capitaliseFirst(value) {
+    const text = String(value ?? "").trim();
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
   }
 
   function escapeHtml(value) {

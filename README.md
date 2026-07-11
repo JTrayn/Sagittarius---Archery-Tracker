@@ -2,305 +2,274 @@
 
 **Sagittarius** is a prototype archery scorecard and shot-analysis app for plotting arrows, reviewing practice sessions, tracking records, and exporting clean target images.
 
-It is designed for target archery practice: create a scorecard, plot arrows directly on a target face, review your ends, and use analysis tools to understand how your session performed.
+It is designed for target archery practice: create a scorecard, plot arrows directly on a target face, review each end, and use analysis tools to understand how the session performed.
 
 ![Sagittarius overview](docs/assets/readme/overview.JPG)
 
 ## Highlights
 
-- Plot arrows directly onto archery target faces.
-- Score full practice sessions with automatic scoring from plotted arrow positions.
-- Review scorecard stats including total score, average arrow, X count, misses, average centre, MPI, Ring Break Luck, and Luck Adjusted Score.
-- Use analysis overlays for labels, dispersion, enclosing group, Shot Pattern DNA, and Ring Break Luck.
-- Run Performance Intelligence to compare your actual score against a 5,000-run Monte Carlo simulation of your plotted shot pattern.
-- Replay sessions with Timeline mode.
+- Plot arrows directly onto archery target faces and score them automatically from their positions.
+- Record complete practice sessions with plotted arrows, manual scores, notes, equipment details, and independent target-face/distance metadata.
+- Review total score, average arrow, X count, misses, average centre, MPI, Ring Break Luck, and Luck Adjusted Score.
+- Use visual overlays for arrow labels, dispersion, enclosing group, Shot Pattern DNA, and Ring Break Luck.
+- Run Performance Intelligence with a 5,000-run Monte Carlo simulation of the plotted shot pattern.
+- Use Progression Intelligence to follow the running projected score through the round and compare early, middle, and late performance both across the session and within each end.
+- Replay sessions chronologically with Timeline mode.
 - Extrapolate a plotted group to different distances.
-- Temporarily compare a session against another target face with Target swap, without changing saved records or PB categories.
-- Manage saved scorecards through a calendar-assisted **Scorecard manager** that highlights days with saved sessions and shows compact visual session cards.
-- Track trends, records, and arrows shot across saved scorecards.
-- Export scorecards as JSON and export clean target images for sharing or coaching.
-- Create and edit custom target faces, which is a major focus of the app and something many archery scorecard apps do not allow.
-- On laptop-width viewports, the viewport toolbar can collapse into a slim handle and reveal wrapped controls on hover to protect target space.
-- On narrow score panels, the scorecard keeps stable columns, uses horizontal scrolling, pins Total/Run over a clean panel-coloured edge mask, preserves Avg Arrow, Avg Centre, and MPI, and keeps Invert fixed to the visible scorecard pane.
-- The scorecard/target workspace preserves its current proportional split when the browser window is resized; the default scorecard share is 35%, and dragging the divider reveals more columns without changing table density.
+- Temporarily compare the same arrows against another target face with Target Swap without changing the saved scorecard category.
+- Browse, duplicate, import, export, and manage saved scorecards through the calendar-assisted Scorecard Manager.
+- Track trends, personal bests, records, and arrows shot across saved scorecards.
+- Export clean target images and end sheets for sharing or coaching.
+- Create and edit custom target faces.
 
 ## Quick start
 
-Sagittarius is currently **prototype software**. At this stage it can be run in two simple ways:
+Sagittarius is currently **prototype software**. It can be run in two simple ways:
 
-1. **Locally as a basic web app** - download or clone the project and open `index.html` in a modern browser.
-2. **Via GitHub Pages / live GitHub hosting** - if the repository is hosted with GitHub Pages enabled, the app can be opened directly in the browser from the hosted site.
+1. Download or clone the project and open `index.html` in a modern browser.
+2. Host the project as a static site, such as through GitHub Pages.
 
-No account, server, or build step is required for the current prototype. Scorecards can be saved locally inside the browser and exported/imported as JSON files so your practice data remains portable.
-
-In the future, the intended delivery may change. The likely direction is a standalone desktop app for the full experience, with a lighter mobile version for more basic score entry and review.
+No account, server, or build step is required. Scorecards are saved locally in the browser and can be exported/imported as JSON so practice data remains portable.
 
 ## Scorecards
 
-Target faces define the geometry and scoring zones of the target. They do **not** lock the scorecard to a specific distance: you can use any target face at any distance, and changing the target face will not overwrite the distance you selected.
-
-
-The scorecard panel is the main session view. It shows the scorecard title and session details, a minimal score line, individual end rows, and a **Scorecard analysis** section underneath. The scorecard uses a scorecard-first scroll flow: long scorecards show their rows before the analysis and notes sections so smaller laptop screens prioritise the actual scoring table. On narrower laptop layouts, non-essential manual-score copy is hidden, manual score buttons wrap into a clean 6 x 2 grid, analysis metric cards wrap into clean equal-width grids, and the scorecard table keeps Avg Arrow / Avg Centre / MPI available through horizontal scroll while sticky Total and Run remain visible. The middle divider stores the scorecard/target allocation as a percentage, so resizing the browser preserves the chosen split instead of keeping a stale pixel width. Table density follows the browser width, while divider movement only reveals more or fewer columns.
+Target faces define target geometry and scoring zones. They do **not** lock the scorecard to a particular distance: any target face can be used at any distance.
 
 ![Scorecard](docs/assets/readme/scorecard.JPG)
 
-The scorecard supports both plotted and manual scoring. Plotted arrows are scored from their target position, while manual scores can be used when you want to record a score without placing an arrow on the target.
+The scorecard supports both plotted and manual scoring. Plotted arrows are scored from their target positions, while manual scores can record results without placing an arrow on the target.
 
-The scorecard view includes practical session stats such as:
+The scorecard includes:
 
-- **Total score** - the current score for the scorecard.
-- **Average arrow** - the average score per recorded arrow.
-- **X count** - the number of X-ring hits where supported by the target face.
-- **Misses** - recorded misses for the session.
-- **Average centre** - the average plotted-arrow distance from the target centre.
-- **MPI** - mean point of impact, showing how far the group centre is from the middle.
-- **Ring Break Luck** - whether close line decisions were mostly lucky or unlucky.
-- **Luck Adjusted Score** - an estimate of what the score would look like with neutral ring-break luck.
+- **Total score** — the current score for the round.
+- **Average arrow** — average points per recorded arrow.
+- **X count** — X-ring hits where supported by the target face.
+- **Misses** — recorded misses.
+- **Average centre** — average plotted-arrow distance from the bullseye.
+- **MPI** — mean point of impact, showing the location of the group centre.
+- **Ring Break Luck** — whether close scoring-line decisions were mostly favourable or unfavourable.
+- **Luck Adjusted Score** — an estimate of the score with neutral ring-break luck.
 
 ![Scorecard analysis](docs/assets/readme/scorecard-analysis.JPG)
 
-When a completed scorecard is your best result for a matching target face, distance, arrow count, and possible score, Sagittarius shows a **PB** indicator.
+When a completed scorecard is the best matching result for its target face, distance, arrow count, and possible score, Sagittarius shows a **PB** indicator.
 
 ![PB indicator](docs/assets/readme/PB-indicator.JPG)
 
+## Scorecard Manager
 
-## Saved scorecard calendar
+The **Scorecard Manager** combines a saved-session list with a calendar. Days containing scorecards are highlighted, and sessions are grouped by date with target, distance, arrow count, time, and score details.
 
-The **Scorecard manager** includes a custom calendar alongside the saved-scorecard list. Days with saved scorecards are subtly highlighted, days with multiple scorecards show a compact count marker, and the calendar only shows dates from the active month. Each saved entry uses a compact visual summary card for the scorecard/target face, distance, and arrows, with date, time, and score shown separately, plus a top-right action strip with compact icon buttons for duplicate, export, and delete.
+Selecting a date jumps to that date group rather than immediately loading a scorecard, which helps when several sessions were recorded on the same day.
 
-Selecting a date does not immediately open a scorecard. Instead, the saved-scorecard list jumps to that date group so you can review and choose the exact session, which is especially useful when you have multiple scorecards on the same day.
+![Scorecard manager](docs/assets/readme/scorecard-manager.JPG)
 
 ## Plotting arrows
 
-Use the target viewport to plot arrows directly onto the target face. The app stores plotted arrow positions in real target-face measurements, which means the scorecard can be re-rendered, analysed, exported, and compared reliably.
+Use the target viewport to place arrows directly on the target face. Sagittarius stores positions in real target-face millimetres, allowing the same arrows to be scored, analysed, replayed, exported, extrapolated, or viewed on another target face reliably.
 
-The viewport toolbar includes controls for plotting, editing, locking, fitting the target to view, centring the target, filtering by end, opening analysis tools, exporting images, entering Timeline mode, using distance extrapolation, and temporarily changing the viewed target with **Target swap**.
+The viewport includes plotting, editing, locking, target navigation, end filtering, overlays, Timeline, extrapolation, Target Swap, and image export tools.
 
 ## Viewport overlays
 
-Overlays help you inspect different parts of your shooting session without changing the underlying scorecard.
-
 ### Arrow labels
 
-The labels overlay shows arrow numbering directly on the target, making it easier to connect plotted arrows with scorecard rows and review specific shots.
+The labels overlay shows arrow numbering on the target so plotted impacts can be matched to scorecard rows and shot order.
 
 ![Labels overlay](docs/assets/readme/labels-overlay.JPG)
 
 ### Dispersion and enclosing group
 
-**Dispersion** helps show how widely the arrows are spread around the group. It gives a quick visual sense of whether the session was tight, loose, vertical, horizontal, or uneven.
+**Dispersion** visualises how widely the arrows are spread around the group.
 
-**Enclosing group** shows the smallest simple circle that contains the plotted group. This is useful as an easy-to-understand group-size reference: if the enclosing circle shrinks over time, your plotted group is becoming tighter.
+**Enclosing group** shows a simple circle containing the plotted group, providing an easy group-size reference.
 
 ![Dispersion and enclosing overlays](docs/assets/readme/dispersion-and-enclosing-overlays.JPG)
 
-These overlays are useful for coaching and review because they focus on grouping rather than just score. Two scorecards can have similar scores but very different group shapes.
-
 ### Shot Pattern DNA
 
-**Shot Pattern DNA** is a deeper group analysis overlay. It looks at the actual plotted arrow positions and summarises the pattern of the session.
+**Shot Pattern DNA** analyses the geometry of the plotted session.
 
 ![DNA overlay](docs/assets/readme/DNA-overlay.JPG)
 
-Shot Pattern DNA can help identify things such as:
+It includes information such as:
 
-- where the group centre is sitting,
-- whether the group is offset from the middle,
-- whether the group is wider horizontally or vertically,
-- the likely shape and angle of the group,
-- and which arrows behave like major outliers.
+- group centre and bullseye offset,
+- horizontal and vertical spread,
+- group shape and angle,
+- confidence ellipses,
+- and major outliers.
 
-This is the same type of information used by the Performance Intelligence modal to simulate likely repeat outcomes from the plotted pattern.
+The same pattern model feeds Performance Intelligence.
 
 ### Ring Break Luck overlay
 
-Ring Break Luck highlights arrows near scoring boundaries. Green arrows represent lucky line-cutters; red arrows represent unlucky near-misses; neutral arrows are dimmed.
+The Ring Break Luck overlay highlights arrows close to scoring boundaries. Green arrows are favourable line-cutters, red arrows are unfavourable near-misses, and neutral arrows are dimmed.
 
 ![Ring Break Luck overlay](docs/assets/readme/ring-breaker-overlay.JPG)
 
-This overlay is useful when you want to see exactly which arrows contributed to the Ring Break Luck stat.
-
 ## Ring Break Luck and Luck Adjusted Score
 
-**Ring Break Luck** estimates whether your score benefited from close line-cutters or was hurt by near-misses.
+**Ring Break Luck** estimates whether the score benefited from close line-cutters or was hurt by near-misses.
 
-The app looks at the outer edge of each plotted arrow and compares it to nearby scoring ring boundaries. The important zone is roughly a **6 mm window** around a line:
+The app compares the outer edge of each plotted arrow with nearby scoring boundaries. The analysis uses a close boundary window extending about 3 mm either side of the higher-scoring line. Arrows well away from a scoring line are neutral: a clean 10 is simply a good shot, while a clear 8 is not treated as unlucky.
 
-- about 3 mm outside the higher scoring line,
-- through the exact line touch,
-- to about 3 mm inside the higher scoring line.
+The rating uses a 0–100 scale:
 
-Arrows outside that close boundary window are treated as neutral because they are not meaningfully lucky or unlucky. A clean 10 well inside the line is not considered lucky; it is just a good shot. A clear 8 nowhere near the 9 line is not considered unlucky; it is simply an 8.
-
-The score is shown on a 0-100 scale:
-
-- **50** means neutral ring-break luck.
+- **50** is neutral ring-break luck.
 - **Above 50** means close scoring decisions were mostly favourable.
 - **Below 50** means close scoring decisions were mostly unfavourable.
-- Very close line-cutters push the value up more strongly.
-- Very close near-misses push the value down more strongly.
+- Very close line-cutters and near-misses carry more weight.
 
-**Luck Adjusted Score** uses the same close-boundary idea, but translates score-changing line breaks into an estimated score adjustment. It asks: *what might this score have looked like with neutral ring-break luck?*
+**Luck Adjusted Score** converts the same boundary evidence into an estimated score adjustment. It asks what the score may have looked like with neutral ring-break luck.
 
-These stats do not replace the official score. They are context tools that help explain whether the score was helped or hurt by close scoring margins.
+These are context tools and do not replace the official score.
 
 ## Performance Intelligence
 
-Performance Intelligence is the app’s deeper session-analysis modal. It turns the plotted arrows into a statistical model of the session, then uses that model to estimate what similar repeats of the same shooting pattern might score.
+Performance Intelligence analyses a completed plotted round. It is available only when every arrow in the scorecard has been plotted on the target; incomplete scorecards and scorecards containing manual score entries are excluded so every section is based on the same complete set of score and position data.
 
 ![Performance Intelligence overview](docs/assets/readme/intelligence-modal-1.JPG)
 
-The app analyses the plotted group and builds **Shot Pattern DNA** from the session. This includes information such as group centre, spread, shape, offset, angle, ellipse behaviour, and outliers. That DNA is then used as the basis for a Monte Carlo simulation.
+### Performance overview and Monte Carlo forecast
 
-In Sagittarius, Monte Carlo means the app generates **5,000 simulated scorecards** from the plotted shot pattern. Each simulated scorecard creates realistic x/y arrow impacts from the same underlying pattern and scores them through the normal target scoring engine.
+Sagittarius builds Shot Pattern DNA from the real plotted group, then runs **5,000 simulated scorecards**. Each simulation generates realistic x/y impacts from the model and scores them through the normal target scoring engine.
 
-The modal can show:
+The overview shows:
 
-- **Actual score** - the real recorded scorecard result.
-- **Expected score** - the average score across the simulated scorecards.
-- **Likely range** - the range where the same shot pattern commonly lands.
-- **Best simulated score** - the highest result seen in that simulation batch.
-- **Luck Rating** - where the actual score sits inside the simulated score distribution.
-- **Score probabilities** - how often the simulated scorecards reached selected score targets.
+- **Actual score** — the completed recorded result.
+- **Expected score** — the average score across the simulated repeats.
+- **Likely range** — the 10th-to-90th-percentile range for similar repeats.
+- **Luck Rating** — the actual score's percentile within the simulated score distribution.
 
-![Performance Intelligence details](docs/assets/readme/intelligence-modal-2.JPG)
+The Performance Intelligence **Luck Rating** is different from Ring Break Luck. Ring Break Luck only evaluates arrows close to scoring boundaries. Intelligence Luck Rating compares the complete score with the full simulated score distribution for the shot pattern.
 
-The **Luck Rating** in Performance Intelligence is different from Ring Break Luck. Ring Break Luck only looks at close line touches and near-misses. Intelligence Luck Rating looks at the whole simulated score distribution and asks whether the actual score converted unusually well or poorly for the overall shot pattern.
+### Progression Intelligence
 
-They can loosely correlate. A scorecard with many lucky line-cutters may also have a high Monte Carlo Luck Rating. But they are not the same stat: Ring Break Luck is boundary-specific, while Intelligence Luck Rating is whole-pattern score-conversion luck.
+Progression Intelligence uses observed scores rather than Monte Carlo values.
 
-### What-if adjustments and projections
+The **Running projected score** graph shows the full-round score implied by the recorded scoring pace after every arrow:
 
-Performance Intelligence also runs controlled what-if scenarios using the same simulation engine.
+**running average arrow × total arrows in the round**
 
-![Performance Intelligence what-if analysis](docs/assets/readme/intelligence-modal-3.JPG)
+Because Performance Intelligence only opens for completed scorecards, the final point always equals the actual final score. The line is divided into blue Early, yellow Middle, and red Late sections, with completed ends labelled along the bottom.
 
-These projections can estimate how the expected score might change if the group were adjusted, such as:
+The modal separates **Session performance** from **Within-end performance**. Session performance presents the running projected-score graph, a bar for every end, the weakest-end consistency comparison, and Early/Middle/Late session cards as raw evidence. One **Session analysis** box then appears at the end of the section and gives the app's overall interpretation. Trend labels require a meaningful difference and repeated evidence across ends; ordinary random differences are reported as **No reliable session trend** rather than being over-interpreted.
 
-- **re-centering the group**,
-- **removing major outliers**,
-- **reducing horizontal spread**,
-- **reducing vertical spread**,
-- or tightening the overall pattern.
+Within-end performance presents average-score bars for each repeated arrow position, its consistency comparison, and Early/Middle/Late within-end cards. One **Within-end analysis** box appears after those results. The calculation accounts for stronger and weaker ends before identifying a reliable decline, improvement, or position-specific pattern. The modal still shows all observed averages when no reliable pattern is detected.
 
-The goal is not to predict the future perfectly. It is to show which changes would likely matter most if the same session pattern were improved.
+When either final analysis detects a reliable trend, that conclusion receives a prismatic rainbow/gleam treatment so the finding is easy to spot. A scope with no reliable trend remains visually neutral; Session and Within-end results are highlighted independently.
+
+The phase cards include average arrow, score, average centre, observed horizontal × vertical spread, MPI, major outliers, and a flippable target view with the dimmed **Dispersion** overlay. Target views automatically fit every plotted arrow, including misses outside the target face.
+
+### Shot Pattern DNA
+
+Shot Pattern DNA is presented as a restrained grid of blue-accented metric cards and explains the geometry used by the forecast:
+
+- core MPI and core bullseye offset,
+- fitted core width and height,
+- group shape and angle,
+- the 95% prediction ellipse,
+- and major geometric outliers.
+
+The modal warns when the group centre changes materially between session phases, because one overall Gaussian model may be less representative when the round contains distinctly different shot patterns.
+
+### Improvement forecast
+
+The session and within-end bar sections each include a direct consistency comparison. **Weakest end normalised** recalculates the lowest-scoring end at the average of the remaining ends. **Weakest arrow position normalised** does the same for the lowest repeated arrow position. These are arithmetic comparisons based on the recorded score, not Monte Carlo predictions.
+
+The separate Improvement forecast reruns the same simulation after controlled geometric pattern changes such as:
+
+- re-centring the group,
+- removing major outliers,
+- reducing horizontal spread,
+- reducing vertical spread,
+- and combining realistic improvements.
+
+The Monte Carlo table reports each expected score and its signed **Change** from the Actual Pattern baseline to two decimal places. Every scenario reuses the same underlying random trials, preventing small differences from being caused by unrelated simulation noise.
+
+These scenarios are comparisons, not guaranteed predictions. Major outliers are identified geometrically, so **Core group only** can occasionally be neutral or negative when an outlier happened to score better than the fitted core group.
+
+Score probabilities remain expanded by default and show how often simulations reached selected score targets.
 
 ## Timeline replay
 
-Timeline mode lets you review how a session developed over time instead of only seeing the final group.
+Timeline mode replays the session chronologically so the development of the group can be reviewed over time.
 
 ![Timeline standard view](docs/assets/readme/timeline-standard.JPG)
 
-You can replay arrows progressively, inspect the order of shots, and see how the group builds across the scorecard. This is useful for reviewing whether a session started well and faded, whether a bad end changed the result, or whether the group shifted during the round.
-
-End-based timeline views make it easier to compare ends and see how each end contributed to the final score.
+It can be used to inspect shot order, compare ends, identify group movement, and see when a strong or weak period affected the round.
 
 ![Timeline ends](docs/assets/readme/timeline-ends.JPG)
 
+## Target Swap
 
-## Target swap
+Changing the target face through **Edit scorecard** is permanent: the scorecard is recategorised under the new target for scoring, PBs, records, and trends.
 
-Changing the target face inside **Edit scorecard** is a permanent scorecard edit: the session is recategorised as that target face for scoring, PBs, records, and trends.
-
-For temporary comparison, the viewport includes **Target swap**. This lets you view and rescore the same plotted arrows on another target face without changing the saved scorecard category. A warning appears over the viewport while Target swap is active, and the **Original target** option returns the view to the scorecard's actual target face.
+**Target Swap** is a temporary analysis tool. It displays and rescores the same plotted arrows on another target face without changing the saved scorecard category. Selecting **Original target** returns to the scorecard’s real target face.
 
 ## Extrapolated distance
 
-The extrapolation tool projects the plotted arrow group to a different distance and recalculates the displayed score.
+Extrapolation projects the plotted group to another distance and recalculates the displayed score.
 
 ![Extrapolation](docs/assets/readme/extrapolation.JPG)
 
-This is useful for exploring questions such as: *how would this group look at 70 m instead of 18 m?* or *what would happen if this pattern were scaled to a shorter distance?*
-
-Extrapolation is an analysis tool only. It does not modify the original stored arrow positions.
+It can be used to explore how a group shot at one distance may look when geometrically scaled to another. Extrapolation does not modify the stored arrow positions.
 
 ## Trends, records, and arrow volume
 
-The Trends view helps compare saved sessions over time. It is intended for reviewing practice history and spotting longer-term changes in performance.
+The Trends view compares saved sessions over time.
 
 ![Trends view](docs/assets/readme/trends-view.JPG)
 
-The graph can track different performance metrics, including:
+Available metrics include:
 
 - total score,
 - average arrow,
 - average centre,
 - group size,
 - MPI offset,
-- and 70 m equivalent stats.
+- and 70 m equivalent grouping metrics.
 
-**70 m equivalent** stats scale distance-based measurements to a 70 m reference. This makes it easier to compare grouping-type metrics across sessions shot at different distances. For example, a group shot at 18 m can be scaled to a 70 m equivalent so it can be compared more meaningfully with longer-distance practice.
+**70 m equivalent** metrics scale distance-based measurements to a common 70 m reference, making grouping results from different shooting distances easier to compare.
 
-The records area can track best results across categories such as:
-
-- target face,
-- distance,
-- arrow count,
-- total score,
-- average arrow,
-- average centre,
-- group size,
-- MPI,
-- and 70 m equivalent centre/group/MPI records.
-
-The Trends view also includes an arrows-shot tracker. This currently gives a simple sense of shooting volume from saved scorecards, and is intended to be expanded in the future into a more detailed training-volume and workload feature.
+Records can be grouped by target face, distance, arrow count, possible score, and relevant performance metric. Sagittarius also tracks arrows shot from saved scorecards.
 
 ## Saving, importing, and exporting scorecard data
 
-Sagittarius can save scorecards in the browser and also export scorecard data as JSON.
+Scorecards are saved in the browser and can be exported as JSON.
 
-JSON export/import is useful for:
+JSON import/export supports:
 
-- backing up scorecards,
+- backups,
 - moving scorecards between browsers or computers,
-- sharing scorecards for review,
-- keeping practice data portable,
-- and preserving custom target-face information used by a scorecard.
-
-The Scorecard Manager lets you browse, load, manage, export, and import saved scorecards.
-
-![Scorecard manager](docs/assets/readme/scorecard-manager.JPG)
+- sharing sessions for review,
+- and preserving custom target-face data used by a scorecard.
 
 ## Image export
 
-Sagittarius can export clean target images for sharing, record keeping, or coaching review.
-
-The export modal supports different export styles and layouts.
+Sagittarius can export target images for sharing, record keeping, and coaching review.
 
 ![Image export modal](docs/assets/readme/image-export-modal.JPG)
 
-Standard view exports show the target and plotted arrows clearly.
+Standard view exports show the target and plotted arrows.
 
 ![Standard view image export](docs/assets/readme/standard-view-image-export.png)
 
-End-sheet exports lay out ends in a printable/shareable format.
+End-sheet exports arrange ends in a printable or shareable layout.
 
 ![End sheet image export](docs/assets/readme/end-sheet-image-export.png)
 
 ## Custom target faces
 
-One of the most important features of Sagittarius is the ability to create and edit **custom target faces**.
+Sagittarius can create and edit **custom target faces**.
 
 ![Target face creation](docs/assets/readme/scoreface-creation.JPG)
 
-Many archery apps only support a fixed set of built-in target faces. Sagittarius is designed to be more flexible. Custom target faces make it possible to model different formats, practice faces, club faces, experimental faces, or target types that are not included by default.
-
-This is especially useful for archers who practice with non-standard targets or want their scorecard and analysis tools to match the exact face they are using.
-
-## Who it is for
-
-Sagittarius is aimed at archers who want more than a paper scorecard. It is useful for:
-
-- practice logging,
-- plotted-arrow review,
-- group and pattern analysis,
-- score and record tracking,
-- coaching discussions,
-- sharing clean target images,
-- and experimenting with custom target faces.
+Custom faces can model club formats, practice faces, experimental targets, or target types not included with the built-in set.
 
 ## Current status
 
-This README reflects **Sagittarius v0.9.19**, including the accepted minimal scorecard header, independent target/distance metadata, Target swap comparison tool, automatic saving after Edit scorecard changes, the calendar-assisted Scorecard manager with compact saved-session cards and actual target-face previews, the polished top-toolbar order, the scorecard-first laptop layout, unified scorecard/analysis/notes scrolling, removal of the redundant top-left target viewport HUD, laptop layout refinements for manual scoring, analysis metric wrapping and thinner scrollbars, the handle-only compact viewport toolbar, compact-toolbar dropdown fixes, Trends panel height fixes, and narrow scorecard-table horizontal scrolling with stable columns, delayed fixed-size 6 x 2 manual-score wrapping, right-gapped sticky Total/Run columns with a clean edge mask, visible-pane-aligned Invert control, compact viewport-toolbar controls that wrap around the Display toggle without reserving empty second-row space, a manual-score strip that always grows to fit its controls, and smoothly responsive scorecard-table density that remains readable while retaining horizontal scrolling.
+This README reflects **Sagittarius v0.9.36**, including plotted and manual scorecards, custom target faces, saved-scorecard management, PBs and records, Timeline, overlays, Ring Break Luck, Luck Adjusted Score, Monte Carlo Performance Intelligence, Progression Intelligence, what-if projections, Target Swap, distance extrapolation, trends, JSON portability, and image export.
 
-Sagittarius is currently a prototype browser-based app. Future versions may expand the analysis system, session summaries, custom target-face workflows, score history, arrows-shot tracking, desktop packaging, and mobile-friendly workflows.
+Sagittarius remains a prototype browser-based app. Future versions may expand training-volume analysis, long-term performance modelling, and desktop packaging.

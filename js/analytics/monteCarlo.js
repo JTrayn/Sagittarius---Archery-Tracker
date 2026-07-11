@@ -126,21 +126,31 @@
   }
 
   function samplePosition(model, rng) {
-    if (model.outliers.length && rng() < model.outlierRate) {
-      const source = model.outliers[Math.floor(rng() * model.outliers.length)] || { xMm: 0, yMm: 0 };
+    // Consume the same random values for every scenario so What-if comparisons
+    // use paired Monte Carlo samples instead of unrelated simulation noise.
+    const outlierRoll = rng();
+    const outlierIndexRoll = rng();
+    const [jitterX, jitterY] = gaussianPair(rng);
+    const [coreZ1, coreZ2] = gaussianPair(rng);
+
+    if (model.outliers.length && outlierRoll < model.outlierRate) {
+      const sourceIndex = Math.min(model.outliers.length - 1, Math.floor(outlierIndexRoll * model.outliers.length));
+      const source = model.outliers[sourceIndex] || { xMm: 0, yMm: 0 };
       const jitter = Math.max(1, Math.min(Math.sqrt(model.fit.varianceX), Math.sqrt(model.fit.varianceY)) * 0.12);
       return {
-        xMm: source.xMm + gaussian(rng) * jitter,
-        yMm: source.yMm + gaussian(rng) * jitter
+        xMm: source.xMm + jitterX * jitter,
+        yMm: source.yMm + jitterY * jitter
       };
     }
 
-    return sampleGaussian(model.fit, rng);
+    return sampleGaussianFromNormals(model.fit, coreZ1, coreZ2);
   }
 
   function sampleGaussian(fit, rng) {
-    const z1 = gaussian(rng);
-    const z2 = gaussian(rng);
+    return sampleGaussianFromNormals(fit, gaussian(rng), gaussian(rng));
+  }
+
+  function sampleGaussianFromNormals(fit, z1, z2) {
     const l11 = Math.sqrt(Math.max(0.000001, fit.varianceX));
     const l21 = fit.covarianceXY / l11;
     const l22 = Math.sqrt(Math.max(0.000001, fit.varianceY - l21 * l21));
@@ -151,11 +161,17 @@
   }
 
   function gaussian(rng) {
+    return gaussianPair(rng)[0];
+  }
+
+  function gaussianPair(rng) {
     let u = 0;
     let v = 0;
     while (u <= 0) u = rng();
     while (v <= 0) v = rng();
-    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    const magnitude = Math.sqrt(-2 * Math.log(u));
+    const angle = 2 * Math.PI * v;
+    return [magnitude * Math.cos(angle), magnitude * Math.sin(angle)];
   }
 
   function transformPoint(point, sourceCentre, nextMean, scaleX, scaleY) {

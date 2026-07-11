@@ -49,7 +49,9 @@
         entries: [],
         reliability: getReliability(0),
         groupCentre: null,
+        coreCentre: null,
         offsetDistanceMm: null,
+        coreOffsetDistanceMm: null,
         allFit: null,
         coreFit: null,
         outliers: { mild: [], major: [], count: 0, mildCount: 0, majorCount: 0, majorRate: 0 },
@@ -69,14 +71,17 @@
     const allFit = fitGaussian(annotated);
     const coreFit = fitGaussian(coreEntries);
     const shape = describeShape(coreFit);
+    const coreCentre = coreFit ? { xMm: coreFit.meanX, yMm: coreFit.meanY } : groupCentre;
 
     return {
       count,
       entries: annotated,
       reliability: getReliability(count),
       groupCentre,
+      coreCentre,
       robustCentre,
       offsetDistanceMm: Math.hypot(groupCentre.xMm, groupCentre.yMm),
+      coreOffsetDistanceMm: Math.hypot(coreCentre.xMm, coreCentre.yMm),
       allFit,
       coreFit,
       outliers: outlierInfo,
